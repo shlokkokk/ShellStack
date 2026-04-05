@@ -1,92 +1,117 @@
 <div align="center">
 
-# 💀 SHELLSTACK
-### **The Ultimate Offensive Security Intelligence Hub & CEH v13 Companion**
+# SHELLSTACK
+### Cybersecurity study terminal for CEH modules, tools, and tactical cheat sheets
 
 [![React](https://img.shields.io/badge/React-19.2-61DAFB?logo=react&logoColor=white&style=for-the-badge)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white&style=for-the-badge)](https://www.typescriptlang.org/)
 [![Vite](https://img.shields.io/badge/Vite-7.2-646CFF?logo=vite&logoColor=white&style=for-the-badge)](https://vitejs.dev/)
-[![GSAP](https://img.shields.io/badge/Animations-GSAP-39FF14?logo=greensock&logoColor=white&style=for-the-badge)](https://greensock.com/gsap/)
-[![TailwindCSS](https://img.shields.io/badge/Styling-Tailwind-06B6D4?logo=tailwindcss&logoColor=white&style=for-the-badge)](https://tailwindcss.com/)
+[![TailwindCSS](https://img.shields.io/badge/Tailwind-3.4-06B6D4?logo=tailwindcss&logoColor=white&style=for-the-badge)](https://tailwindcss.com/)
+[![GSAP](https://img.shields.io/badge/Motion-GSAP-39FF14?logo=greensock&logoColor=white&style=for-the-badge)](https://greensock.com/gsap/)
+[![Radix UI](https://img.shields.io/badge/UI-Radix%20UI-111827?style=for-the-badge)](https://www.radix-ui.com/)
 
-**⚡ High-performance. 🦾 Brutalist. 🎯 Mission Critical.**
+**A full-screen offensive security workspace with a terminal-first aesthetic.**
 
-[Explore Live Demo](https://shell-stack.vercel.app/) • [View Arsenal](#-core-arsenal) • [CEH Modules](#-ceh-v13-curriculum)
+[Live Demo](https://shell-stack.vercel.app/) • [Features](#features) • [Routes](#routes) • [Deployment](#deployment)
 
 </div>
 
 ---
 
-## 👽 THE CONCEPT
+## Overview
 
-**ShellStack** is a specialized learning and intelligence platform designed for cybersecurity professionals and CEH qualification candidates. It bridges the gap between theoretical knowledge and tactical execution by integrating a massive database of 130+ offensive security tools directly into the CEH v13 learning curriculum.
+ShellStack is a React + TypeScript web app built as a high-density cybersecurity study hub. It combines a curated tools directory, CEH module explorer, live terminal experience, and a command cheat sheet into one visually intense interface.
 
-Built with a **strictly brutalist / terminal-inspired aesthetic**, ShellStack provides a zero-friction, mission-critical workspace for mastering the art of ethical hacking.
-
----
-
-## 🦾 CORE ARSENAL
-
-### 🛠️ The Global Tools Encyclopedia
-- **130+ Specialized Tools**: From Info-Gathering to Post-Exploitation.
-- **Real-World Commands**: Genuine usage strings, flags, and tactical descriptions.
-- **Categorized Intelligence**: 13 unique weapon categories including Wireless Attacks, Forensics, and Reverse Engineering.
-- **Interactive Search**: High-density directory with real-time filtering and OSINT tags.
-
-### 📚 CEH v13 Knowledge Graph
-- **20 Interactive Domains**: Fully mapped to the latest CEH blueprint.
-- **Deep Contextual Integration**: Study a module → Instantly analyze its related tools without losing your place.
-- **Nested Modal Intelligence**: Tool documentation pops up over the module view for seamless reference.
-- **Progress Tracking**: Localized session persistence to monitor your study roadmap.
-
-### 💻 Live Simulation & Study Toolkit
-- **Terminal Emulator**: A reactive command-line UI for rapid command review.
-- **Exam Readiness Logic**: Dedicated study toolkit with high-weight domain highlights and tactical tips.
-- **Mission Dashboard**: Real-time stats on module completion and arsenal coverage.
+The project is designed around authorized learning and exam preparation. The UI emphasizes fast scanning, compact information hierarchy, and modal-driven drill-downs so you can move between concepts without losing context.
 
 ---
 
-## 🛠️ TECH STACK
+## Features
 
-| Layer | Technology |
-| :--- | :--- |
-| **Frontend Framework** | React 19 (Hooks, Context, Router 7) |
-| **Language** | TypeScript (Strict Mode) |
-| **Build Tool** | Vite |
-| **Animation Engine** | GSAP 3 (ScrollTrigger, Timelines) |
-| **UI Architecture** | Tailwind CSS + Radix UI (Headless Primitives) |
-| **Typography** | Inter & Space Mono (Terminal Grade) |
-| **Icons** | Lucide React |
+- Home dashboard with a terminal-inspired hero, featured tools, and a Kali-style hub snapshot.
+- Tools directory with search, category filters, inline command previews, and full tool detail modals.
+- CEH module browser with module summaries, key tools, countermeasures, and deeper topic drill-downs.
+- Live terminal section for a more immersive command-line study flow.
+- Study toolkit for quick review and exam-focused navigation.
+- Master cheat sheet with searchable commands and clipboard copy support.
+- Persistent app shell with custom cursor, cyber grid background, scanlines, and modal overlays.
 
 ---
 
-## 🚀 DEPLOYMENT
+## Routes
 
-The ShellStack platform is pre-built and live on Vercel. You can access the full tactical suite at:
-
-**🔗 [https://shell-stack.vercel.app/](https://shell-stack.vercel.app/)**
+- `/` - landing page and featured security hub.
+- `/tools` - searchable offensive tools directory.
+- `/ceh` - CEH module explorer.
+- `/terminal` - live terminal experience.
+- `/study` - study toolkit.
+- `/cheatsheet` - command cheat sheet.
 
 ---
 
+## Content Library
+
+- 13 tool categories covering reconnaissance, web application testing, wireless, forensics, reverse engineering, reporting, and more.
+- A CEH module database with topic-level breakdowns, key points, commands, and countermeasures.
+- A master cheat sheet organized by attack phase and command family.
+- Tool and module detail modals for deeper inspection without leaving the page.
+
 ---
 
-## 🛡️ MISSION STATUS
+## Tech Stack
 
-- [x] Multi-Page Architecture Migration
-- [x] 130+ Tools Database Integrated
-- [x] CEH Learning Hub Redesign (Full Grid)
-- [x] Deep Context Nested Modals
-- [x] GSAP Entrance Sequence Overhaul
-- [ ] Authentication / Session Cloud Sync (Coming Soon)
-- [ ] User Progress Analytics Dashboard (Planning)
+| Layer | Stack |
+| --- | --- |
+| Frontend | React 19 |
+| Language | TypeScript |
+| Build Tool | Vite |
+| Styling | Tailwind CSS |
+| Motion | GSAP |
+| UI Primitives | Radix UI |
+| Routing | React Router DOM |
+| Utilities | Lucide React, clsx, tailwind-merge, cva |
+
+---
+
+## Project Structure
+
+- `src/pages/` - routed screens like Home, Tools Directory, and Cheat Sheet.
+- `src/sections/` - larger landing-page sections and content blocks.
+- `src/components/` - shared UI, background effects, and modal components.
+- `src/data/` - tool, module, and cheat sheet content sources.
+- `src/hooks/` - reusable client hooks.
+- `src/lib/` - utility helpers.
+
+---
+
+## Visual System
+
+ShellStack uses a dark terminal palette, neon green accents, layered background effects, and high-contrast panels to create a dense security-console feel. The layout is intentionally compact, with modals and panels used to keep the interface fast and focused.
+
+---
+
+## Deployment
+
+The app is live on Vercel:
+
+[https://shell-stack.vercel.app/](https://shell-stack.vercel.app/)
+
+ShellStack is presented as a finished deployed experience, not a starter kit.
+
+---
+
+## Notes
+
+- Built for study, lab work, and authorized security training.
+- The content is organized for fast exam review and practical command discovery.
+- The UI is intentionally bold, cinematic, and information-heavy.
 
 ---
 
 <div align="center">
 
-### **STAY SECURE. STAY OFFENSIVE.**
-**ShellStack Engine v1.0.0**
+### STAY SHARP. STAY AUTHORIZED.
 
-[MIT License](LICENSE) • [Contribution Guidelines](#) • [Security Policy](#)
+ShellStack
 
 </div>
