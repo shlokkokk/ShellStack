@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { ArrowRight, Terminal, Shield, Cpu } from 'lucide-react';
+import { ArrowRight, Terminal, Shield, Cpu, BookOpen, ChevronsDown } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 gsap.registerPlugin(ScrollTrigger);
 
 const TerminalHero = () => {
+  const navigate = useNavigate();
   const sectionRef = useRef<HTMLElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const headlineRef = useRef<HTMLHeadingElement>(null);
@@ -122,10 +124,10 @@ const TerminalHero = () => {
     return () => ctx.revert();
   }, []);
 
-  const scrollToSection = (id: string) => {
-    const element = document.querySelector(id);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+  const scrollToKaliHub = () => {
+    const section = document.getElementById('kali-hub');
+    if (section) {
+      section.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 
@@ -137,7 +139,7 @@ const TerminalHero = () => {
       {/* Main Panel */}
       <div
         ref={panelRef}
-        className="relative w-[min(86vw,1100px)] h-[min(72vh,560px)] cyber-panel flex flex-col"
+        className="relative w-[min(86vw,1100px)] min-h-[460px] lg:h-[min(66vh,500px)] cyber-panel flex flex-col"
         style={{ willChange: 'transform, opacity' }}
       >
         {/* Header Bar */}
@@ -168,50 +170,68 @@ const TerminalHero = () => {
         <div className="flex-1 flex flex-col lg:flex-row p-6 lg:p-8 gap-6 lg:gap-8">
           {/* Left: Text Content */}
           <div className="flex-1 flex flex-col justify-center">
-            <h1
-              ref={headlineRef}
-              className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight mb-4"
-              style={{ willChange: 'transform, opacity' }}
-            >
-              <span className="text-[#F2F5F9]">SHELL</span>
-              <span className="text-[#39FF14]">STACK</span>
-            </h1>
-
-            <p
-              ref={subheadlineRef}
-              className="text-lg sm:text-xl text-[#A7B0BC] mb-8 font-mono min-h-[1.5em]"
-              style={{ willChange: 'transform, opacity' }}
-            >
-              {typedText}
-              <span className="terminal-cursor" />
-            </p>
-
-            <div ref={ctaRef} className="flex flex-wrap gap-4 mb-6">
-              <button
-                onClick={() => scrollToSection('#kali-hub')}
-                className="cyber-btn-primary flex items-center gap-2"
+            <div>
+              <h1
+                ref={headlineRef}
+                className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight mb-4"
+                style={{ willChange: 'transform, opacity' }}
               >
-                <Terminal className="w-4 h-4" />
-                Explore Tools
-                <ArrowRight className="w-4 h-4" />
-              </button>
+                <span className="text-[#F2F5F9]">SHELL</span>
+                <span className="text-[#39FF14]">STACK</span>
+              </h1>
 
-              <button
-                onClick={() => scrollToSection('#ceh-modules')}
-                className="cyber-btn flex items-center gap-2"
+              <p
+                ref={subheadlineRef}
+                className="text-lg sm:text-xl text-[#A7B0BC] mb-8 font-mono min-h-[1.5em]"
+                style={{ willChange: 'transform, opacity' }}
               >
-                <Shield className="w-4 h-4" />
-                View CEH Modules
-              </button>
+                {typedText}
+                <span className="terminal-cursor" />
+              </p>
+
+              <div ref={ctaRef} className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl">
+                <button
+                  onClick={() => navigate('/tools')}
+                  className="cyber-btn-primary w-full flex items-center justify-center gap-2"
+                >
+                  <Terminal className="w-4 h-4" />
+                  Tools Directory
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+
+                <button
+                  onClick={() => navigate('/ceh')}
+                  className="cyber-btn w-full flex items-center justify-center gap-2"
+                >
+                  <Shield className="w-4 h-4" />
+                  CEH Explorer
+                </button>
+
+                <button
+                  onClick={() => navigate('/cheatsheet')}
+                  className="cyber-btn w-full flex items-center justify-center gap-2 sm:col-span-2"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  Cheat Sheet
+                </button>
+
+                <button
+                  onClick={scrollToKaliHub}
+                  className="cyber-btn w-full flex items-center justify-center gap-2 sm:col-span-2"
+                >
+                  <ChevronsDown className="w-4 h-4" />
+                  Jump to Kali Linux
+                </button>
+              </div>
             </div>
 
-            <p className="text-xs font-mono text-[#A7B0BC]/60 flex items-center gap-4">
+            <p className="text-xs font-mono text-[#A7B0BC]/70 flex items-center gap-4 mt-4">
               <span className="flex items-center gap-1">
                 <Cpu className="w-3 h-3" />
-                v2.4
+                Live Intel Feed
               </span>
-              <span>200+ tools</span>
-              <span>offline-ready</span>
+              <span>230 tools indexed</span>
+              <span>CEH v13 mapped</span>
             </p>
           </div>
 
@@ -235,6 +255,10 @@ const TerminalHero = () => {
                     <span>Loading CEH v13 modules...</span>
                   </div>
                   <div className="flex items-center gap-2">
+                    <span className="text-[#00F0FF]">[INFO]</span>
+                    <span>Indexing command signatures...</span>
+                  </div>
+                  <div className="flex items-center gap-2">
                     <span className="text-[#39FF14]">[OK]</span>
                     <span>230 tools indexed</span>
                   </div>
@@ -243,8 +267,20 @@ const TerminalHero = () => {
                     <span>20 CEH modules loaded</span>
                   </div>
                   <div className="flex items-center gap-2">
+                    <span className="text-[#39FF14]">[OK]</span>
+                    <span>Cheat sheet cache primed</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#00F0FF]">[INFO]</span>
+                    <span>Linking recon, exploit, and reporting paths</span>
+                  </div>
+                  <div className="flex items-center gap-2">
                     <span className="text-[#FFE600]">[WARN]</span>
                     <span>Some tools require root privileges</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#39FF14]">[OK]</span>
+                    <span>Workspace ready for operator input</span>
                   </div>
                   <div className="mt-4 text-[#39FF14]">
                     root@shellstack:~# <span className="animate-pulse">_</span>

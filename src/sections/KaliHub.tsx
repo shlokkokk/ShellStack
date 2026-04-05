@@ -137,7 +137,7 @@ const KaliHub = ({ onToolSelect }: KaliHubProps) => {
     >
       <div className="w-full px-6 lg:px-12">
         {/* Header */}
-        <div ref={headerRef} className="mb-12 lg:mb-16">
+        <div ref={headerRef} className="mb-12 lg:mb-16 relative z-30">
           <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
             <div>
               <div className="flex items-center gap-2 mb-3">
@@ -155,7 +155,7 @@ const KaliHub = ({ onToolSelect }: KaliHubProps) => {
             </div>
 
             {/* Search & Filter */}
-            <div className="flex flex-col sm:flex-row gap-3 relative">
+            <div className="flex flex-col sm:flex-row gap-3 relative z-40">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A7B0BC]" />
                 <input
@@ -168,7 +168,7 @@ const KaliHub = ({ onToolSelect }: KaliHubProps) => {
                 
                 {/* Search Results Dropdown */}
                 {showSearchResults && (
-                  <div className="absolute top-full left-0 right-0 mt-2 cyber-panel max-h-80 overflow-y-auto z-50">
+                  <div className="absolute top-full left-0 right-0 mt-2 cyber-panel max-h-80 overflow-y-auto z-[120]">
                     {filteredTools.length > 0 ? (
                       filteredTools.map((tool) => (
                         <button
@@ -206,7 +206,7 @@ const KaliHub = ({ onToolSelect }: KaliHubProps) => {
         </div>
 
         {/* Category Grid */}
-        <div ref={cardsRef} className="grid grid-cols-12 gap-4 lg:gap-5">
+        <div ref={cardsRef} className="grid grid-cols-12 gap-4 lg:gap-5 relative z-10">
           {categories.map((category) => {
             const Icon = iconMap[category.icon] || Terminal;
             const categoryTools = getCategoryTools(category.id);
@@ -267,10 +267,10 @@ const KaliHub = ({ onToolSelect }: KaliHubProps) => {
         {/* Stats Bar */}
         <div className="mt-12 lg:mt-16 flex flex-wrap justify-center gap-8 lg:gap-16 py-6 border-t border-[rgba(243,245,249,0.08)]">
           {[
-            { value: `${tools.length}+`, label: 'Tools' },
-            { value: `${categories.length}`, label: 'Categories' },
-            { value: '1000+', label: 'Commands' },
-            { value: '24/7', label: 'Updated' },
+            { value: 'Curated', label: 'Tooling' },
+            { value: 'Multi-Domain', label: 'Coverage' },
+            { value: 'Actionable', label: 'Commands' },
+            { value: 'Evergreen', label: 'Maintained' },
           ].map((stat) => (
             <div key={stat.label} className="text-center">
               <div className="text-2xl lg:text-3xl font-bold text-[#39FF14] font-mono">
