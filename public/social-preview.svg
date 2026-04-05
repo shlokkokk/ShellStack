@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-label="ShellStack social preview">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#05060b"/>
+      <stop offset="100%" stop-color="#0b0f18"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0%" stop-color="#39ff14"/>
+      <stop offset="100%" stop-color="#00f0ff"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#39ff14" stop-opacity="0.75"/>
+      <stop offset="100%" stop-color="#39ff14" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <g opacity="0.38">
+    <path d="M0 90h1200M0 180h1200M0 270h1200M0 360h1200M0 450h1200M0 540h1200" stroke="#1d2534" stroke-width="1"/>
+    <path d="M120 0v630M300 0v630M480 0v630M660 0v630M840 0v630M1020 0v630" stroke="#1d2534" stroke-width="1"/>
+  </g>
+
+  <circle cx="1010" cy="130" r="220" fill="url(#glow)" opacity="0.22"/>
+  <circle cx="220" cy="520" r="240" fill="url(#glow)" opacity="0.12"/>
+
+  <g transform="translate(72 68)">
+    <rect x="0" y="0" width="1056" height="494" rx="28" fill="#0b0f18" stroke="#263149" stroke-width="2"/>
+
+    <rect x="26" y="26" width="1004" height="46" rx="14" fill="#101726" stroke="#243047" stroke-width="1.5"/>
+    <circle cx="50" cy="49" r="7" fill="#ff2d2d"/>
+    <circle cx="76" cy="49" r="7" fill="#ffe600"/>
+    <circle cx="102" cy="49" r="7" fill="#39ff14"/>
+
+    <text x="588" y="57" fill="#a7b0bc" font-size="16" font-family="JetBrains Mono, Consolas, monospace" text-anchor="middle">shellstack — cybersecurity study terminal</text>
+
+    <g transform="translate(54 112)">
+      <text x="0" y="22" fill="#39ff14" font-size="18" font-family="JetBrains Mono, Consolas, monospace">&gt; OFFENSIVE SECURITY ARSENAL</text>
+      <text x="0" y="88" fill="#f2f5f9" font-size="70" font-weight="700" font-family="Space Grotesk, Inter, sans-serif">SHELL</text>
+      <text x="286" y="88" fill="#39ff14" font-size="70" font-weight="700" font-family="Space Grotesk, Inter, sans-serif">STACK</text>
+
+      <text x="0" y="142" fill="#a7b0bc" font-size="26" font-family="JetBrains Mono, Consolas, monospace">A living reference for Kali Linux tools &amp; CEH prep.</text>
+
+      <g transform="translate(0 184)">
+        <rect x="0" y="0" width="332" height="50" rx="14" fill="#0f1420" stroke="#243047"/>
+        <text x="20" y="32" fill="#39ff14" font-size="17" font-family="JetBrains Mono, Consolas, monospace">Tools Directory</text>
+
+        <rect x="352" y="0" width="220" height="50" rx="14" fill="#0f1420" stroke="#243047"/>
+        <text x="374" y="32" fill="#f2f5f9" font-size="17" font-family="JetBrains Mono, Consolas, monospace">CEH Explorer</text>
+
+        <rect x="0" y="62" width="572" height="50" rx="14" fill="#0f1420" stroke="#243047"/>
+        <text x="20" y="94" fill="#f2f5f9" font-size="17" font-family="JetBrains Mono, Consolas, monospace">Cheat Sheet</text>
+      </g>
+
+      <g transform="translate(0 334)">
+        <rect x="0" y="0" width="960" height="86" rx="18" fill="#0d1320" stroke="#243047"/>
+        <text x="24" y="30" fill="#39ff14" font-size="17" font-family="JetBrains Mono, Consolas, monospace">root@shellstack:~# ./init.sh</text>
+        <text x="24" y="58" fill="#00f0ff" font-size="15" font-family="JetBrains Mono, Consolas, monospace">[INFO] Loading tool database...  [OK] 230 tools indexed  [WARN] root privileges required</text>
+      </g>
+    </g>
+
+    <g transform="translate(794 126)">
+      <rect x="0" y="0" width="208" height="208" rx="24" fill="#0d1320" stroke="#243047"/>
+      <circle cx="104" cy="104" r="58" fill="none" stroke="#39ff14" stroke-opacity="0.5" stroke-width="2"/>
+      <circle cx="104" cy="104" r="30" fill="none" stroke="#00f0ff" stroke-opacity="0.65" stroke-width="2"/>
+      <path d="M62 104h84M104 62v84" stroke="#39ff14" stroke-opacity="0.45" stroke-width="2"/>
+      <path d="M70 132l18-18 14 12 26-32" fill="none" stroke="#39ff14" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+      <rect x="26" y="170" width="156" height="8" rx="4" fill="url(#accent)" opacity="0.75"/>
+    </g>
+  </g>
+</svg>
