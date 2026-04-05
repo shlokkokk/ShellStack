@@ -1,73 +1,92 @@
-# React + TypeScript + Vite
+<div align="center">
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+# 💀 SHELLSTACK
+### **The Ultimate Offensive Security Intelligence Hub & CEH v13 Companion**
 
-Currently, two official plugins are available:
+[![React](https://img.shields.io/badge/React-19.2-61DAFB?logo=react&logoColor=white&style=for-the-badge)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white&style=for-the-badge)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-7.2-646CFF?logo=vite&logoColor=white&style=for-the-badge)](https://vitejs.dev/)
+[![GSAP](https://img.shields.io/badge/Animations-GSAP-39FF14?logo=greensock&logoColor=white&style=for-the-badge)](https://greensock.com/gsap/)
+[![TailwindCSS](https://img.shields.io/badge/Styling-Tailwind-06B6D4?logo=tailwindcss&logoColor=white&style=for-the-badge)](https://tailwindcss.com/)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+**⚡ High-performance. 🦾 Brutalist. 🎯 Mission Critical.**
 
-## React Compiler
+[Explore Live Demo](https://shell-stack.vercel.app/) • [View Arsenal](#-core-arsenal) • [CEH Modules](#-ceh-v13-curriculum)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+</div>
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 👽 THE CONCEPT
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+**ShellStack** is a specialized learning and intelligence platform designed for cybersecurity professionals and CEH qualification candidates. It bridges the gap between theoretical knowledge and tactical execution by integrating a massive database of 130+ offensive security tools directly into the CEH v13 learning curriculum.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+Built with a **strictly brutalist / terminal-inspired aesthetic**, ShellStack provides a zero-friction, mission-critical workspace for mastering the art of ethical hacking.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+---
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 🦾 CORE ARSENAL
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### 🛠️ The Global Tools Encyclopedia
+- **130+ Specialized Tools**: From Info-Gathering to Post-Exploitation.
+- **Real-World Commands**: Genuine usage strings, flags, and tactical descriptions.
+- **Categorized Intelligence**: 13 unique weapon categories including Wireless Attacks, Forensics, and Reverse Engineering.
+- **Interactive Search**: High-density directory with real-time filtering and OSINT tags.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### 📚 CEH v13 Knowledge Graph
+- **20 Interactive Domains**: Fully mapped to the latest CEH blueprint.
+- **Deep Contextual Integration**: Study a module → Instantly analyze its related tools without losing your place.
+- **Nested Modal Intelligence**: Tool documentation pops up over the module view for seamless reference.
+- **Progress Tracking**: Localized session persistence to monitor your study roadmap.
+
+### 💻 Live Simulation & Study Toolkit
+- **Terminal Emulator**: A reactive command-line UI for rapid command review.
+- **Exam Readiness Logic**: Dedicated study toolkit with high-weight domain highlights and tactical tips.
+- **Mission Dashboard**: Real-time stats on module completion and arsenal coverage.
+
+---
+
+## 🛠️ TECH STACK
+
+| Layer | Technology |
+| :--- | :--- |
+| **Frontend Framework** | React 19 (Hooks, Context, Router 7) |
+| **Language** | TypeScript (Strict Mode) |
+| **Build Tool** | Vite |
+| **Animation Engine** | GSAP 3 (ScrollTrigger, Timelines) |
+| **UI Architecture** | Tailwind CSS + Radix UI (Headless Primitives) |
+| **Typography** | Inter & Space Mono (Terminal Grade) |
+| **Icons** | Lucide React |
+
+---
+
+## 🚀 DEPLOYMENT
+
+The ShellStack platform is pre-built and live on Vercel. You can access the full tactical suite at:
+
+**🔗 [https://shell-stack.vercel.app/](https://shell-stack.vercel.app/)**
+
+---
+
+---
+
+## 🛡️ MISSION STATUS
+
+- [x] Multi-Page Architecture Migration
+- [x] 130+ Tools Database Integrated
+- [x] CEH Learning Hub Redesign (Full Grid)
+- [x] Deep Context Nested Modals
+- [x] GSAP Entrance Sequence Overhaul
+- [ ] Authentication / Session Cloud Sync (Coming Soon)
+- [ ] User Progress Analytics Dashboard (Planning)
+
+---
+
+<div align="center">
+
+### **STAY SECURE. STAY OFFENSIVE.**
+**ShellStack Engine v1.0.0**
+
+[MIT License](LICENSE) • [Contribution Guidelines](#) • [Security Policy](#)
+
+</div>
