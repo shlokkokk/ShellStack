@@ -15,9 +15,9 @@ const Navigation = () => {
   }, []);
 
   const navLinks = [
-    { label: 'Kali', href: '#kali-hub' },
+    { label: 'Kali Hub', href: '#kali-hub' },
     { label: 'CEH', href: '#ceh-modules' },
-    { label: 'Tools', href: '#featured-tool' },
+    { label: 'Featured', href: '#featured-tool' },
     { label: 'Terminal', href: '#live-terminal' },
   ];
 

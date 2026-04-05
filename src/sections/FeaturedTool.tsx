@@ -15,6 +15,13 @@ const FeaturedTool = ({ onToolSelect }: FeaturedToolProps) => {
   const centerPanelRef = useRef<HTMLDivElement>(null);
   const rightPanelRef = useRef<HTMLDivElement>(null);
 
+  const scrollToToolsHub = () => {
+    const hub = document.querySelector('#kali-hub');
+    if (hub) {
+      hub.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   useEffect(() => {
     const section = sectionRef.current;
     const leftPanel = leftPanelRef.current;
@@ -204,6 +211,14 @@ const FeaturedTool = ({ onToolSelect }: FeaturedToolProps) => {
 
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row gap-4">
+              <button
+                onClick={scrollToToolsHub}
+                className="cyber-btn flex items-center justify-center gap-2"
+              >
+                <ArrowRight className="w-4 h-4" />
+                Browse All Tools
+              </button>
+
               <button 
                 onClick={() => onToolSelect('metasploit')}
                 className="cyber-btn-primary flex items-center justify-center gap-2"
