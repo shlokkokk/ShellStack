@@ -126,7 +126,7 @@ const KaliHub = ({ onToolSelect }: KaliHubProps) => {
   };
 
   const getCategoryTools = (categoryId: string): Tool[] => {
-    return tools.filter(t => t.category === categoryId).slice(0, 5);
+    return tools.filter(t => t.category === categoryId);
   };
 
   return (
@@ -243,8 +243,8 @@ const KaliHub = ({ onToolSelect }: KaliHubProps) => {
                     </p>
                     
                     {/* Featured Tools */}
-                    <div className="flex flex-wrap gap-1.5 mb-3">
-                      {categoryTools.slice(0, 3).map((tool) => (
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      {categoryTools.map((tool) => (
                         <button
                           key={tool.id}
                           onClick={(e) => {
@@ -258,22 +258,6 @@ const KaliHub = ({ onToolSelect }: KaliHubProps) => {
                       ))}
                     </div>
                   </div>
-
-                  {/* View All Button */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (categoryTools.length > 0) {
-                        onToolSelect(categoryTools[0].id);
-                      }
-                    }}
-                    className="flex items-center gap-1 mt-4 text-[#A7B0BC] group-hover:text-[#39FF14] transition-colors duration-300"
-                  >
-                    <span className="text-xs font-mono uppercase tracking-wider">
-                      View All Tools
-                    </span>
-                    <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-300" />
-                  </button>
                 </div>
               </div>
             );

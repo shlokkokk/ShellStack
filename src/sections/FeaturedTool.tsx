@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { Link } from 'react-router-dom';
 import { ArrowRight, Zap, Target, Layers, Terminal, ExternalLink } from 'lucide-react';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -15,12 +16,7 @@ const FeaturedTool = ({ onToolSelect }: FeaturedToolProps) => {
   const centerPanelRef = useRef<HTMLDivElement>(null);
   const rightPanelRef = useRef<HTMLDivElement>(null);
 
-  const scrollToToolsHub = () => {
-    const hub = document.querySelector('#kali-hub');
-    if (hub) {
-      hub.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
+  // removed scrollToToolsHub since we will use Link
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -34,53 +30,30 @@ const FeaturedTool = ({ onToolSelect }: FeaturedToolProps) => {
       const scrollTl = gsap.timeline({
         scrollTrigger: {
           trigger: section,
-          start: 'top top',
-          end: '+=130%',
-          pin: true,
-          scrub: 0.6,
+          start: 'top 80%',
+          toggleActions: 'play none none reverse',
         },
       });
 
-      // ENTRANCE (0% - 30%)
+      // ENTRANCE 
       scrollTl
         .fromTo(
           leftPanel,
-          { opacity: 0, x: '-55vw', rotateY: 18 },
-          { opacity: 1, x: 0, rotateY: 0, ease: 'none' },
+          { opacity: 0, x: -100, rotateY: 15 },
+          { opacity: 1, x: 0, rotateY: 0, duration: 0.8, ease: 'power3.out' },
           0
         )
         .fromTo(
           rightPanel,
-          { opacity: 0, x: '55vw', rotateY: -18 },
-          { opacity: 1, x: 0, rotateY: 0, ease: 'none' },
+          { opacity: 0, x: 100, rotateY: -15 },
+          { opacity: 1, x: 0, rotateY: 0, duration: 0.8, ease: 'power3.out' },
           0
         )
         .fromTo(
           centerPanel,
-          { opacity: 0, scale: 0.92, y: '10vh' },
-          { opacity: 1, scale: 1, y: 0, ease: 'none' },
-          0.05
-        );
-
-      // EXIT (70% - 100%)
-      scrollTl
-        .fromTo(
-          leftPanel,
-          { opacity: 1, x: 0, rotateY: 0 },
-          { opacity: 0.25, x: '-18vw', rotateY: 10, ease: 'power2.in' },
-          0.7
-        )
-        .fromTo(
-          rightPanel,
-          { opacity: 1, x: 0, rotateY: 0 },
-          { opacity: 0.25, x: '18vw', rotateY: -10, ease: 'power2.in' },
-          0.7
-        )
-        .fromTo(
-          centerPanel,
-          { opacity: 1, scale: 1, y: 0 },
-          { opacity: 0.25, scale: 0.98, y: '-6vh', ease: 'power2.in' },
-          0.7
+          { opacity: 0, scale: 0.9, y: 50 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.8, ease: 'power3.out' },
+          0.2
         );
     }, section);
 
@@ -105,7 +78,7 @@ const FeaturedTool = ({ onToolSelect }: FeaturedToolProps) => {
     <section
       ref={sectionRef}
       id="featured-tool"
-      className="relative w-full h-screen flex items-center justify-center overflow-hidden"
+      className="relative w-full py-24 flex items-center justify-center overflow-hidden"
     >
       {/* Three Panel Layout */}
       <div className="relative w-full h-full flex items-center justify-center px-4 lg:px-8 py-10">
@@ -211,13 +184,13 @@ const FeaturedTool = ({ onToolSelect }: FeaturedToolProps) => {
 
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row gap-4">
-              <button
-                onClick={scrollToToolsHub}
+              <Link
+                to="/tools"
                 className="cyber-btn flex items-center justify-center gap-2"
               >
                 <ArrowRight className="w-4 h-4" />
                 Browse All Tools
-              </button>
+              </Link>
 
               <button 
                 onClick={() => onToolSelect('metasploit')}

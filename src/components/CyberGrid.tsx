@@ -138,7 +138,7 @@ const CyberGrid = () => {
 
     const drawRadar = () => {
       const centerX = canvas.width * 0.9;
-      const centerY = canvas.height * 0.1;
+      const centerY = (canvas.height * 0.1) + 80;
       const radius = 60;
 
       // Radar circles

@@ -28,35 +28,20 @@ const CEHModules = ({ onModuleSelect }: CEHModulesProps) => {
       gsap.fromTo(
         header,
         { opacity: 0, y: 30 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.8,
-          ease: 'power3.out',
-          scrollTrigger: {
-            trigger: header,
-            start: 'top 80%',
-            toggleActions: 'play none none reverse',
-          },
-        }
+        { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' }
       );
 
       const cards = scrollContainer.querySelectorAll('.module-card');
       gsap.fromTo(
         cards,
-        { opacity: 0, x: 60, rotateY: 10 },
+        { opacity: 0, scale: 0.9, y: 40 },
         {
           opacity: 1,
-          x: 0,
-          rotateY: 0,
+          scale: 1,
+          y: 0,
           duration: 0.6,
-          stagger: 0.06,
-          ease: 'power3.out',
-          scrollTrigger: {
-            trigger: scrollContainer,
-            start: 'top 75%',
-            toggleActions: 'play none none reverse',
-          },
+          stagger: 0.08,
+          ease: 'back.out(1.2)'
         }
       );
     }, section);
@@ -169,12 +154,8 @@ const CEHModules = ({ onModuleSelect }: CEHModulesProps) => {
           </div>
         </div>
 
-        {/* Horizontal Scroll Container */}
-        <div
-          ref={scrollContainerRef}
-          className="overflow-x-auto pb-6 scrollbar-hide"
-        >
-          <div className="flex gap-4 lg:gap-5 px-6 lg:px-12" style={{ width: 'max-content' }}>
+        {/* Grid Container */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6 px-6 lg:px-12 mt-8" ref={scrollContainerRef}>
             {cehModules.map((module) => {
               const isCompleted = completedModules.includes(module.id);
               
@@ -182,7 +163,7 @@ const CEHModules = ({ onModuleSelect }: CEHModulesProps) => {
                 <div
                   key={module.id}
                   onClick={() => onModuleSelect(module.id)}
-                  className={`module-card w-[320px] lg:w-[360px] cyber-panel p-5 lg:p-6 flex flex-col group cursor-pointer transition-all duration-300 hover:-translate-y-1.5 ${
+                  className={`module-card w-full cyber-panel p-5 lg:p-6 flex flex-col group cursor-pointer transition-all duration-300 hover:-translate-y-1.5 ${
                     isCompleted
                       ? 'border-[rgba(57,255,20,0.5)]'
                       : 'hover:border-[rgba(57,255,20,0.65)]'
@@ -273,16 +254,12 @@ const CEHModules = ({ onModuleSelect }: CEHModulesProps) => {
                 </div>
               );
             })}
-          </div>
         </div>
 
-        {/* Scroll Hint */}
-        <div className="px-6 lg:px-12 mt-4 flex items-center justify-between">
-          <p className="text-xs font-mono text-[#A7B0BC]/60 flex items-center gap-2">
-            <span className="w-4 h-4 border border-[#A7B0BC]/30 rounded flex items-center justify-center">
-              →
-            </span>
-            Scroll horizontally to view all modules
+        <div className="px-6 lg:px-12 mt-8 flex items-center justify-between border-t border-[rgba(243,245,249,0.08)] pt-6">
+          <p className="text-sm font-mono text-[#A7B0BC] flex items-center gap-2">
+            <BookOpen className="w-4 h-4 text-[#39FF14]" />
+            Master the Curriculum
           </p>
           
           <div className="text-xs font-mono text-[#A7B0BC]">

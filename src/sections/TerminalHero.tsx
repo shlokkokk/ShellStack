@@ -117,47 +117,6 @@ const TerminalHero = () => {
           '-=0.4'
         );
 
-      // Scroll-driven exit animation
-      const scrollTl = gsap.timeline({
-        scrollTrigger: {
-          trigger: section,
-          start: 'top top',
-          end: '+=130%',
-          pin: true,
-          scrub: 0.6,
-          onLeaveBack: () => {
-            // Reset all elements when scrolling back to top
-            gsap.to([panel, headline, subheadline, ...cta.children, image, ...status.children], {
-              opacity: 1,
-              x: 0,
-              y: 0,
-              scale: 1,
-              duration: 0.3,
-            });
-          },
-        },
-      });
-
-      // Exit phase (70% - 100%)
-      scrollTl
-        .fromTo(
-          panel,
-          { opacity: 1, scale: 1, y: 0 },
-          { opacity: 0.25, scale: 0.98, y: '-10vh', ease: 'power2.in' },
-          0.7
-        )
-        .fromTo(
-          image,
-          { opacity: 1, x: 0 },
-          { opacity: 0.2, x: '-6vw', ease: 'power2.in' },
-          0.7
-        )
-        .fromTo(
-          [headline, subheadline, ...cta.children],
-          { opacity: 1, x: 0 },
-          { opacity: 0.2, x: '6vw', ease: 'power2.in' },
-          0.7
-        );
     }, section);
 
     return () => ctx.revert();
@@ -173,7 +132,7 @@ const TerminalHero = () => {
   return (
     <section
       ref={sectionRef}
-      className="relative w-full h-screen flex items-center justify-center overflow-hidden"
+      className="relative w-full py-28 lg:py-40 flex items-center justify-center overflow-hidden"
     >
       {/* Main Panel */}
       <div

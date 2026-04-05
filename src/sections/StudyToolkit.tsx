@@ -75,11 +75,6 @@ const StudyToolkit = () => {
           duration: 0.6,
           stagger: 0.08,
           ease: 'power3.out',
-          scrollTrigger: {
-            trigger: section,
-            start: 'top 75%',
-            toggleActions: 'play none none reverse',
-          },
         }
       );
 
@@ -92,11 +87,7 @@ const StudyToolkit = () => {
           duration: 0.45,
           stagger: 0.05,
           ease: 'power3.out',
-          scrollTrigger: {
-            trigger: section,
-            start: 'top 75%',
-            toggleActions: 'play none none reverse',
-          },
+          delay: 0.3,
         }
       );
     }, section);

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
-import { X, BookOpen, Terminal, Shield, CheckCircle, AlertTriangle, ChevronRight, ChevronDown } from 'lucide-react';
+import { X, BookOpen, Terminal, Shield, CheckCircle, AlertTriangle, ChevronRight, ChevronDown, ArrowRight } from 'lucide-react';
 import type { Module } from '../data/cehModules';
+import { tools, type Tool } from '../data/kaliTools';
+import ToolDetailModal from './ToolDetailModal';
 
 interface ModuleDetailModalProps {
   module: Module | null;
@@ -11,6 +13,7 @@ interface ModuleDetailModalProps {
 const ModuleDetailModal = ({ module, isOpen, onClose }: ModuleDetailModalProps) => {
   const [expandedTopics, setExpandedTopics] = useState<string[]>([]);
   const [activeSection, setActiveSection] = useState<'topics' | 'tools' | 'countermeasures'>('topics');
+  const [selectedTool, setSelectedTool] = useState<Tool | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -183,20 +186,46 @@ const ModuleDetailModal = ({ module, isOpen, onClose }: ModuleDetailModalProps) 
                                 <h4 className="text-xs font-mono uppercase tracking-wider text-[#00F0FF] mb-2">
                                   Commands
                                 </h4>
-                                <div className="space-y-2">
-                                  {topic.commands.map((cmd, idx) => (
-                                    <div
-                                      key={idx}
-                                      className="p-3 bg-[#05060B] rounded border-l-2 border-[#00F0FF]"
-                                    >
-                                      <code className="text-sm font-mono text-[#00F0FF] block mb-1">
-                                        {cmd.command}
-                                      </code>
-                                      <span className="text-xs text-[#A7B0BC]">
-                                        {cmd.description}
-                                      </span>
-                                    </div>
-                                  ))}
+                                <div className="space-y-3">
+                                  {topic.commands.map((cmd, idx) => {
+                                    // Try to determine if this command uses a specific tool
+                                    const matchedTool = tools.find(t => 
+                                      cmd.command.toLowerCase().startsWith(t.id.toLowerCase()) || 
+                                      cmd.command.toLowerCase().startsWith(t.name.toLowerCase())
+                                    );
+
+                                    return (
+                                      <div
+                                        key={idx}
+                                        className="p-3 bg-[#05060B] rounded border-l-2 border-[#00F0FF] flex flex-col gap-2"
+                                      >
+                                        <div className="flex flex-col">
+                                          <code className="text-sm font-mono text-[#00F0FF] block mb-1">
+                                            {cmd.command}
+                                          </code>
+                                          <span className="text-xs text-[#A7B0BC]">
+                                            {cmd.description}
+                                          </span>
+                                        </div>
+                                        
+                                        {matchedTool && (
+                                          <div className="mt-2 pt-2 border-t border-[rgba(243,245,249,0.05)]">
+                                            <button 
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setSelectedTool(matchedTool);
+                                              }}
+                                              className="flex items-center gap-1.5 text-xs font-mono text-[#39FF14] hover:text-[#F2F5F9] transition-colors"
+                                            >
+                                              <Terminal className="w-3.5 h-3.5" />
+                                              Analyze {matchedTool.name} Documentation
+                                              <ArrowRight className="w-3 h-3" />
+                                            </button>
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
                                 </div>
                               </div>
                             )}
@@ -246,20 +275,57 @@ const ModuleDetailModal = ({ module, isOpen, onClose }: ModuleDetailModalProps) 
                 Key Tools for This Module
               </h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {module.keyTools.map((tool, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center gap-3 p-4 cyber-panel hover:border-[rgba(57,255,20,0.4)] transition-colors cursor-pointer group"
-                  >
-                    <div className="w-10 h-10 flex items-center justify-center bg-[rgba(57,255,20,0.1)] rounded-lg border border-[rgba(57,255,20,0.2)] group-hover:bg-[rgba(57,255,20,0.15)] transition-colors">
-                      <Terminal className="w-5 h-5 text-[#39FF14]" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {module.keyTools.map((toolName, index) => {
+                  const matchedTool = tools.find(t => 
+                    t.name.toLowerCase() === toolName.toLowerCase() || 
+                    t.id.toLowerCase() === toolName.toLowerCase()
+                  );
+
+                  if (matchedTool) {
+                    return (
+                      <div
+                        key={index}
+                        onClick={() => setSelectedTool(matchedTool)}
+                        className="flex flex-col gap-3 p-5 cyber-panel hover:border-[rgba(57,255,20,0.4)] transition-all cursor-pointer group"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 flex shrink-0 items-center justify-center bg-[rgba(57,255,20,0.1)] rounded-lg border border-[rgba(57,255,20,0.2)] group-hover:bg-[rgba(57,255,20,0.15)] transition-colors">
+                            <Terminal className="w-5 h-5 text-[#39FF14]" />
+                          </div>
+                          <div>
+                            <span className="font-bold text-[#F2F5F9] group-hover:text-[#39FF14] transition-colors block mb-1">
+                              {matchedTool.name}
+                            </span>
+                            <span className="text-xs text-[#A7B0BC] line-clamp-2">
+                              {matchedTool.description}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="mt-auto self-end">
+                          <span className="flex items-center gap-1 text-xs font-mono text-[#39FF14] opacity-0 group-hover:opacity-100 transition-opacity">
+                            View Docs <ArrowRight className="w-3 h-3" />
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  // Fallback for tools not in DB yet
+                  return (
+                    <div
+                      key={index}
+                      className="flex items-center gap-3 p-4 cyber-panel border-[rgba(243,245,249,0.08)] opacity-75"
+                    >
+                      <div className="w-10 h-10 flex shrink-0 items-center justify-center bg-[#05060B] rounded-lg border border-[rgba(243,245,249,0.1)]">
+                        <Terminal className="w-5 h-5 text-[#A7B0BC]" />
+                      </div>
+                      <span className="font-mono text-[#A7B0BC]">
+                        {toolName}
+                      </span>
                     </div>
-                    <span className="font-mono text-[#F2F5F9] group-hover:text-[#39FF14] transition-colors">
-                      {tool}
-                    </span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -315,6 +381,12 @@ const ModuleDetailModal = ({ module, isOpen, onClose }: ModuleDetailModalProps) 
             Close
           </button>
         </div>
+        {/* Nested Tool Modal */}
+        <ToolDetailModal
+          tool={selectedTool}
+          isOpen={selectedTool !== null}
+          onClose={() => setSelectedTool(null)}
+        />
       </div>
     </div>
   );

@@ -137,58 +137,27 @@ const LiveTerminal = () => {
     if (!section || !terminal || !textBlock || !codeBlock) return;
 
     const ctx = gsap.context(() => {
-      const scrollTl = gsap.timeline({
-        scrollTrigger: {
-          trigger: section,
-          start: 'top top',
-          end: '+=130%',
-          pin: true,
-          scrub: 0.6,
-        },
-      });
+      const animTl = gsap.timeline();
 
-      // ENTRANCE (0% - 30%)
-      scrollTl
+      // ENTRANCE 
+      animTl
         .fromTo(
           terminal,
-          { opacity: 0, scale: 0.94, y: '18vh' },
-          { opacity: 1, scale: 1, y: 0, ease: 'none' },
+          { opacity: 0, scale: 0.94, y: 50 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.8, ease: 'power3.out' },
           0
         )
         .fromTo(
           textBlock,
-          { opacity: 0, x: '-8vw' },
-          { opacity: 1, x: 0, ease: 'none' },
-          0.05
+          { opacity: 0, x: -50 },
+          { opacity: 1, x: 0, duration: 0.8, ease: 'power3.out' },
+          0.1
         )
         .fromTo(
           codeBlock,
-          { opacity: 0, x: '8vw' },
-          { opacity: 1, x: 0, ease: 'none' },
-          0.05
-        );
-
-      // SETTLE (30% - 70%) - no animation
-
-      // EXIT (70% - 100%)
-      scrollTl
-        .fromTo(
-          terminal,
-          { opacity: 1, scale: 1, y: 0 },
-          { opacity: 0.25, scale: 0.98, y: '-8vh', ease: 'power2.in' },
-          0.7
-        )
-        .fromTo(
-          textBlock,
-          { opacity: 1, x: 0 },
-          { opacity: 0.2, x: '-4vw', ease: 'power2.in' },
-          0.7
-        )
-        .fromTo(
-          codeBlock,
-          { opacity: 1, x: 0 },
-          { opacity: 0.2, x: '4vw', ease: 'power2.in' },
-          0.7
+          { opacity: 0, x: 50 },
+          { opacity: 1, x: 0, duration: 0.8, ease: 'power3.out' },
+          0.1
         );
     }, section);
 
@@ -253,7 +222,7 @@ const LiveTerminal = () => {
     <section
       ref={sectionRef}
       id="live-terminal"
-      className="relative w-full h-screen flex items-center justify-center overflow-hidden"
+      className="relative w-full py-28 flex items-center justify-center overflow-hidden"
     >
       {/* Terminal Panel */}
       <div
