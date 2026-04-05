@@ -6,7 +6,6 @@ import {
   CheckSquare,
   BookOpen,
   Scale,
-  Download,
   ExternalLink,
   ArrowRight,
   Github,
@@ -14,7 +13,7 @@ import {
   AlertCircle,
   X
 } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -152,9 +151,7 @@ const StudyToolkit = () => {
             const Icon = resource.icon;
             const isComingSoon = resource.action === 'Coming Soon';
             
-            const CardWrapper = isComingSoon ? 'div' : Link;
-            const extraProps = isComingSoon ? {} : { to: resource.link };
-
+            
             return (
               <div
                 key={resource.id}
