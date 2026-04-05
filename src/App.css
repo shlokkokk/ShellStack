@@ -1,0 +1,213 @@
+/* App-specific styles */
+
+/* Hide scrollbar for horizontal scroll containers */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Line clamp utilities */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Smooth scroll behavior */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Prevent horizontal overflow */
+body {
+  overflow-x: hidden;
+}
+
+/* Custom focus styles */
+*:focus-visible {
+  outline: 2px solid rgba(57, 255, 20, 0.5);
+  outline-offset: 2px;
+}
+
+/* Button press effect */
+button:active {
+  transform: scale(0.98);
+}
+
+/* Card hover lift effect */
+.cyber-panel {
+  transition: transform 0.3s ease, border-color 0.3s ease;
+}
+
+/* Code syntax highlighting colors */
+.syntax-keyword {
+  color: #39FF14;
+}
+
+.syntax-string {
+  color: #FFE600;
+}
+
+.syntax-comment {
+  color: #5a7a9a;
+}
+
+.syntax-number {
+  color: #FF6B00;
+}
+
+.syntax-function {
+  color: #00F0FF;
+}
+
+/* Animation for pulse glow */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(57, 255, 20, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(57, 255, 20, 0.4);
+  }
+}
+
+.pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Typing cursor animation */
+@keyframes typing-cursor {
+  0%, 50% {
+    opacity: 1;
+  }
+  51%, 100% {
+    opacity: 0;
+  }
+}
+
+.typing-cursor {
+  animation: typing-cursor 0.8s infinite;
+}
+
+/* Matrix character fade */
+@keyframes matrix-fade {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.3;
+  }
+}
+
+/* Scanline animation */
+@keyframes scanline {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100vh);
+  }
+}
+
+/* Glitch effect keyframes */
+@keyframes glitch-skew {
+  0% {
+    transform: skew(0deg);
+  }
+  20% {
+    transform: skew(-2deg);
+  }
+  40% {
+    transform: skew(2deg);
+  }
+  60% {
+    transform: skew(-1deg);
+  }
+  80% {
+    transform: skew(1deg);
+  }
+  100% {
+    transform: skew(0deg);
+  }
+}
+
+.glitch-effect:hover {
+  animation: glitch-skew 0.3s ease-in-out;
+}
+
+/* Responsive typography */
+@media (max-width: 640px) {
+  h1 {
+    font-size: 2.5rem !important;
+  }
+  
+  h2 {
+    font-size: 2rem !important;
+  }
+  
+  h3 {
+    font-size: 1.5rem !important;
+  }
+}
+
+/* Print styles */
+@media print {
+  .scanlines,
+  .grid-overlay,
+  .noise-overlay,
+  .custom-cursor,
+  .cursor-dot,
+  .matrix-rain {
+    display: none !important;
+  }
+  
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  
+  .cyber-panel {
+    border: 1px solid #ccc !important;
+    box-shadow: none !important;
+  }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  
+  .terminal-cursor {
+    animation: none !important;
+    opacity: 1 !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .cyber-panel {
+    border-width: 2px;
+    border-color: rgba(243, 245, 249, 0.3);
+  }
+  
+  .cyber-text-secondary {
+    color: #c0c0c0;
+  }
+}
