@@ -3,12 +3,11 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import {
   Github,
-  Mail,
-  Twitter,
   Terminal,
-  Heart,
-  ExternalLink,
+  Shield,
+  BookOpen,
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -46,25 +45,15 @@ const Footer = () => {
 
   const footerLinks = {
     tools: [
-      { label: 'Nmap', href: '#' },
-      { label: 'Metasploit', href: '#' },
-      { label: 'Burp Suite', href: '#' },
-      { label: 'Wireshark', href: '#' },
-      { label: 'SQLMap', href: '#' },
+      { label: 'All Tools', href: '/tools' },
+      { label: 'Information Gathering', href: '/tools' },
+      { label: 'Vulnerability Analysis', href: '/tools' },
+      { label: 'Exploitation', href: '/tools' },
     ],
     ceh: [
-      { label: 'Module 01', href: '#' },
-      { label: 'Module 05', href: '#' },
-      { label: 'Module 10', href: '#' },
-      { label: 'Module 15', href: '#' },
-      { label: 'Module 20', href: '#' },
-    ],
-    resources: [
-      { label: 'Cheat Sheets', href: '#' },
-      { label: 'Lab Guides', href: '#' },
-      { label: 'Exam Tips', href: '#' },
-      { label: 'Tool Docs', href: '#' },
-      { label: 'Community', href: '#' },
+      { label: 'CEH Modules', href: '/ceh' },
+      { label: 'Study Guide', href: '/study' },
+      { label: 'Live Terminal', href: '/terminal' },
     ],
   };
 
@@ -76,43 +65,26 @@ const Footer = () => {
       <div ref={contentRef} className="w-full px-6 lg:px-12">
         {/* Main Footer Content */}
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 lg:gap-12 mb-12">
-          {/* Brand Column */}
-          <div className="col-span-2 md:col-span-4 lg:col-span-1">
+          <div className="col-span-2 lg:col-span-2">
             <div className="flex items-center gap-2 mb-4">
               <Terminal className="w-5 h-5 text-[#39FF14]" />
               <span className="font-mono text-lg font-bold tracking-wider text-[#F2F5F9]">
-                HACK<span className="text-[#39FF14]">REF</span>
+                SHELL<span className="text-[#39FF14]">STACK</span>
               </span>
             </div>
-            <p className="text-sm text-[#A7B0BC] mb-6 max-w-xs">
-              The ultimate field manual for ethical hackers. Master Kali Linux
-              tools and CEH certification.
+            <p className="text-sm text-[#A7B0BC] mb-6 max-w-sm">
+              The ultimate high-performance intelligence hub for hackers. 
+              Master the CEH v13 curriculum with an integrated arsenal of 130+ defensive and offensive tools.
             </p>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4">
               <a
-                href="https://github.com"
+                href="https://github.com/shlokkokk/ShellStack"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 text-[#A7B0BC] hover:text-[#39FF14] transition-colors duration-300"
-                aria-label="GitHub"
+                className="flex items-center gap-2 text-xs font-mono text-[#A7B0BC] hover:text-[#39FF14] transition-colors"
               >
-                <Github className="w-5 h-5" />
-              </a>
-              <a
-                href="https://twitter.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-2 text-[#A7B0BC] hover:text-[#39FF14] transition-colors duration-300"
-                aria-label="Twitter"
-              >
-                <Twitter className="w-5 h-5" />
-              </a>
-              <a
-                href="mailto:hello@shellstack.dev"
-                className="p-2 text-[#A7B0BC] hover:text-[#39FF14] transition-colors duration-300"
-                aria-label="Email"
-              >
-                <Mail className="w-5 h-5" />
+                <Github className="w-4 h-4" />
+                SOURCE_CODE
               </a>
             </div>
           </div>
@@ -125,12 +97,12 @@ const Footer = () => {
             <ul className="space-y-2">
               {footerLinks.tools.map((link) => (
                 <li key={link.label}>
-                  <a
-                    href={link.href}
+                  <Link
+                    to={link.href}
                     className="text-sm text-[#A7B0BC] hover:text-[#39FF14] transition-colors duration-300"
                   >
                     {link.label}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -144,98 +116,56 @@ const Footer = () => {
             <ul className="space-y-2">
               {footerLinks.ceh.map((link) => (
                 <li key={link.label}>
-                  <a
-                    href={link.href}
+                  <Link
+                    to={link.href}
                     className="text-sm text-[#A7B0BC] hover:text-[#39FF14] transition-colors duration-300"
                   >
                     {link.label}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
           </div>
 
-          {/* Resources Column */}
-          <div>
-            <h4 className="text-xs font-mono uppercase tracking-wider text-[#F2F5F9] mb-4">
-              Resources
-            </h4>
-            <ul className="space-y-2">
-              {footerLinks.resources.map((link) => (
-                <li key={link.label}>
-                  <a
-                    href={link.href}
-                    className="text-sm text-[#A7B0BC] hover:text-[#39FF14] transition-colors duration-300"
-                  >
-                    {link.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Contribute CTA */}
           <div className="col-span-2 md:col-span-2 lg:col-span-1">
             <h4 className="text-xs font-mono uppercase tracking-wider text-[#F2F5F9] mb-4">
-              Contribute
+              Explore
             </h4>
-            <p className="text-sm text-[#A7B0BC] mb-4">
-              Found a broken command? Want to add a tool?
-            </p>
-            <a
-              href="https://github.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 cyber-btn text-xs"
-            >
-              <Github className="w-4 h-4" />
-              Open a PR
-              <ExternalLink className="w-3 h-3" />
-            </a>
+            <ul className="space-y-3">
+              <li>
+                <Link to="/ceh" className="flex items-center gap-2 text-sm text-[#A7B0BC] hover:text-[#39FF14] transition-colors">
+                  <Shield className="w-4 h-4" /> CEH Modules
+                </Link>
+              </li>
+              <li>
+                <Link to="/tools" className="flex items-center gap-2 text-sm text-[#A7B0BC] hover:text-[#39FF14] transition-colors">
+                  <BookOpen className="w-4 h-4" /> Tool Arsenal
+                </Link>
+              </li>
+              <li>
+                <a 
+                  href="https://github.com/shlokkokk/ShellStack" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-sm text-[#A7B0BC] hover:text-[#39FF14] transition-colors"
+                >
+                  <Github className="w-4 h-4" /> Repository
+                </a>
+              </li>
+            </ul>
           </div>
         </div>
 
         {/* Bottom Bar */}
         <div className="pt-8 border-t border-[rgba(243,245,249,0.08)] flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-xs font-mono text-[#A7B0BC]">
-            <a
-              href="#"
-              className="hover:text-[#39FF14] transition-colors duration-300"
-            >
-              Privacy
-            </a>
-            <span className="text-[rgba(243,245,249,0.2)]">|</span>
-            <a
-              href="#"
-              className="hover:text-[#39FF14] transition-colors duration-300"
-            >
-              Terms
-            </a>
-            <span className="text-[rgba(243,245,249,0.2)]">|</span>
-            <a
-              href="#"
-              className="hover:text-[#39FF14] transition-colors duration-300"
-            >
-              License
-            </a>
-          </div>
-
-          <div className="flex items-center gap-1 text-xs text-[#A7B0BC]">
-            <span>Made with</span>
-            <Heart className="w-3 h-3 text-[#FF2D2D] fill-[#FF2D2D]" />
-            <span>by the security community</span>
+          <div className="flex items-center gap-2 text-xs font-mono text-[#A7B0BC]">
+            <Terminal className="w-3.5 h-3.5 text-[#39FF14]" />
+            <span>SHELLSTACK // OFFENSIVE_INTEL_HUB</span>
           </div>
 
           <div className="text-xs font-mono text-[#A7B0BC]">
-            © 2026 ShellStack. All rights reserved.
+            © 2026 ShellStack.
           </div>
-        </div>
-
-        {/* Version Badge */}
-        <div className="mt-6 flex justify-center">
-          <span className="px-3 py-1 text-xs font-mono text-[#A7B0BC]/60 border border-[rgba(243,245,249,0.08)] rounded-full">
-            v2.4.0 — build 2026.01.15
-          </span>
         </div>
       </div>
     </footer>

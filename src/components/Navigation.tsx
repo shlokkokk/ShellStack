@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Menu, X, Terminal } from 'lucide-react';
+import { Menu, X, Terminal, Github } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
 const Navigation = () => {
@@ -68,22 +68,16 @@ const Navigation = () => {
               })}
             </div>
 
-            {/* Right Side */}
             <div className="flex items-center gap-4">
-              <button
-                className="p-2 text-[#A7B0BC] hover:text-[#39FF14] transition-colors duration-300"
-                aria-label="Search"
-              >
-                <Search className="w-5 h-5" />
-              </button>
 
               <a
-                href="https://github.com"
+                href="https://github.com/shlokkokk/ShellStack"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hidden sm:block cyber-btn text-xs"
+                className="hidden sm:flex items-center gap-2 cyber-btn text-xs"
               >
-                Contribute
+                <Github className="w-4 h-4" />
+                GITHUB
               </a>
 
               {/* Mobile Menu Button */}
@@ -135,12 +129,13 @@ const Navigation = () => {
             );
           })}
           <a
-            href="https://github.com"
+            href="https://github.com/shlokkokk/ShellStack"
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-8 cyber-btn-primary"
+            className="mt-8 cyber-btn-primary flex items-center gap-2"
           >
-            Contribute
+            <Github className="w-5 h-5" />
+            GITHUB
           </a>
         </div>
       </div>
