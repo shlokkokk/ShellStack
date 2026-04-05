@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Copy, Check, ArrowRight, Terminal, Play } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -315,10 +316,10 @@ const LiveTerminal = () => {
               ))}
             </div>
 
-            <button className="cyber-btn-primary flex items-center gap-2">
+            <Link to="/cheatsheet" className="cyber-btn-primary flex items-center gap-2">
               Open Full Cheat Sheet
               <ArrowRight className="w-4 h-4" />
-            </button>
+            </Link>
           </div>
 
           {/* Right: Terminal Output */}

@@ -14,6 +14,7 @@ import ToolsDirectory from './pages/ToolsDirectory';
 import CEHModules from './sections/CEHModules';
 import LiveTerminal from './sections/LiveTerminal';
 import StudyToolkit from './sections/StudyToolkit';
+import CheatSheetPage from './pages/CheatSheetPage';
 
 // Shared modals that may be required outside of standard page flows
 import ModuleDetailModal from './components/ModuleDetailModal';
@@ -98,6 +99,7 @@ function App() {
                 </PageWrapper>
               } 
             />
+            <Route path="/cheatsheet" element={<CheatSheetPage />} />
           </Routes>
         </main>
         
