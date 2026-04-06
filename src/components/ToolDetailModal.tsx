@@ -10,7 +10,15 @@ interface ToolDetailModalProps {
 
 const ToolDetailModal = ({ tool, isOpen, onClose }: ToolDetailModalProps) => {
   const [copiedCommand, setCopiedCommand] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'commands' | 'info' | 'examples'>('commands');
+  const [activeTab, setActiveTab] = useState<'commands' | 'info' | 'examples' | 'guide'>('commands');
+
+  useEffect(() => {
+    if (tool?.detailedReport) {
+      setActiveTab('guide');
+    } else {
+      setActiveTab('commands');
+    }
+  }, [tool]);
 
   useEffect(() => {
     if (isOpen) {
@@ -91,10 +99,12 @@ const ToolDetailModal = ({ tool, isOpen, onClose }: ToolDetailModalProps) => {
         {/* Tabs */}
         <div className="flex border-b border-[rgba(243,245,249,0.08)]">
           {[
+            { id: 'guide', label: 'Guide', icon: BookOpen, hide: !tool.detailedReport },
             { id: 'commands', label: 'Commands', icon: Terminal },
-            { id: 'info', label: 'Information', icon: BookOpen },
+            { id: 'info', label: 'Information', icon: Zap },
             { id: 'examples', label: 'Examples', icon: Target },
           ].map((tab) => {
+            if (tab.hide) return null;
             const Icon = tab.icon;
             return (
               <button
@@ -114,7 +124,118 @@ const ToolDetailModal = ({ tool, isOpen, onClose }: ToolDetailModalProps) => {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-6 scrollbar-hide">
+          {activeTab === 'guide' && tool.detailedReport && (
+            <div className="space-y-8 pb-8">
+              {/* Legal Warning */}
+              <div className="p-4 bg-[rgba(255,45,45,0.1)] border border-[rgba(255,45,45,0.3)] rounded-lg animate-pulse-subtle">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 text-[#FF2D2D] flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="text-sm font-bold text-[#FF2D2D] mb-1 font-mono uppercase tracking-widest">
+                      [CRITICAL_LEGAL_WARNING]
+                    </h4>
+                    <p className="text-sm text-[#F2F5F9]/80 leading-relaxed italic">
+                      {tool.detailedReport.legalWarning}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Why This Tool */}
+              <div className="space-y-4">
+                <h3 className="text-xl font-bold text-[#F2F5F9] border-l-4 border-[#39FF14] pl-3">
+                  Why {tool.name}?
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {tool.detailedReport.whyThisTool.map((reason, idx) => (
+                    <div key={idx} className="p-4 bg-[rgba(243,245,249,0.03)] border border-[rgba(243,245,249,0.08)] rounded hover:border-[rgba(57,255,20,0.3)] transition-colors group">
+                      <div className="flex gap-3">
+                        <Check className="w-4 h-4 text-[#39FF14] mt-1 shrink-0 group-hover:scale-110 transition-transform" />
+                        <p className="text-sm text-[#A7B0BC]">{reason}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Step by Step */}
+              <div className="space-y-6">
+                <h3 className="text-xl font-bold text-[#F2F5F9] border-l-4 border-[#00F0FF] pl-3">
+                  Tactical Walkthrough
+                </h3>
+                <div className="relative space-y-4">
+                  {/* Vertical Line */}
+                  <div className="absolute left-[19px] top-4 bottom-4 w-0.5 bg-[rgba(0,240,255,0.15)]" />
+                  
+                  {tool.detailedReport.stepByStep.map((step) => (
+                    <div key={step.step} className="relative flex gap-6 group">
+                      <div className="z-10 w-10 h-10 rounded-full bg-[#05060B] border-2 border-[rgba(0,240,255,0.3)] flex items-center justify-center font-mono text-sm text-[#00F0FF] group-hover:border-[#00F0FF] transition-colors">
+                        {step.step}
+                      </div>
+                      <div className="flex-1 pt-1">
+                        <h4 className="text-[#F2F5F9] font-bold mb-1">{step.title}</h4>
+                        <p className="text-sm text-[#A7B0BC] mb-3 leading-relaxed">
+                          {step.description}
+                        </p>
+                        {step.code && (
+                          <div className="bg-[#05060B] p-3 rounded border border-[rgba(243,245,249,0.05)] font-mono text-xs text-[#00F0FF]">
+                            {step.code}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* CTF Tips */}
+              <div className="p-6 bg-gradient-to-br from-[rgba(57,255,20,0.05)] to-transparent border border-[rgba(57,255,20,0.2)] rounded-xl relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                  <Target className="w-24 h-24 text-[#39FF14]" />
+                </div>
+                <h3 className="text-lg font-bold text-[#39FF14] flex items-center gap-2 mb-4">
+                  <Zap className="w-5 h-5" />
+                  CTF TACTICS & TIPS
+                </h3>
+                <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
+                  {tool.detailedReport.ctfTips.map((tip, idx) => (
+                    <li key={idx} className="flex gap-2 text-sm text-[#A7B0BC]">
+                      <span className="text-[#39FF14] font-bold">»</span> {tip}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Use Cases */}
+              <div className="space-y-4">
+                <h3 className="text-xl font-bold text-[#F2F5F9] border-l-4 border-[#FFE600] pl-3">
+                  Operational Use Cases
+                </h3>
+                <div className="space-y-3">
+                  {tool.detailedReport.useCases.map((uc, idx) => (
+                    <div key={idx} className="p-4 bg-[rgba(243,245,249,0.02)] border border-[rgba(243,245,249,0.05)] rounded-lg hover:bg-[rgba(255,230,0,0.02)] hover:border-[rgba(255,230,0,0.2)] transition-all">
+                      <div className="flex justify-between items-start mb-2">
+                        <h4 className="font-bold text-[#F2F5F9]">{uc.title}</h4>
+                        <div className="px-2 py-0.5 rounded text-[10px] font-mono bg-[rgba(255,230,0,0.1)] text-[#FFE600] border border-[rgba(255,230,0,0.2)] uppercase">
+                          SCENARIO_{idx + 1}
+                        </div>
+                      </div>
+                      <p className="text-sm text-[#A7B0BC] mb-4">{uc.context}</p>
+                      <div className="space-y-1.5">
+                        {uc.commands.map((cmd, cIdx) => (
+                          <div key={cIdx} className="flex items-center gap-2 bg-[#05060B] px-3 py-2 rounded font-mono text-xs text-[#00F0FF]">
+                            <span className="text-gray-600">$</span> {cmd}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           {activeTab === 'commands' && (
             <div className="space-y-4">
               <h3 className="text-lg font-bold text-[#F2F5F9] flex items-center gap-2">

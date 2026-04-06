@@ -18,6 +18,13 @@ export interface Tool {
   relatedTools?: string[];
   installation?: string;
   website?: string;
+  detailedReport?: {
+    whyThisTool: string[];
+    stepByStep: { step: number; title: string; description: string; code?: string }[];
+    ctfTips: string[];
+    useCases: { title: string; context: string; commands: string[] }[];
+    legalWarning: string;
+  };
 }
 
 export interface Category {

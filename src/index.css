@@ -384,4 +384,36 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
+  @keyframes pulse-subtle {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.75; }
+  }
+  .animate-pulse-subtle {
+    animation: pulse-subtle 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes scroll-vertical {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-50%); }
+  }
+  .animate-scroll-vertical {
+    animation: scroll-vertical 25s linear infinite;
+  }
+
+  @keyframes draw-path {
+    0% { stroke-dasharray: 0, 1000; }
+    100% { stroke-dasharray: 1000, 1000; }
+  }
+  .animate-draw-path {
+    animation: draw-path 4s ease-out forwards;
+  }
+
+  @keyframes bounce-subtle {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+  }
+  .animate-bounce-subtle {
+    animation: bounce-subtle 3s ease-in-out infinite;
+  }
 }
