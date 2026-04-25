@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { gsap } from 'gsap';
-import { Copy, Check, Search, ChevronRight, Terminal, ArrowLeft } from 'lucide-react';
+import { Copy, Check, Search, ChevronRight, Terminal, ArrowLeft, Target, Cpu, Activity, ShieldCheck, Wifi, Fingerprint } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { masterCheatSheet, type CheatCommand } from '../data/masterCheatSheet';
 
@@ -17,8 +17,8 @@ const CheatSheetPage = () => {
     if (!header || !content) return;
 
     const ctx = gsap.context(() => {
-      gsap.fromTo(header, { opacity: 0, y: -30 }, { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' });
-      gsap.fromTo(content, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6, delay: 0.15, ease: 'power3.out' });
+      gsap.fromTo(header, { opacity: 0, y: -40 }, { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' });
+      gsap.fromTo(content, { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: 0.8, delay: 0.2, ease: 'power3.out' });
     });
     return () => ctx.revert();
   }, []);
@@ -29,7 +29,6 @@ const CheatSheetPage = () => {
     setTimeout(() => setCopiedCmd(null), 1500);
   };
 
-  // Filter logic
   const filteredCategories = useMemo(() => {
     if (!searchQuery.trim()) return masterCheatSheet;
     const q = searchQuery.toLowerCase();
@@ -42,15 +41,11 @@ const CheatSheetPage = () => {
 
         const filteredSections = cat.sections.map((sec) => {
           const secMatches = sec.title.toLowerCase().includes(q);
-          
-          if (catMatches || secMatches) {
-            return sec; // Include all commands in this section if parent/self matches
-          }
+          if (catMatches || secMatches) return sec;
 
           const filteredCmds = sec.commands.filter(
             (c) => c.cmd.toLowerCase().includes(q) || c.desc.toLowerCase().includes(q)
           );
-
           return { ...sec, commands: filteredCmds };
         }).filter((sec) => sec.commands.length > 0);
 
@@ -59,22 +54,12 @@ const CheatSheetPage = () => {
       .filter((cat) => cat.sections.length > 0);
   }, [searchQuery]);
 
-  const totalCommands = masterCheatSheet.reduce(
-    (acc, cat) => acc + cat.sections.reduce((a, s) => a + s.commands.length, 0), 0
-  );
-
   const currentCategory = filteredCategories.find((c) => c.id === activeCategory) || filteredCategories[0];
 
-  const scrollToCategory = (id: string) => {
-    setActiveCategory(id);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
   const highlightVariables = (cmd: string) => {
-    // Highlight <VARIABLES> in cyan
     return cmd.split(/(<[^>]+>)/).map((part, i) =>
       part.startsWith('<') && part.endsWith('>') ? (
-        <span key={i} className="text-[#00F0FF] font-bold">{part}</span>
+        <span key={i} className="text-[#22d3ee] font-bold drop-shadow-[0_0_8px_rgba(34,211,238,0.4)]">{part}</span>
       ) : (
         <span key={i}>{part}</span>
       )
@@ -82,129 +67,186 @@ const CheatSheetPage = () => {
   };
 
   return (
-    <div className="min-h-screen pt-20 pb-16">
-      {/* Header */}
-      <div ref={headerRef} className="w-full px-6 lg:px-12 mb-8">
-        <div className="flex items-center gap-3 mb-6">
-          <Link to="/terminal" className="flex items-center gap-2 text-xs font-mono text-[#A7B0BC] hover:text-[#39FF14] transition-colors">
-            <ArrowLeft className="w-4 h-4" /> TERMINAL
-          </Link>
-          <span className="text-[#A7B0BC]/30">/</span>
-          <span className="text-xs font-mono text-[#39FF14]">CHEAT_SHEET</span>
+    <div className="min-h-screen pt-24 pb-20 bg-transparent">
+      {/* Cinematic Header Overlay */}
+      <div ref={headerRef} className="w-full px-6 lg:px-12 mb-12 relative z-20">
+        <div className="flex items-center gap-3 mb-6 font-mono text-[10px] tracking-[0.2em] text-[#94a3b8]">
+          <Link to="/" className="hover:text-[#4ade80] transition-colors uppercase">HQ</Link>
+          <span className="opacity-30">/</span>
+          <span className="text-[#4ade80] uppercase">PAYLOAD_NEXUS</span>
         </div>
 
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
-          <div>
-            <div className="flex items-center gap-3 mb-3">
-              <Terminal className="w-6 h-6 text-[#39FF14]" />
-              <h1 className="text-3xl lg:text-5xl font-bold text-[#F2F5F9]">
-                MASTER <span className="text-[#39FF14]">CHEAT SHEET</span>
-              </h1>
-            </div>
-            <p className="text-base text-[#A7B0BC] max-w-2xl">
-              {totalCommands}+ tactical commands across {masterCheatSheet.length} operational categories.
-              From passive recon to domain dominance — every payload you will ever need.
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
+          <div className="space-y-4">
+            <h1 className="text-5xl lg:text-7xl font-black tracking-tighter leading-none">
+              <span className="text-white">COMMAND</span><br />
+              <span className="text-[#4ade80] drop-shadow-[0_0_20px_rgba(74,222,128,0.3)]">CHEST</span>
+            </h1>
+            <p className="text-[#94a3b8] max-w-xl font-mono text-sm leading-relaxed border-l-2 border-[#4ade80]/30 pl-6">
+              Strategic payload repository for CEH operators. Tactical commands indexed across {masterCheatSheet.length} operational phases.
             </p>
           </div>
 
-          {/* Search Bar */}
-          <div className="relative w-full lg:w-96">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A7B0BC]" />
-            <input
-              type="text"
-              placeholder="Search commands, tools, payloads..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-[#0B0E16] border border-[rgba(243,245,249,0.08)] rounded-lg text-sm font-mono text-[#F2F5F9] placeholder:text-[#A7B0BC]/50 focus:outline-none focus:border-[#39FF14]/50 transition-colors"
-            />
+          {/* Advanced Search HUD */}
+          <div className="relative w-full lg:w-[450px]">
+            <div className="absolute -top-8 right-0 flex items-center gap-4 text-[10px] font-mono text-[#4ade80]">
+              <span className="animate-pulse flex items-center gap-1">
+                <Activity className="w-3 h-3" /> LIVE_FILTER_ACTIVE
+              </span>
+              <span className="opacity-50">v1.4.2_SECURE</span>
+            </div>
+            <div className="cyber-panel p-1 rounded-xl overflow-hidden group">
+              <div className="relative bg-[#0B0E16] flex items-center p-3">
+                <Search className="w-4 h-4 text-[#4ade80] mr-3 group-hover:scale-110 transition-transform" />
+                <input
+                  type="text"
+                  placeholder="SEARCH_PAYLOAD_SIGNATURES..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="bg-transparent border-none outline-none w-full font-mono text-sm text-white placeholder:text-[#94a3b8]/40"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Main Layout */}
-      <div ref={contentRef} className="w-full px-6 lg:px-12 flex gap-8">
-        {/* Sidebar — Category Nav */}
-        <aside className="hidden lg:block w-72 flex-shrink-0">
-          <div className="sticky top-24 max-h-[calc(100vh-120px)] overflow-y-auto scrollbar-hide pr-2 space-y-1">
-            <p className="text-[10px] font-mono text-[#A7B0BC]/60 uppercase tracking-widest mb-3 px-3">
-              TACTICAL PHASES
-            </p>
-            {filteredCategories.map((cat) => {
-              const cmdCount = cat.sections.reduce((a, s) => a + s.commands.length, 0);
-              return (
+      {/* Grid Layout */}
+      <div ref={contentRef} className="w-full px-6 lg:px-12 grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-10">
+        
+        {/* Left Sidebar: Operational Phases - ULTIMATE COOL REDESIGN */}
+        <aside className="hidden lg:block">
+          <div className="cyber-panel sticky top-36 max-h-[75vh] overflow-y-auto cyber-scrollbar flex flex-col p-0 bg-black/40 backdrop-blur-xl border-[#4ade80]/10">
+            {/* HUD Header Detail */}
+            <div className="p-6 pt-8 pb-4 border-b border-white/5 relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-2 opacity-10">
+                <ShieldCheck className="w-12 h-12 text-[#4ade80]" />
+              </div>
+              <div className="flex items-center justify-between mb-4 relative z-10">
+                <div className="flex flex-col">
+                  <h3 className="text-[10px] font-mono font-bold tracking-[0.3em] text-[#4ade80]">OPERATIONAL_PHASES</h3>
+                  <span className="text-[8px] font-mono text-[#94a3b8] opacity-50 uppercase mt-1">Status: Active_Session_01</span>
+                </div>
+                <div className="p-1.5 bg-[#4ade80]/10 rounded border border-[#4ade80]/20">
+                  <Target className="w-3.5 h-3.5 text-[#4ade80] animate-pulse" />
+                </div>
+              </div>
+            </div>
+            
+            {/* Navigation List */}
+            <nav className="p-4 space-y-2.5">
+              {filteredCategories.map((cat, idx) => (
                 <button
                   key={cat.id}
-                  onClick={() => scrollToCategory(cat.id)}
-                  className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center gap-3 transition-all duration-200 group border backdrop-blur-sm ${
+                  onClick={() => setActiveCategory(cat.id)}
+                  className={`w-full group relative flex items-center gap-4 p-3 rounded-lg transition-all border overflow-hidden ${
                     activeCategory === cat.id
-                      ? 'bg-[rgba(57,255,20,0.12)] border-[rgba(57,255,20,0.3)] shadow-[0_0_15px_rgba(57,255,20,0.05)]'
-                      : 'bg-[#0B0E16]/30 border-transparent hover:bg-[rgba(243,245,249,0.05)] hover:border-[rgba(243,245,249,0.1)]'
+                      ? 'bg-[#4ade80]/10 border-[#4ade80]/40 text-[#4ade80] shadow-[0_0_20px_rgba(74,222,128,0.1)]'
+                      : 'bg-transparent border-white/5 text-[#94a3b8] hover:bg-white/5 hover:border-white/10'
                   }`}
                 >
-                  <span className="text-lg filter drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]">{cat.icon}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className={`text-[11px] font-mono truncate uppercase tracking-wider ${
-                      activeCategory === cat.id ? 'text-[#39FF14]' : 'text-[#F2F5F9]/80 group-hover:text-[#39FF14]'
-                    }`}>
-                      {cat.name}
-                    </p>
-                    <p className="text-[9px] font-mono text-[#A7B0BC]/50 uppercase">{cmdCount} tactical items</p>
+                  {/* Category Number Sidebar */}
+                  <div className={`absolute left-0 top-0 bottom-0 w-1 transition-all ${activeCategory === cat.id ? 'bg-[#4ade80]' : 'bg-transparent group-hover:bg-white/10'}`} />
+                  
+                  {/* Icon Container */}
+                  <div className={`flex-shrink-0 w-10 h-10 rounded-md flex items-center justify-center text-xl transition-all ${
+                    activeCategory === cat.id ? 'bg-[#4ade80]/20 scale-110' : 'bg-white/5 group-hover:bg-white/10'
+                  }`}>
+                    <span className="filter drop-shadow-[0_0_8px_rgba(255,255,255,0.1)]">{cat.icon}</span>
                   </div>
-                  <ChevronRight className={`w-3.5 h-3.5 transition-all duration-300 ${
-                    activeCategory === cat.id ? 'text-[#39FF14] translate-x-0.5' : 'text-[#A7B0BC]/20 group-hover:text-[#39FF14]/40'
-                  }`} />
+
+                  <div className="flex-grow text-left">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-mono font-black tracking-widest uppercase">
+                        {cat.name.split(' ')[0]}
+                      </span>
+                      <span className="text-[8px] font-mono opacity-30">0{idx + 1}</span>
+                    </div>
+                    <div className={`text-[9px] font-mono mt-0.5 truncate max-w-[150px] ${activeCategory === cat.id ? 'text-[#4ade80]/60' : 'text-[#94a3b8]/40'}`}>
+                      {cat.name.split(' ').slice(1).join(' ')}
+                    </div>
+                  </div>
+
+                  {/* Active Scanline Effect */}
+                  {activeCategory === cat.id && (
+                    <div className="absolute inset-0 pointer-events-none">
+                      <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-[#4ade80]/5 to-transparent opacity-50" />
+                      <div className="absolute top-0 left-0 w-full h-[1px] bg-[#4ade80]/40 animate-scanline" />
+                    </div>
+                  )}
                 </button>
-              );
-            })}
+              ))}
+            </nav>
+
+            {/* Bottom Status Panel */}
+            <div className="p-6 mt-auto border-t border-white/5 bg-white/5">
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <Wifi className="w-3 h-3 text-[#4ade80]" />
+                    <span className="text-[9px] font-mono text-[#94a3b8]">ENCRYPTED_LINK</span>
+                  </div>
+                  <div className="w-1.5 h-1.5 bg-[#4ade80] rounded-full animate-ping" />
+                </div>
+                
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-[8px] font-mono text-[#94a3b8]/50 tracking-tighter">
+                    <span>MEMORY_USAGE</span>
+                    <span>0x7F4E</span>
+                  </div>
+                  <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-[#4ade80]/40 to-[#4ade80] w-[88%] shadow-[0_0_10px_rgba(74,222,128,0.5)]" />
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 pt-2 border-t border-white/5">
+                  <Fingerprint className="w-3 h-3 text-[#22d3ee]" />
+                  <span className="text-[8px] font-mono text-[#22d3ee]/60 tracking-[0.2em]">OPERATOR: LEVEL_A</span>
+                </div>
+              </div>
+            </div>
           </div>
         </aside>
 
-        {/* Mobile Category Selector */}
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#05060B]/95 backdrop-blur-md border-t border-[rgba(243,245,249,0.08)] overflow-x-auto">
-          <div className="flex gap-1 p-2">
-            {filteredCategories.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => scrollToCategory(cat.id)}
-                className={`flex-shrink-0 px-3 py-2 rounded-lg text-xs font-mono whitespace-nowrap transition-all ${
-                  activeCategory === cat.id
-                    ? 'bg-[rgba(57,255,20,0.1)] text-[#39FF14] border border-[rgba(57,255,20,0.3)]'
-                    : 'text-[#A7B0BC] border border-transparent'
-                }`}
-              >
-                {cat.icon} {cat.name.split(' ')[0]}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Content Area */}
-        <main className="flex-1 min-w-0 pb-20 lg:pb-0">
-          {currentCategory && (
-            <div>
-              {/* Category Header */}
-              <div className="mb-8 pb-6 border-b border-[rgba(243,245,249,0.08)]">
-                <div className="flex items-center gap-3 mb-2">
-                  <span className="text-2xl">{currentCategory.icon}</span>
-                  <h2 className="text-2xl font-bold text-[#F2F5F9]">{currentCategory.name}</h2>
+        {/* Main Content Area */}
+        <main className="space-y-10 min-w-0">
+          {currentCategory ? (
+            <div className="space-y-12">
+              {/* Category Lead */}
+              <div className="relative cyber-panel p-10 overflow-hidden group bg-[#0B0E16]/60">
+                <div className="absolute -top-10 -right-10 text-[180px] opacity-[0.02] group-hover:opacity-[0.04] transition-opacity pointer-events-none select-none grayscale">
+                  {currentCategory.icon}
                 </div>
-                <p className="text-sm text-[#A7B0BC]">{currentCategory.description}</p>
+                <div className="flex flex-col md:flex-row md:items-center gap-8 relative z-10">
+                  <div className="w-20 h-20 bg-gradient-to-br from-[#4ade80]/20 to-[#4ade80]/5 rounded-2xl flex items-center justify-center text-4xl shadow-[0_0_40px_rgba(74,222,128,0.15)] border border-[#4ade80]/20">
+                    {currentCategory.icon}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-2 h-2 bg-[#4ade80] rounded-full animate-pulse" />
+                      <span className="text-[10px] font-mono text-[#4ade80] tracking-[0.4em] uppercase font-bold">Phase_Initialized</span>
+                    </div>
+                    <h2 className="text-4xl lg:text-5xl font-black text-white tracking-tight mb-2 uppercase">{currentCategory.name}</h2>
+                    <p className="text-[#94a3b8] text-base font-mono leading-relaxed max-w-2xl">{currentCategory.description}</p>
+                  </div>
+                </div>
               </div>
 
-              {/* Sections */}
+              {/* Payload Sections */}
               {currentCategory.sections.map((section) => (
-                <div key={section.title} className="mb-10">
-                  <h3 className="text-sm font-mono font-bold text-[#39FF14] uppercase tracking-wider mb-4 flex items-center gap-2">
-                    <div className="w-2 h-2 bg-[#39FF14] rounded-full" />
-                    {section.title}
-                  </h3>
+                <div key={section.title} className="space-y-8">
+                  <div className="flex items-center gap-6">
+                    <div className="px-3 py-1 bg-[#4ade80]/10 border border-[#4ade80]/20 rounded text-[9px] font-mono font-bold text-[#4ade80] tracking-[0.2em] uppercase">Section</div>
+                    <h3 className="text-sm font-mono font-bold text-white tracking-[0.2em] uppercase">{section.title}</h3>
+                    <div className="h-px bg-gradient-to-r from-[#4ade80]/20 to-transparent flex-grow" />
+                  </div>
 
-                  <div className="space-y-2">
+                  <div className="grid grid-cols-1 gap-4">
                     {section.commands.map((cmd, idx) => (
-                      <CommandRow
+                      <PayloadCard
                         key={`${section.title}-${idx}`}
                         cmd={cmd}
-                        copiedCmd={copiedCmd}
+                        isCopied={copiedCmd === cmd.cmd}
                         onCopy={copyToClipboard}
                         highlightVariables={highlightVariables}
                       />
@@ -213,13 +255,11 @@ const CheatSheetPage = () => {
                 </div>
               ))}
             </div>
-          )}
-
-          {filteredCategories.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-32 text-center">
-              <Search className="w-12 h-12 text-[#A7B0BC]/30 mb-4" />
-              <p className="text-lg font-mono text-[#A7B0BC]">No commands match "{searchQuery}"</p>
-              <p className="text-sm text-[#A7B0BC]/60 mt-2">Try a different keyword like "nmap", "reverse shell", or "privesc"</p>
+          ) : (
+            <div className="cyber-panel p-20 flex flex-col items-center justify-center text-center">
+              <Search className="w-16 h-16 text-[#94a3b8]/20 mb-6" />
+              <h3 className="text-xl font-mono text-white mb-2">NO_RESULTS_FOUND</h3>
+              <p className="text-[#94a3b8] font-mono text-sm italic">"Try broadening your search parameters, operator."</p>
             </div>
           )}
         </main>
@@ -228,39 +268,57 @@ const CheatSheetPage = () => {
   );
 };
 
-// Memoized row to prevent re-renders on copy
-const CommandRow = ({
-  cmd,
-  copiedCmd,
-  onCopy,
-  highlightVariables,
-}: {
-  cmd: CheatCommand;
-  copiedCmd: string | null;
-  onCopy: (text: string) => void;
-  highlightVariables: (text: string) => React.ReactNode[];
-}) => {
-  const isCopied = copiedCmd === cmd.cmd;
+const PayloadCard = ({ cmd, isCopied, onCopy, highlightVariables }: any) => {
   return (
-    <div className="group flex items-start gap-3 p-3 rounded-lg border border-[rgba(243,245,249,0.04)] bg-[#0B0E16]/80 backdrop-blur-sm hover:border-[rgba(57,255,20,0.15)] hover:bg-[#0B0E16]/95 transition-all duration-200">
-      <div className="flex-1 min-w-0">
-        <code className="block text-sm font-mono text-[#F2F5F9] break-all whitespace-pre-wrap leading-relaxed">
-          <span className="text-[#39FF14] select-none mr-2">$</span>
-          {highlightVariables(cmd.cmd)}
-        </code>
-        <p className="text-xs text-[#A7B0BC] mt-1.5">{cmd.desc}</p>
+    <div className="cyber-panel relative group overflow-hidden transition-all duration-300 hover:border-[#4ade80]/40 bg-[#0B0E16]/40 hover:bg-[#0B0E16]/80">
+      <div className="p-6 flex flex-col sm:flex-row items-start sm:items-center gap-6">
+        
+        <div className="flex-grow min-w-0 w-full">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <div className="w-1.5 h-1.5 bg-[#4ade80]/40 rounded-full" />
+              <span className="text-[9px] font-mono text-[#94a3b8]/60 tracking-widest uppercase">Payload_Record</span>
+            </div>
+            <span className="text-[9px] font-mono text-[#4ade80]/40 opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-tighter">Verified_Syntax</span>
+          </div>
+          
+          <div className="relative group/code">
+            <div className="absolute -inset-1 bg-gradient-to-r from-[#4ade80]/20 to-transparent rounded-lg blur opacity-0 group-hover/code:opacity-100 transition-opacity" />
+            <code className="relative block text-[13px] font-mono text-[#4ade80] leading-relaxed break-all bg-black/60 p-5 rounded-lg border border-white/5 transition-all group-hover:border-[#4ade80]/20">
+              <span className="opacity-30 mr-3 select-none">$</span>
+              {highlightVariables(cmd.cmd)}
+            </code>
+          </div>
+          
+          <div className="mt-3 flex items-center gap-3">
+            <div className="h-px w-4 bg-[#4ade80]/20" />
+            <p className="text-xs text-[#94a3b8]/80 leading-relaxed font-mono italic">
+              {cmd.desc}
+            </p>
+          </div>
+        </div>
+
+        {/* Action Button - ULTRA MODERN */}
+        <button
+          onClick={() => onCopy(cmd.cmd)}
+          className={`flex-shrink-0 relative group/btn p-4 rounded-xl transition-all duration-300 border overflow-hidden ${
+            isCopied 
+              ? 'bg-[#4ade80] border-[#4ade80] text-[#020617] shadow-[0_0_30px_rgba(74,222,128,0.4)]' 
+              : 'bg-white/5 border-white/10 text-[#94a3b8] hover:border-[#4ade80]/50 hover:text-[#4ade80]'
+          }`}
+        >
+          <div className="relative z-10 flex items-center gap-2">
+            {isCopied ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
+            {isCopied && <span className="text-[10px] font-bold tracking-tighter uppercase">Copied</span>}
+          </div>
+          {!isCopied && (
+            <div className="absolute inset-0 bg-gradient-to-t from-[#4ade80]/20 to-transparent translate-y-full group-hover/btn:translate-y-0 transition-transform" />
+          )}
+        </button>
       </div>
-      <button
-        onClick={() => onCopy(cmd.cmd)}
-        className={`flex-shrink-0 p-2 rounded-md transition-all duration-200 ${
-          isCopied
-            ? 'bg-[rgba(57,255,20,0.1)] text-[#39FF14]'
-            : 'text-[#A7B0BC]/40 hover:text-[#39FF14] hover:bg-[rgba(57,255,20,0.05)]'
-        }`}
-        title="Copy to clipboard"
-      >
-        {isCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-      </button>
+
+      {/* Decorative Scanline inside card */}
+      <div className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-[#4ade80]/30 to-transparent scale-x-0 group-hover:scale-x-100 transition-transform duration-700" />
     </div>
   );
 };

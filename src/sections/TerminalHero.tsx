@@ -1,25 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { ArrowRight, Terminal, Shield, Cpu, BookOpen, ChevronsDown } from 'lucide-react';
+import { Terminal, Shield, BookOpen, ChevronsDown, Cpu, Activity, Zap, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-
-gsap.registerPlugin(ScrollTrigger);
 
 const TerminalHero = () => {
   const navigate = useNavigate();
-  const sectionRef = useRef<HTMLElement>(null);
-  const panelRef = useRef<HTMLDivElement>(null);
-  const headlineRef = useRef<HTMLHeadingElement>(null);
-  const subheadlineRef = useRef<HTMLParagraphElement>(null);
-  const ctaRef = useRef<HTMLDivElement>(null);
-  const imageRef = useRef<HTMLDivElement>(null);
-  const statusRef = useRef<HTMLDivElement>(null);
   const [typedText, setTypedText] = useState('');
+  const fullText = 'The definitive reference for Kali Linux tools & CEH mastery.';
 
-  const fullText = 'A living reference for Kali Linux tools & CEH prep.';
-
-  // Typing animation
   useEffect(() => {
     let index = 0;
     const timer = setInterval(() => {
@@ -29,278 +17,175 @@ const TerminalHero = () => {
       } else {
         clearInterval(timer);
       }
-    }, 50);
-
+    }, 40);
     return () => clearInterval(timer);
-  }, []);
-
-  // GSAP entrance animation
-  useEffect(() => {
-    const section = sectionRef.current;
-    const panel = panelRef.current;
-    const headline = headlineRef.current;
-    const subheadline = subheadlineRef.current;
-    const cta = ctaRef.current;
-    const image = imageRef.current;
-    const status = statusRef.current;
-
-    if (!section || !panel || !headline || !subheadline || !cta || !image || !status) return;
-
-    const ctx = gsap.context(() => {
-      // Initial states
-      gsap.set(panel, { opacity: 0, scale: 0.96, y: '12vh' });
-      gsap.set(headline, { opacity: 0, y: 40 });
-      gsap.set(subheadline, { opacity: 0, y: 24 });
-      gsap.set(cta.children, { opacity: 0, y: 24 });
-      gsap.set(image, { opacity: 0, x: '10vw', scale: 1.04 });
-      gsap.set(status.children, { opacity: 0, y: -10 });
-
-      // Entrance timeline
-      const tl = gsap.timeline({ delay: 0.3 });
-
-      tl.to(panel, {
-        opacity: 1,
-        scale: 1,
-        y: 0,
-        duration: 0.8,
-        ease: 'power3.out',
-      })
-        .to(
-          headline,
-          {
-            opacity: 1,
-            y: 0,
-            duration: 0.6,
-            ease: 'power3.out',
-          },
-          '-=0.4'
-        )
-        .to(
-          subheadline,
-          {
-            opacity: 1,
-            y: 0,
-            duration: 0.6,
-            ease: 'power3.out',
-          },
-          '-=0.3'
-        )
-        .to(
-          cta.children,
-          {
-            opacity: 1,
-            y: 0,
-            duration: 0.5,
-            stagger: 0.08,
-            ease: 'power3.out',
-          },
-          '-=0.3'
-        )
-        .to(
-          image,
-          {
-            opacity: 1,
-            x: 0,
-            scale: 1,
-            duration: 0.8,
-            ease: 'power3.out',
-          },
-          '-=0.6'
-        )
-        .to(
-          status.children,
-          {
-            opacity: 1,
-            y: 0,
-            duration: 0.4,
-            stagger: 0.05,
-            ease: 'power3.out',
-          },
-          '-=0.4'
-        );
-
-    }, section);
-
-    return () => ctx.revert();
   }, []);
 
   const scrollToKaliHub = () => {
     const section = document.getElementById('kali-hub');
-    if (section) {
-      section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    if (section) section.scrollIntoView({ behavior: 'smooth' });
   };
 
   return (
-    <section
-      ref={sectionRef}
-      className="relative w-full py-28 lg:py-40 flex items-center justify-center overflow-hidden"
-    >
-      {/* Main Panel */}
-      <div
-        ref={panelRef}
-        className="relative w-[min(86vw,1100px)] min-h-[460px] lg:h-[min(66vh,500px)] cyber-panel flex flex-col"
-        style={{ willChange: 'transform, opacity' }}
-      >
-        {/* Header Bar */}
-        <div className="flex items-center justify-between h-11 px-4 border-b border-[rgba(243,245,249,0.08)]">
-          {/* Window Controls */}
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-[#FF2D2D]" />
-            <div className="w-3 h-3 rounded-full bg-[#FFE600]" />
-            <div className="w-3 h-3 rounded-full bg-[#39FF14]" />
+    <section className="relative w-full min-h-screen flex items-center justify-center px-6 lg:px-12 pt-20 overflow-hidden">
+      <div className="max-w-screen-2xl w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        
+        {/* Left Side: Massive Branding & CTA */}
+        <div className="z-10 space-y-8">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-[#4ade80] font-mono text-xs tracking-[0.3em] opacity-80 animate-pulse">
+              <Zap className="w-3 h-3" />
+              SYSTEM_CORE_INITIALIZED
+            </div>
+            <h1 className="text-7xl sm:text-8xl lg:text-9xl font-black tracking-tighter leading-[0.85]">
+              <span className="block text-white">SHELL</span>
+              <span className="block text-[#4ade80] drop-shadow-[0_0_30px_rgba(74,222,128,0.3)]">STACK</span>
+            </h1>
           </div>
 
-          {/* Status Pills */}
-          <div ref={statusRef} className="flex items-center gap-3">
-            <span className="flex items-center gap-1.5 px-2 py-0.5 text-xs font-mono text-[#39FF14] bg-[rgba(57,255,20,0.1)] rounded border border-[rgba(57,255,20,0.2)]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#39FF14] animate-pulse" />
-              ONLINE
-            </span>
-            <span className="flex items-center gap-1.5 px-2 py-0.5 text-xs font-mono text-[#00F0FF] bg-[rgba(0,240,255,0.1)] rounded border border-[rgba(0,240,255,0.2)]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#00F0FF]" />
-              SYNCED
-            </span>
+          <div className="max-w-xl space-y-6">
+            <p className="text-xl text-[#94a3b8] font-mono leading-relaxed border-l-2 border-[#4ade80]/30 pl-6 py-2">
+              {typedText}
+              <span className="w-2 h-5 bg-[#4ade80] inline-block ml-2 animate-pulse align-middle" />
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <button
+                onClick={() => navigate('/tools')}
+                className="group relative px-8 py-4 bg-[#4ade80] text-[#020617] font-bold rounded-xl overflow-hidden transition-all hover:scale-105 active:scale-95"
+              >
+                <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                <span className="relative flex items-center justify-center gap-2">
+                  <Terminal className="w-5 h-5" />
+                  ACCESS TOOLS
+                </span>
+              </button>
+
+              <button
+                onClick={() => navigate('/ceh')}
+                className="group px-8 py-4 bg-white/5 border border-white/10 hover:border-[#4ade80]/50 text-white font-bold rounded-xl backdrop-blur-md transition-all hover:bg-white/10"
+              >
+                <span className="flex items-center justify-center gap-2">
+                  <Shield className="w-5 h-5 text-[#4ade80]" />
+                  CEH EXPLORER
+                </span>
+              </button>
+
+              <button
+                onClick={() => navigate('/cheatsheet')}
+                className="sm:col-span-2 group px-8 py-4 bg-white/5 border border-white/10 hover:border-[#22d3ee]/50 text-white font-bold rounded-xl backdrop-blur-md transition-all hover:bg-white/10"
+              >
+                <span className="flex items-center justify-center gap-2">
+                  <BookOpen className="w-5 h-5 text-[#22d3ee]" />
+                  COMMAND CHEATSHEET
+                </span>
+              </button>
+            </div>
           </div>
 
-          <div className="w-16" /> {/* Spacer for balance */}
+          {/* Quick Stats HUD */}
+          <div className="flex flex-wrap gap-6 pt-4">
+            <div className="flex flex-col">
+              <span className="text-[10px] text-[#94a3b8] font-mono uppercase tracking-widest">Database</span>
+              <span className="text-2xl font-bold text-white">230+ TOOLS</span>
+            </div>
+            <div className="w-px h-10 bg-white/10 hidden sm:block" />
+            <div className="flex flex-col">
+              <span className="text-[10px] text-[#94a3b8] font-mono uppercase tracking-widest">Curriculum</span>
+              <span className="text-2xl font-bold text-white">CEH V13</span>
+            </div>
+            <div className="w-px h-10 bg-white/10 hidden sm:block" />
+            <div className="flex flex-col">
+              <span className="text-[10px] text-[#94a3b8] font-mono uppercase tracking-widest">Status</span>
+              <span className="text-2xl font-bold text-[#4ade80]">ENCRYPTED</span>
+            </div>
+          </div>
         </div>
 
-        {/* Content Area */}
-        <div className="flex-1 flex flex-col lg:flex-row p-6 lg:p-8 gap-6 lg:gap-8">
-          {/* Left: Text Content */}
-          <div className="flex-1 flex flex-col justify-center">
-            <div>
-              <h1
-                ref={headlineRef}
-                className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight mb-4"
-                style={{ willChange: 'transform, opacity' }}
-              >
-                <span className="text-[#F2F5F9]">SHELL</span>
-                <span className="text-[#39FF14]">STACK</span>
-              </h1>
-
-              <p
-                ref={subheadlineRef}
-                className="text-lg sm:text-xl text-[#A7B0BC] mb-8 font-mono min-h-[1.5em]"
-                style={{ willChange: 'transform, opacity' }}
-              >
-                {typedText}
-                <span className="terminal-cursor" />
-              </p>
-
-              <div ref={ctaRef} className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl">
-                <button
-                  onClick={() => navigate('/tools')}
-                  className="cyber-btn-primary w-full flex items-center justify-center gap-2"
-                >
-                  <Terminal className="w-4 h-4" />
-                  Tools Directory
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-
-                <button
-                  onClick={() => navigate('/ceh')}
-                  className="cyber-btn w-full flex items-center justify-center gap-2"
-                >
-                  <Shield className="w-4 h-4" />
-                  CEH Explorer
-                </button>
-
-                <button
-                  onClick={() => navigate('/cheatsheet')}
-                  className="cyber-btn w-full flex items-center justify-center gap-2 sm:col-span-2"
-                >
-                  <BookOpen className="w-4 h-4" />
-                  Cheat Sheet
-                </button>
-
-                <button
-                  onClick={scrollToKaliHub}
-                  className="cyber-btn w-full flex items-center justify-center gap-2 sm:col-span-2"
-                >
-                  <ChevronsDown className="w-4 h-4" />
-                  Jump to Kali Linux
-                </button>
+        {/* Right Side: Visual HUD Terminal */}
+        <div className="relative hidden lg:block">
+          {/* Main Console Frame */}
+          <div className="cyber-panel p-1 rounded-2xl shadow-[0_0_100px_rgba(74,222,128,0.1)]">
+            <div className="bg-[#0B0E16] rounded-[14px] overflow-hidden">
+              {/* Terminal Header */}
+              <div className="h-10 px-4 flex items-center justify-between border-b border-white/5 bg-white/5">
+                <div className="flex gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-[#ef4444]" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-[#fbbf24]" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-[#4ade80]" />
+                </div>
+                <div className="text-[10px] font-mono text-[#94a3b8] tracking-widest">MONITOR_SESSION_01</div>
+                <Lock className="w-3 h-3 text-[#94a3b8]" />
               </div>
-            </div>
-
-            <p className="text-xs font-mono text-[#A7B0BC]/70 flex items-center gap-4 mt-4">
-              <span className="flex items-center gap-1">
-                <Cpu className="w-3 h-3" />
-                Live Intel Feed
-              </span>
-              <span>230 tools indexed</span>
-              <span>CEH v13 mapped</span>
-            </p>
-          </div>
-
-          {/* Right: Visual */}
-          <div
-            ref={imageRef}
-            className="hidden lg:flex flex-1 items-center justify-center"
-            style={{ willChange: 'transform, opacity' }}
-          >
-            <div className="relative w-full h-full max-h-[400px] rounded-lg overflow-hidden border border-[rgba(243,245,249,0.1)]">
-              {/* Animated Terminal Content */}
-              <div className="absolute inset-0 bg-[#0B0E16] p-4 font-mono text-sm overflow-hidden">
-                <div className="text-[#39FF14] mb-2">root@shellstack:~# ./init.sh</div>
-                <div className="text-[#A7B0BC] space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[#00F0FF]">[INFO]</span>
-                    <span>Loading Kali Linux tool database...</span>
+              
+              {/* Terminal Body */}
+              <div className="p-6 font-mono text-[11px] leading-relaxed text-[#94a3b8] h-[400px] overflow-hidden">
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="text-[#4ade80]">root@shellstack:</span>
+                  <span className="text-[#22d3ee]">~</span>
+                  <span className="text-white">$</span>
+                  <span className="text-white">./init_shellstack --god-tier</span>
+                </div>
+                
+                <div className="space-y-2 opacity-80">
+                  <div className="flex justify-between items-center bg-white/5 p-2 rounded border border-white/5">
+                    <span className="flex items-center gap-2 text-[#4ade80]">
+                      <Terminal className="w-3 h-3" /> KALI_TOOLSET
+                    </span>
+                    <span className="text-xs text-white">230_INDEXED</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[#00F0FF]">[INFO]</span>
-                    <span>Loading CEH v13 modules...</span>
+                  <div className="flex justify-between items-center bg-white/5 p-2 rounded border border-white/5">
+                    <span className="flex items-center gap-2 text-[#22d3ee]">
+                      <BookOpen className="w-3 h-3" /> CEH_V13_CURRICULUM
+                    </span>
+                    <span className="text-xs text-white">LOADED</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[#00F0FF]">[INFO]</span>
-                    <span>Indexing command signatures...</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[#39FF14]">[OK]</span>
-                    <span>230 tools indexed</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[#39FF14]">[OK]</span>
-                    <span>20 CEH modules loaded</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[#39FF14]">[OK]</span>
-                    <span>Cheat sheet cache primed</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[#00F0FF]">[INFO]</span>
-                    <span>Linking recon, exploit, and reporting paths</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[#FFE600]">[WARN]</span>
-                    <span>Some tools require root privileges</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[#39FF14]">[OK]</span>
-                    <span>Workspace ready for operator input</span>
-                  </div>
-                  <div className="mt-4 text-[#39FF14]">
-                    root@shellstack:~# <span className="animate-pulse">_</span>
+                  <div className="flex justify-between items-center bg-white/5 p-2 rounded border border-white/5">
+                    <span className="flex items-center gap-2 text-[#fbbf24]">
+                      <Cpu className="w-3 h-3" /> CMD_DATABASE
+                    </span>
+                    <span className="text-xs text-white">PARSING...</span>
                   </div>
                 </div>
 
-                {/* Decorative elements */}
-                <div className="absolute bottom-4 right-4 flex flex-col items-end gap-1">
-                  <div className="text-xs text-[#A7B0BC]/40">CPU: 12%</div>
-                  <div className="text-xs text-[#A7B0BC]/40">MEM: 456MB</div>
-                  <div className="text-xs text-[#A7B0BC]/40">NET: SECURE</div>
+                <div className="mt-6 space-y-1">
+                  <div className="text-[#4ade80]/50">[SYS] CORE_INTEGRITY: GOD_TIER</div>
+                  <div className="text-[#4ade80]/50">[SYS] UPLINK: SECURE_v1.4</div>
+                  <div className="flex items-center gap-1 mt-4">
+                    <span className="text-[#4ade80]">#</span>
+                    <span className="w-2 h-4 bg-[#4ade80] animate-pulse" />
+                  </div>
                 </div>
               </div>
+            </div>
 
-              {/* Glow effect */}
-              <div className="absolute inset-0 pointer-events-none shadow-[inset_0_0_60px_rgba(57,255,20,0.1)]" />
+            {/* Integrated HUD Labels - Safely inside the frame */}
+            <div className="absolute top-14 right-6 z-20 flex items-center gap-2 text-[10px] font-mono font-bold text-[#4ade80] animate-pulse">
+              <span className="opacity-50">[</span>
+              LIVE_FEED
+              <span className="opacity-50">]</span>
+            </div>
+            <div className="absolute bottom-6 left-6 z-20 flex items-center gap-2 text-[10px] font-mono font-bold text-[#22d3ee] animate-pulse">
+              <span className="opacity-50">[</span>
+              SECURE_NODE
+              <span className="opacity-50">]</span>
             </div>
           </div>
+
+          {/* Decorative Background Elements */}
+          <div className="absolute -top-10 -right-10 w-40 h-40 bg-[#4ade80]/10 rounded-full blur-[80px]" />
+          <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-[#22d3ee]/10 rounded-full blur-[80px]" />
         </div>
       </div>
+
+      {/* Scroll Indicator */}
+      <button
+        onClick={scrollToKaliHub}
+        className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-[#94a3b8] hover:text-white transition-colors animate-bounce-subtle"
+      >
+        <span className="text-[10px] font-mono tracking-[0.3em] uppercase">Initialize Scroll</span>
+        <ChevronsDown className="w-5 h-5 text-[#4ade80]" />
+      </button>
     </section>
   );
 };

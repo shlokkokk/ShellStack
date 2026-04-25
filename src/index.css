@@ -6,45 +6,45 @@
 
 @layer base {
   :root {
-    --background: 222 47% 3%;
+    --background: 222 47% 4%;
     --foreground: 216 33% 97%;
-    --card: 222 35% 6%;
+    --card: 222 47% 6%;
     --card-foreground: 216 33% 97%;
-    --popover: 222 35% 6%;
+    --popover: 222 47% 6%;
     --popover-foreground: 216 33% 97%;
-    --primary: 107 100% 54%;
-    --primary-foreground: 222 47% 3%;
-    --secondary: 222 20% 12%;
+    --primary: 142 70% 50%;
+    --primary-foreground: 222 47% 4%;
+    --secondary: 222 47% 12%;
     --secondary-foreground: 216 33% 97%;
-    --muted: 222 20% 12%;
+    --muted: 222 47% 12%;
     --muted-foreground: 215 16% 62%;
-    --accent: 107 100% 54%;
-    --accent-foreground: 222 47% 3%;
+    --accent: 142 70% 50%;
+    --accent-foreground: 222 47% 4%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
-    --border: 220 13% 20%;
-    --input: 220 13% 20%;
-    --ring: 107 100% 54%;
+    --border: 220 13% 18%;
+    --input: 220 13% 18%;
+    --ring: 142 70% 50%;
     --radius: 0.625rem;
     
-    /* Custom Cyberpunk Colors */
-    --cyber-bg-primary: #05060B;
-    --cyber-bg-secondary: #0B0E16;
-    --cyber-surface: #11141D;
-    --cyber-surface-raised: #1A1E2A;
-    --cyber-accent: #39FF14;
-    --cyber-accent-dim: #2DD10F;
-    --cyber-cyan: #00F0FF;
-    --cyber-blue: #0066FF;
-    --cyber-purple: #7C3AED;
-    --cyber-red: #FF2D2D;
-    --cyber-orange: #FF6B00;
-    --cyber-yellow: #FFE600;
-    --cyber-text-primary: #F2F5F9;
-    --cyber-text-secondary: #A7B0BC;
-    --cyber-border: rgba(243, 245, 249, 0.08);
-    --cyber-border-accent: rgba(57, 255, 20, 0.65);
-    --cyber-glow: rgba(57, 255, 20, 0.18);
+    /* Custom Cyberpunk Colors - Refined for Ergonomics */
+    --cyber-bg-primary: #020617;
+    --cyber-bg-secondary: #0a0f1d;
+    --cyber-surface: #111827;
+    --cyber-surface-raised: #1e293b;
+    --cyber-accent: #4ade80;
+    --cyber-accent-dim: #22c55e;
+    --cyber-cyan: #22d3ee;
+    --cyber-blue: #3b82f6;
+    --cyber-purple: #8b5cf6;
+    --cyber-red: #ef4444;
+    --cyber-orange: #f97316;
+    --cyber-yellow: #fbbf24;
+    --cyber-text-primary: #f8fafc;
+    --cyber-text-secondary: #94a3b8;
+    --cyber-border: rgba(243, 245, 249, 0.05);
+    --cyber-border-accent: rgba(74, 222, 128, 0.4);
+    --cyber-glow: rgba(74, 222, 128, 0.12);
   }
 }
 
@@ -78,9 +78,10 @@
   
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Space Grotesk', sans-serif;
-    font-weight: 700;
-    letter-spacing: 0.02em;
+    font-weight: 800;
+    letter-spacing: -0.02em;
     text-transform: uppercase;
+    color: var(--cyber-text-primary);
   }
   
   code, pre, .mono {
@@ -95,10 +96,27 @@
 
 @layer components {
   .cyber-panel {
-    background-color: var(--cyber-bg-secondary);
-    border: 1px solid var(--cyber-border);
-    border-radius: 10px;
-    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+    background-color: rgba(10, 15, 29, 0.45);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    border: 1px solid rgba(74, 222, 128, 0.15);
+    border-radius: 16px;
+    box-shadow: 
+      0 10px 40px -10px rgba(0, 0, 0, 0.5),
+      inset 0 0 20px rgba(74, 222, 128, 0.03);
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .cyber-panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--cyber-accent), transparent);
+    opacity: 0.3;
   }
   
   .cyber-panel-hover:hover {
@@ -174,8 +192,8 @@
     z-index: 9998;
     background: repeating-linear-gradient(
       0deg,
-      rgba(0, 0, 0, 0.14),
-      rgba(0, 0, 0, 0.14) 1px,
+      rgba(0, 0, 0, 0.04),
+      rgba(0, 0, 0, 0.04) 1px,
       transparent 1px,
       transparent 3px
     );
@@ -190,7 +208,7 @@
     pointer-events: none;
     z-index: 9997;
     background-image: 
-      linear-gradient(to right, rgba(243, 245, 249, 0.03) 1px, transparent 1px);
+      linear-gradient(to right, rgba(243, 245, 249, 0.015) 1px, transparent 1px);
     background-size: calc(100vw / 12) 100%;
   }
   
@@ -202,7 +220,7 @@
     height: 100%;
     pointer-events: none;
     z-index: 9996;
-    opacity: 0.02;
+    opacity: 0.01;
     mix-blend-mode: overlay;
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
   }
@@ -409,6 +427,22 @@
     animation: draw-path 4s ease-out forwards;
   }
 
+  @keyframes blob {
+    0% { transform: translate(0px, 0px) scale(1); }
+    33% { transform: translate(30px, -50px) scale(1.1); }
+    66% { transform: translate(-20px, 20px) scale(0.9); }
+    100% { transform: translate(0px, 0px) scale(1); }
+  }
+  .animate-blob {
+    animation: blob 7s infinite;
+  }
+  .animation-delay-2000 {
+    animation-delay: 2s;
+  }
+  .animation-delay-4000 {
+    animation-delay: 4s;
+  }
+
   @keyframes bounce-subtle {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-4px); }
@@ -416,4 +450,33 @@
   .animate-bounce-subtle {
     animation: bounce-subtle 3s ease-in-out infinite;
   }
+}
+
+/* Custom Cyber Scrollbar */
+.cyber-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.cyber-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 10px;
+}
+
+.cyber-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(74, 222, 128, 0.2);
+  border-radius: 10px;
+  transition: background 0.3s ease;
+}
+
+.cyber-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(74, 222, 128, 0.5);
+}
+
+/* Scroll Fade Mask */
+.scroll-mask-bottom {
+  mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+}
+
+.cyber-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(74, 222, 128, 0.6) !important;
 }

@@ -5,7 +5,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 import Navigation from './components/Navigation';
 import CustomCursor from './components/CustomCursor';
-import CyberGrid from './components/CyberGrid';
+import CyberBackground from './components/CyberBackground';
 import Footer from './sections/Footer';
 
 import Home from './pages/Home';
@@ -260,11 +260,8 @@ const AppShell = () => {
   return (
     <>
       <ScrollToTop />
-      <div ref={mainRef} className="relative min-h-screen cyber-bg-primary flex flex-col">
-        <CyberGrid />
-        <div className="grid-overlay" />
-        <div className="scanlines" />
-        <div className="noise-overlay" />
+      <div ref={mainRef} className="relative min-h-screen flex flex-col">
+        <CyberBackground />
 
         <CustomCursor />
         <Navigation />

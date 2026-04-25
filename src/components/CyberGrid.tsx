@@ -56,7 +56,7 @@ const CyberGrid = () => {
         else ctx.lineTo(hx, hy);
       }
       ctx.closePath();
-      ctx.strokeStyle = `rgba(57, 255, 20, ${opacity * 0.12})`;
+      ctx.strokeStyle = `rgba(74, 222, 128, ${opacity * 0.08})`;
       ctx.lineWidth = 0.5;
       ctx.stroke();
     };
@@ -64,8 +64,8 @@ const CyberGrid = () => {
     const drawNode = (node: Node, index: number) => {
       // Draw node glow
       const gradient = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, node.radius * 4);
-      gradient.addColorStop(0, 'rgba(57, 255, 20, 0.15)');
-      gradient.addColorStop(1, 'rgba(57, 255, 20, 0)');
+      gradient.addColorStop(0, 'rgba(74, 222, 128, 0.1)');
+      gradient.addColorStop(1, 'rgba(74, 222, 128, 0)');
       ctx.fillStyle = gradient;
       ctx.beginPath();
       ctx.arc(node.x, node.y, node.radius * 4, 0, Math.PI * 2);
@@ -74,7 +74,7 @@ const CyberGrid = () => {
       // Draw node core
       ctx.beginPath();
       ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
-      ctx.fillStyle = '#39FF14';
+      ctx.fillStyle = '#4ade80';
       ctx.fill();
 
       // Draw hexagon around some nodes
@@ -98,7 +98,7 @@ const CyberGrid = () => {
             ctx.beginPath();
             ctx.moveTo(nodes[i].x, nodes[i].y);
             ctx.lineTo(nodes[j].x, nodes[j].y);
-            ctx.strokeStyle = `rgba(57, 255, 20, ${opacity * 0.12})`;
+            ctx.strokeStyle = `rgba(74, 222, 128, ${opacity * 0.08})`;
             ctx.lineWidth = opacity * 0.6;
             ctx.stroke();
 
@@ -108,7 +108,7 @@ const CyberGrid = () => {
               const packetY = nodes[i].y + (nodes[j].y - nodes[i].y) * Math.random();
               ctx.beginPath();
               ctx.arc(packetX, packetY, 2, 0, Math.PI * 2);
-              ctx.fillStyle = '#00F0FF';
+              ctx.fillStyle = '#22d3ee';
               ctx.fill();
             }
           }
@@ -118,7 +118,7 @@ const CyberGrid = () => {
 
     const drawGrid = () => {
       const gridSize = 50;
-      ctx.strokeStyle = 'rgba(57, 255, 20, 0.015)';
+      ctx.strokeStyle = 'rgba(74, 222, 128, 0.01)';
       ctx.lineWidth = 0.5;
 
       for (let x = 0; x < canvas.width; x += gridSize) {
@@ -145,7 +145,7 @@ const CyberGrid = () => {
       for (let r = 20; r <= radius; r += 20) {
         ctx.beginPath();
         ctx.arc(centerX, centerY, r, 0, Math.PI * 2);
-        ctx.strokeStyle = 'rgba(57, 255, 20, 0.08)';
+        ctx.strokeStyle = 'rgba(74, 222, 128, 0.05)';
         ctx.lineWidth = 0.5;
         ctx.stroke();
       }
@@ -158,8 +158,8 @@ const CyberGrid = () => {
       ctx.arc(centerX, centerY, radius, sweepAngle, sweepAngle + 0.3);
       ctx.closePath();
       const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
-      gradient.addColorStop(0, 'rgba(57, 255, 20, 0.15)');
-      gradient.addColorStop(1, 'rgba(57, 255, 20, 0)');
+      gradient.addColorStop(0, 'rgba(74, 222, 128, 0.1)');
+      gradient.addColorStop(1, 'rgba(74, 222, 128, 0)');
       ctx.fillStyle = gradient;
       ctx.fill();
 
@@ -171,7 +171,7 @@ const CyberGrid = () => {
         const blipY = centerY + Math.sin(blipAngle) * blipRadius;
         ctx.beginPath();
         ctx.arc(blipX, blipY, 3, 0, Math.PI * 2);
-        ctx.fillStyle = '#FF2D2D';
+        ctx.fillStyle = '#ef4444';
         ctx.fill();
       }
     };
@@ -189,7 +189,7 @@ const CyberGrid = () => {
     const draw = () => {
       if (!isActive) return;
 
-      ctx.fillStyle = 'rgba(5, 6, 11, 0.15)';
+      ctx.fillStyle = 'rgba(2, 6, 23, 0.15)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       drawGrid();
@@ -229,7 +229,7 @@ const CyberGrid = () => {
     <canvas
       ref={canvasRef}
       className="fixed inset-0 pointer-events-none z-0"
-      style={{ opacity: 0.4 }}
+      style={{ opacity: 0.25 }}
     />
   );
 };
