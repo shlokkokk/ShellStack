@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { gsap } from 'gsap';
-import { BookOpen, Clock, GraduationCap, Play, CheckCircle, Target, Zap, Shield, Filter, Search, Award, BarChart3, ChevronRight } from 'lucide-react';
-import { cehModules, type Module } from '../data/cehModules';
+import { BookOpen, Clock, Zap, Shield, Filter, Search, Award, ChevronRight } from 'lucide-react';
+import { cehModules } from '../data/cehModules';
 
 interface CEHModulesProps {
   onModuleSelect: (moduleId: string) => void;
@@ -15,7 +15,6 @@ const CEHModules = ({ onModuleSelect }: CEHModulesProps) => {
   const [activeFilter, setActiveFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [completedModules, setCompletedModules] = useState<string[]>([]);
-  const [hoveredModule, setHoveredModule] = useState<string | null>(null);
 
   // Advanced Mapping for Tactical Domains
   const domainMapping: Record<string, string[]> = {
@@ -170,8 +169,6 @@ const CEHModules = ({ onModuleSelect }: CEHModulesProps) => {
               key={m.id} 
               module={m} 
               isCompleted={completedModules.includes(m.id)}
-              isHovered={hoveredModule === m.id}
-              onHover={setHoveredModule}
               onSelect={onModuleSelect}
             />
           ))}
@@ -190,11 +187,9 @@ const CEHModules = ({ onModuleSelect }: CEHModulesProps) => {
   );
 };
 
-const ModuleCard = ({ module, isCompleted, isHovered, onHover, onSelect }: any) => {
+const ModuleCard = ({ module, isCompleted, onSelect }: any) => {
   return (
     <div
-      onMouseEnter={() => onHover(module.id)}
-      onMouseLeave={() => onHover(null)}
       onClick={() => onSelect(module.id)}
       className={`module-card group relative cyber-panel p-6 cursor-pointer transition-all duration-500 overflow-hidden flex flex-col h-full ${
         isCompleted ? 'border-[#4ade80]/50 bg-[#4ade80]/5' : 'hover:border-[#4ade80]/40'

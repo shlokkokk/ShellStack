@@ -1,8 +1,8 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { gsap } from 'gsap';
-import { Copy, Check, Search, ChevronRight, Terminal, ArrowLeft, Target, Cpu, Activity, ShieldCheck, Wifi, Fingerprint } from 'lucide-react';
+import { Copy, Check, Search, Target, Activity, ShieldCheck, Wifi, Fingerprint } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { masterCheatSheet, type CheatCommand } from '../data/masterCheatSheet';
+import { masterCheatSheet } from '../data/masterCheatSheet';
 
 const CheatSheetPage = () => {
   const [searchQuery, setSearchQuery] = useState('');

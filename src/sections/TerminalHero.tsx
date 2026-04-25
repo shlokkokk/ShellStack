@@ -1,6 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { gsap } from 'gsap';
-import { Terminal, Shield, BookOpen, ChevronsDown, Cpu, Activity, Zap, Lock } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Terminal, Shield, BookOpen, ChevronsDown, Cpu, Zap, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const TerminalHero = () => {
