@@ -18,15 +18,18 @@ const ModuleDetailModal = ({ module, isOpen, onClose }: ModuleDetailModalProps) 
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
       // Expand first topic by default
       if (module && module.topics.length > 0) {
         setExpandedTopics([module.topics[0].id]);
       }
     } else {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = 'auto';
+      document.documentElement.style.overflow = 'auto';
     }
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = 'auto';
+      document.documentElement.style.overflow = 'auto';
     };
   }, [isOpen, module]);
 

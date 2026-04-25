@@ -1,10 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { BookOpen, Clock, GraduationCap, Play, CheckCircle } from 'lucide-react';
-import { cehModules } from '../data/cehModules';
-
-gsap.registerPlugin(ScrollTrigger);
+import { BookOpen, Clock, GraduationCap, Play, CheckCircle, Target, Zap, Shield, Filter, Search, Award, BarChart3, ChevronRight } from 'lucide-react';
+import { cehModules, type Module } from '../data/cehModules';
 
 interface CEHModulesProps {
   onModuleSelect: (moduleId: string) => void;
@@ -13,274 +10,245 @@ interface CEHModulesProps {
 const CEHModules = ({ onModuleSelect }: CEHModulesProps) => {
   const sectionRef = useRef<HTMLElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const [studyMode, setStudyMode] = useState(false);
+  const gridRef = useRef<HTMLDivElement>(null);
+  
+  const [activeFilter, setActiveFilter] = useState('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
   const [completedModules, setCompletedModules] = useState<string[]>([]);
+  const [hoveredModule, setHoveredModule] = useState<string | null>(null);
+
+  // Advanced Mapping for Tactical Domains
+  const domainMapping: Record<string, string[]> = {
+    'ALL': [],
+    'RECON': ['reconnaissance', 'footprinting', 'osint', 'enumeration'],
+    'SYSTEM_HACK': ['system hacking', 'password cracking', 'privilege escalation'],
+    'NETWORK': ['scanning networks', 'sniffing', 'session hijacking'],
+    'WEB_APP': ['web application', 'web server', 'sql injection'],
+    'WIRELESS': ['wireless'],
+    'CLOUD_IOT': ['cloud', 'iot', 'ot'],
+    'CRYPTO': ['cryptography']
+  };
+
+  const domains = Object.keys(domainMapping);
 
   useEffect(() => {
     const section = sectionRef.current;
     const header = headerRef.current;
-    const scrollContainer = scrollContainerRef.current;
+    const grid = gridRef.current;
 
-    if (!section || !header || !scrollContainer) return;
+    if (!section || !header || !grid) return;
 
     const ctx = gsap.context(() => {
-      gsap.fromTo(
-        header,
-        { opacity: 0, y: 30 },
-        { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' }
-      );
-
-      const cards = scrollContainer.querySelectorAll('.module-card');
-      gsap.fromTo(
-        cards,
-        { opacity: 0, scale: 0.9, y: 40 },
-        {
-          opacity: 1,
-          scale: 1,
-          y: 0,
-          duration: 0.6,
-          stagger: 0.08,
-          ease: 'back.out(1.2)'
-        }
+      gsap.fromTo(header, { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 1, ease: 'power4.out' });
+      
+      const cards = grid.querySelectorAll('.module-card');
+      gsap.fromTo(cards, 
+        { opacity: 0, y: 30, scale: 0.95 }, 
+        { opacity: 1, y: 0, scale: 1, duration: 0.8, stagger: 0.05, ease: 'power2.out', scrollTrigger: {
+          trigger: grid,
+          start: 'top 80%',
+        }}
       );
     }, section);
 
     return () => ctx.revert();
   }, []);
 
-  // Load completed modules from localStorage
   useEffect(() => {
     const saved = localStorage.getItem('ceh_completed_modules');
-    if (saved) {
-      setCompletedModules(JSON.parse(saved));
-    }
+    if (saved) setCompletedModules(JSON.parse(saved));
   }, []);
 
-  const toggleComplete = (moduleId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    const newCompleted = completedModules.includes(moduleId)
-      ? completedModules.filter(id => id !== moduleId)
-      : [...completedModules, moduleId];
-    setCompletedModules(newCompleted);
-    localStorage.setItem('ceh_completed_modules', JSON.stringify(newCompleted));
-  };
+  const filteredModules = useMemo(() => {
+    return cehModules.filter(m => {
+      const searchContent = `${m.title} ${m.description} ${m.id}`.toLowerCase();
+      const matchesSearch = searchContent.includes(searchQuery.toLowerCase());
+      
+      let matchesFilter = activeFilter === 'ALL';
+      if (!matchesFilter) {
+        const keywords = domainMapping[activeFilter] || [];
+        matchesFilter = keywords.some(kw => searchContent.includes(kw));
+      }
+      
+      return matchesSearch && matchesFilter;
+    });
+  }, [searchQuery, activeFilter]);
 
-  const getProgress = () => {
-    return Math.round((completedModules.length / cehModules.length) * 100);
-  };
+  const progress = Math.round((completedModules.length / cehModules.length) * 100);
 
   return (
-    <section
-      ref={sectionRef}
-      id="ceh-modules"
-      className="relative w-full py-20 lg:py-28"
-    >
-      <div className="w-full">
-        {/* Header */}
-        <div ref={headerRef} className="px-6 lg:px-12 mb-12">
-          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <GraduationCap className="w-5 h-5 text-[#39FF14]" />
-                <span className="text-xs font-mono text-[#39FF14] uppercase tracking-wider">
-                  Certification Prep
-                </span>
-              </div>
-              <h2 className="text-4xl lg:text-5xl font-bold text-[#F2F5F9] mb-3">
-                CEH <span className="text-[#39FF14]">MODULES</span>
-              </h2>
-              <p className="text-lg text-[#A7B0BC]">
-                Navigate all {cehModules.length} exam domains. Master the CEH v13 curriculum.
+    <section ref={sectionRef} className="relative w-full py-24 px-6 lg:px-12 bg-transparent overflow-hidden">
+      
+      {/* Background Decorative HUD */}
+      <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-[0.03] select-none overflow-hidden">
+        <div className="absolute top-20 left-10 text-[120px] font-black text-white">CEH_EXPLORER</div>
+        <div className="absolute bottom-20 right-10 text-[120px] font-black text-[#4ade80]">MISSION_CONTROL</div>
+      </div>
+
+      <div className="max-w-screen-2xl mx-auto relative z-10">
+        
+        {/* Cinematic Header */}
+        <header ref={headerRef} className="mb-16 space-y-8">
+          <div className="flex items-center gap-3 font-mono text-[10px] tracking-[0.4em] text-[#4ade80] animate-pulse">
+            <Award className="w-4 h-4" />
+            <span>CERTIFICATION_PATHWAY_ACTIVE</span>
+          </div>
+
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-10">
+            <div className="space-y-4">
+              <h1 className="text-6xl lg:text-8xl font-black tracking-tighter leading-[0.85]">
+                <span className="text-white">CEH</span><br />
+                <span className="text-[#4ade80] drop-shadow-[0_0_30px_rgba(74,222,128,0.3)]">V13_ACADEMY</span>
+              </h1>
+              <p className="text-[#94a3b8] max-w-2xl font-mono text-base leading-relaxed border-l-2 border-[#4ade80]/30 pl-6 py-2">
+                Master the world's most advanced ethical hacking certification. Comprehensive coverage of {cehModules.length} operational domains.
               </p>
             </div>
 
-            {/* Study Mode Toggle & Progress */}
-            <div className="flex flex-col items-end gap-3">
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-[#A7B0BC]">Study Mode</span>
-                <button
-                  onClick={() => setStudyMode(!studyMode)}
-                  className={`relative w-14 h-7 rounded-full border transition-all duration-300 ${
-                    studyMode
-                      ? 'bg-[rgba(57,255,20,0.2)] border-[rgba(57,255,20,0.5)]'
-                      : 'bg-[#0B0E16] border-[rgba(243,245,249,0.08)]'
-                  }`}
-                >
-                  <span
-                    className={`absolute top-1 w-5 h-5 rounded-full transition-all duration-300 ${
-                      studyMode
-                        ? 'left-8 bg-[#39FF14]'
-                        : 'left-1 bg-[#A7B0BC]'
-                    }`}
-                  />
-                </button>
-              </div>
-              
-              {/* Progress Bar */}
-              <div className="w-48">
-                <div className="flex items-center justify-between text-xs mb-1">
-                  <span className="text-[#A7B0BC]">Progress</span>
-                  <span className="text-[#39FF14]">{getProgress()}%</span>
+            {/* Global Stats HUD */}
+            <div className="cyber-panel p-6 min-w-[320px] bg-black/40 backdrop-blur-xl">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-mono text-[#94a3b8] uppercase tracking-widest">Global Progress</span>
+                  <span className="text-3xl font-bold text-white">{progress}%</span>
                 </div>
-                <div className="h-2 bg-[rgba(243,245,249,0.05)] rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-[#39FF14] to-[#00F0FF] rounded-full transition-all duration-500"
-                    style={{ width: `${getProgress()}%` }}
-                  />
+                <div className="w-12 h-12 rounded-full border-2 border-[#4ade80]/20 flex items-center justify-center relative">
+                  <svg className="w-full h-full -rotate-90">
+                    <circle cx="24" cy="24" r="20" fill="none" stroke="currentColor" strokeWidth="3" className="text-white/5" />
+                    <circle cx="24" cy="24" r="20" fill="none" stroke="currentColor" strokeWidth="3" strokeDasharray="126" strokeDashoffset={126 - (126 * progress) / 100} className="text-[#4ade80] transition-all duration-1000" />
+                  </svg>
+                  <Shield className="absolute w-4 h-4 text-[#4ade80]" />
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div className="flex justify-between text-[10px] font-mono">
+                  <span className="text-[#94a3b8]">MODULES_COMPLETED</span>
+                  <span className="text-[#4ade80]">{completedModules.length}/{cehModules.length}</span>
+                </div>
+                <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-[#4ade80]/40 to-[#4ade80] transition-all duration-1000" style={{ width: `${progress}%` }} />
                 </div>
               </div>
             </div>
           </div>
+        </header>
 
-          {/* Exam Info Bar */}
-          <div className="mt-8 flex flex-wrap gap-6 py-4 border-y border-[rgba(243,245,249,0.08)]">
-            {[
-              { label: 'Exam Code', value: '312-50' },
-              { label: 'Questions', value: '125' },
-              { label: 'Duration', value: '4 hours' },
-              { label: 'Passing Score', value: '60-85%' },
-              { label: 'Format', value: 'Multiple Choice' },
-            ].map((info) => (
-              <div key={info.label} className="flex items-center gap-2">
-                <span className="text-xs font-mono text-[#A7B0BC]">
-                  {info.label}:
-                </span>
-                <span className="text-sm font-mono text-[#F2F5F9]">
-                  {info.value}
-                </span>
-              </div>
+        {/* Tactical Control Bar */}
+        <div className="cyber-panel p-4 mb-10 flex flex-col md:flex-row items-center gap-6 bg-black/20">
+          <div className="relative flex-grow w-full md:w-auto">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#4ade80]" />
+            <input 
+              type="text" 
+              placeholder="SEARCH_MODULE_SIG..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-12 pr-6 py-3 bg-white/5 border border-white/10 rounded-xl font-mono text-sm text-white focus:border-[#4ade80]/50 outline-none transition-all"
+            />
+          </div>
+          <div className="flex items-center gap-3 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 scrollbar-hide">
+            <Filter className="w-4 h-4 text-[#94a3b8] flex-shrink-0" />
+            {domains.map(d => (
+              <button
+                key={d}
+                onClick={() => setActiveFilter(d)}
+                className={`px-4 py-2 rounded-lg font-mono text-[10px] tracking-widest whitespace-nowrap transition-all border ${
+                  activeFilter === d 
+                    ? 'bg-[#4ade80] border-[#4ade80] text-[#020617] font-bold shadow-[0_0_15px_rgba(74,222,128,0.3)]' 
+                    : 'bg-white/5 border-white/10 text-[#94a3b8] hover:bg-white/10'
+                }`}
+              >
+                {d}
+              </button>
             ))}
           </div>
         </div>
 
-        {/* Grid Container */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6 px-6 lg:px-12 mt-8" ref={scrollContainerRef}>
-            {cehModules.map((module) => {
-              const isCompleted = completedModules.includes(module.id);
-              
-              return (
-                <div
-                  key={module.id}
-                  onClick={() => onModuleSelect(module.id)}
-                  className={`module-card w-full cyber-panel p-5 lg:p-6 flex flex-col group cursor-pointer transition-all duration-300 hover:-translate-y-1.5 ${
-                    isCompleted
-                      ? 'border-[rgba(57,255,20,0.5)]'
-                      : 'hover:border-[rgba(57,255,20,0.65)]'
-                  }`}
-                  style={{ perspective: '1000px' }}
-                >
-                  {/* Module Number & Weight */}
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl font-bold font-mono text-[#39FF14]">
-                        {module.number}
-                      </span>
-                      {isCompleted && (
-                        <CheckCircle className="w-5 h-5 text-[#39FF14]" />
-                      )}
-                    </div>
-                    <span className="px-2 py-1 text-xs font-mono text-[#00F0FF] bg-[rgba(0,240,255,0.1)] rounded border border-[rgba(0,240,255,0.2)]">
-                      {module.examWeight}
-                    </span>
-                  </div>
-
-                  {/* Title */}
-                  <h3 className="text-lg font-bold text-[#F2F5F9] mb-2 group-hover:text-[#39FF14] transition-colors duration-300 line-clamp-2">
-                    {module.title}
-                  </h3>
-
-                  {/* Description */}
-                  <p className="text-sm text-[#A7B0BC] mb-4 line-clamp-2 flex-1">
-                    {module.description}
-                  </p>
-
-                  {/* Stats */}
-                  <div className="flex items-center gap-4 text-xs font-mono text-[#A7B0BC] mb-4">
-                    <span className="flex items-center gap-1">
-                      <BookOpen className="w-3.5 h-3.5" />
-                      {module.topics.length} topics
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5" />
-                      {module.duration}
-                    </span>
-                  </div>
-
-                  {/* Progress Bar */}
-                  <div className="mb-4">
-                    <div className="flex items-center justify-between text-xs mb-1">
-                      <span className="text-[#A7B0BC]">Progress</span>
-                      <span className={isCompleted ? 'text-[#39FF14]' : 'text-[#A7B0BC]'}>
-                        {isCompleted ? 'Completed' : 'Not Started'}
-                      </span>
-                    </div>
-                    <div className="h-1 bg-[rgba(243,245,249,0.05)] rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all duration-500 ${
-                          isCompleted ? 'bg-[#39FF14] w-full' : 'bg-[#A7B0BC] w-0'
-                        }`}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onModuleSelect(module.id);
-                      }}
-                      className="flex-1 flex items-center justify-center gap-2 py-2 bg-[rgba(57,255,20,0.1)] text-[#39FF14] rounded border border-[rgba(57,255,20,0.3)] hover:bg-[rgba(57,255,20,0.2)] transition-colors text-sm font-mono"
-                    >
-                      <Play className="w-4 h-4" />
-                      Start
-                    </button>
-                    
-                    {studyMode && (
-                      <button
-                        onClick={(e) => toggleComplete(module.id, e)}
-                        className={`p-2 rounded border transition-colors ${
-                          isCompleted
-                            ? 'bg-[rgba(57,255,20,0.2)] border-[rgba(57,255,20,0.5)] text-[#39FF14]'
-                            : 'bg-[#0B0E16] border-[rgba(243,245,249,0.08)] text-[#A7B0BC] hover:border-[rgba(57,255,20,0.3)]'
-                        }`}
-                        title={isCompleted ? 'Mark incomplete' : 'Mark complete'}
-                      >
-                        <CheckCircle className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+        {/* Goated Grid Container */}
+        <div ref={gridRef} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6 items-stretch">
+          {filteredModules.map((m) => (
+            <ModuleCard 
+              key={m.id} 
+              module={m} 
+              isCompleted={completedModules.includes(m.id)}
+              isHovered={hoveredModule === m.id}
+              onHover={setHoveredModule}
+              onSelect={onModuleSelect}
+            />
+          ))}
         </div>
 
-        <div className="px-6 lg:px-12 mt-8 flex items-center justify-between border-t border-[rgba(243,245,249,0.08)] pt-6">
-          <p className="text-sm font-mono text-[#A7B0BC] flex items-center gap-2">
-            <BookOpen className="w-4 h-4 text-[#39FF14]" />
-            Master the Curriculum
-          </p>
-          
-          <div className="text-xs font-mono text-[#A7B0BC]">
-            {completedModules.length} / {cehModules.length} modules completed
-          </div>
-        </div>
-
-        {/* Study Tips */}
-        {studyMode && (
-          <div className="mx-6 lg:mx-12 mt-8 p-4 cyber-panel border-l-4 border-l-[#39FF14]">
-            <h4 className="text-sm font-bold text-[#F2F5F9] mb-2">Study Tips</h4>
-            <ul className="space-y-1 text-sm text-[#A7B0BC]">
-              <li>• Focus on high-weight modules: M02, M03, M06, M14</li>
-              <li>• Practice commands in a lab environment</li>
-              <li>• Understand countermeasures for each attack type</li>
-              <li>• Review the exam blueprint regularly</li>
-            </ul>
+        {filteredModules.length === 0 && (
+          <div className="py-32 text-center cyber-panel bg-black/20">
+            <Zap className="w-16 h-16 text-[#94a3b8]/20 mx-auto mb-6 animate-pulse" />
+            <h3 className="text-xl font-mono text-white mb-2">NO_MODULES_MATCH_SIGNATURE</h3>
+            <p className="text-[#94a3b8] font-mono text-sm">"Re-scanning the curriculum database..."</p>
           </div>
         )}
+
       </div>
     </section>
+  );
+};
+
+const ModuleCard = ({ module, isCompleted, isHovered, onHover, onSelect }: any) => {
+  return (
+    <div
+      onMouseEnter={() => onHover(module.id)}
+      onMouseLeave={() => onHover(null)}
+      onClick={() => onSelect(module.id)}
+      className={`module-card group relative cyber-panel p-6 cursor-pointer transition-all duration-500 overflow-hidden flex flex-col h-full ${
+        isCompleted ? 'border-[#4ade80]/50 bg-[#4ade80]/5' : 'hover:border-[#4ade80]/40'
+      }`}
+    >
+      {/* Background Glow Effect */}
+      <div className={`absolute -inset-20 bg-gradient-to-br from-[#4ade80]/10 to-transparent blur-[60px] opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none`} />
+
+      {/* Header Info */}
+      <div className="relative z-10 flex items-start justify-between mb-8">
+        <div className="flex flex-col">
+          <span className="text-[10px] font-mono text-[#94a3b8] tracking-[0.2em] uppercase mb-1">Module_{module.number}</span>
+          <div className="flex items-center gap-2">
+            <div className={`w-1.5 h-1.5 rounded-full ${isCompleted ? 'bg-[#4ade80]' : 'bg-[#94a3b8]/30'} animate-pulse`} />
+            <span className={`text-[10px] font-mono ${isCompleted ? 'text-[#4ade80]' : 'text-[#94a3b8]/50'}`}>
+              {isCompleted ? 'DEPLOYED' : 'READY'}
+            </span>
+          </div>
+        </div>
+        <div className="px-2 py-1 bg-[#22d3ee]/10 border border-[#22d3ee]/30 rounded text-[9px] font-mono text-[#22d3ee] font-bold">
+          WT: {module.examWeight}
+        </div>
+      </div>
+
+      {/* Title & Description */}
+      <div className="relative z-10 mb-8 space-y-3 flex-grow">
+        <h3 className="text-xl font-bold text-white group-hover:text-[#4ade80] transition-colors duration-300 tracking-tight leading-tight uppercase">
+          {module.title}
+        </h3>
+        <p className="text-xs text-[#94a3b8] leading-relaxed line-clamp-3 opacity-80 group-hover:opacity-100 transition-opacity">
+          {module.description}
+        </p>
+      </div>
+
+      {/* Footer Stats */}
+      <div className="relative z-10 pt-6 border-t border-white/5 flex items-center justify-between mt-auto">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1.5 text-[10px] font-mono text-[#94a3b8]">
+            <BookOpen className="w-3 h-3 text-[#4ade80]" />
+            {module.topics.length}
+          </div>
+          <div className="flex items-center gap-1.5 text-[10px] font-mono text-[#94a3b8]">
+            <Clock className="w-3 h-3 text-[#22d3ee]" />
+            {module.duration}
+          </div>
+        </div>
+        <button className="p-2 rounded-lg bg-white/5 border border-white/10 group-hover:bg-[#4ade80] group-hover:text-[#020617] group-hover:border-[#4ade80] transition-all duration-300">
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Interactive Scanline */}
+      <div className="absolute top-0 left-0 w-full h-[1px] bg-[#4ade80]/40 -translate-y-full group-hover:animate-scanline pointer-events-none" />
+    </div>
   );
 };
 
