@@ -13,6 +13,12 @@ import { forensicsTools } from './tools/forensics';
 import { reverseEngineeringTools } from './tools/reverse-engineering';
 import { socialEngineeringTools } from './tools/social-engineering';
 import { reportingTools } from './tools/reporting';
+import { cloudSecurityTools } from './tools/cloud-security';
+import { mobileSecurityTools } from './tools/mobile-security';
+import { denialOfServiceTools } from './tools/denial-of-service';
+import { iotOtTools } from './tools/iot-ot';
+import { evasionTools } from './tools/evasion-tools';
+import { cryptographyTools } from './tools/cryptography';
 
 export type { Tool, Category, Command };
 
@@ -30,6 +36,12 @@ export const tools: Tool[] = [
   ...reverseEngineeringTools,
   ...socialEngineeringTools,
   ...reportingTools,
+  ...cloudSecurityTools,
+  ...mobileSecurityTools,
+  ...denialOfServiceTools,
+  ...iotOtTools,
+  ...evasionTools,
+  ...cryptographyTools,
 ];
 
 export const categories: Category[] = [
@@ -123,6 +135,48 @@ export const categories: Category[] = [
     description: 'Generate professional penetration test reports and documentation.',
     icon: 'FileText',
     toolCount: reportingTools.length,
+  },
+  {
+    id: 'cloud-security',
+    name: 'Cloud Security',
+    description: 'Audit and exploit cloud environments — AWS, Azure, GCP, and Kubernetes misconfigurations.',
+    icon: 'Cloud',
+    toolCount: cloudSecurityTools.length,
+  },
+  {
+    id: 'mobile-security',
+    name: 'Mobile Security',
+    description: 'Static and dynamic analysis of Android and iOS applications for vulnerabilities.',
+    icon: 'Smartphone',
+    toolCount: mobileSecurityTools.length,
+  },
+  {
+    id: 'denial-of-service',
+    name: 'Denial of Service',
+    description: 'Network and application layer DoS/DDoS testing and resilience assessment tools.',
+    icon: 'ZapOff',
+    toolCount: denialOfServiceTools.length,
+  },
+  {
+    id: 'iot-ot',
+    name: 'IoT & OT Security',
+    description: 'Audit embedded devices, firmware, industrial control systems, and hardware interfaces.',
+    icon: 'Cpu',
+    toolCount: iotOtTools.length,
+  },
+  {
+    id: 'evasion-tools',
+    name: 'Evasion & Covert Channels',
+    description: 'Bypass IDS/IPS, firewalls, and establish covert tunnels for exfiltration and C2.',
+    icon: 'EyeOff',
+    toolCount: evasionTools.length,
+  },
+  {
+    id: 'cryptography',
+    name: 'Cryptography',
+    description: 'Analyze TLS/SSL configurations, crack hash algorithms, and manage cryptographic keys.',
+    icon: 'Shield',
+    toolCount: cryptographyTools.length,
   },
 ];
 
