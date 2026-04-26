@@ -1,0 +1,111 @@
+import type { Module } from '../cehModules';
+
+export const m13: Module = {
+  id: 'm13',
+  number: 'M13',
+  title: 'Hacking Web Servers',
+  description: 'Analyze the attack surface of web server infrastructure. Master techniques for identifying server misconfigurations, exploiting unpatched vulnerabilities in IIS, Apache, and Nginx, bypassing directory traversal restrictions, and executing server-side attacks like SSRF and HTTP Desync (Smuggling) to compromise the underlying operating system and establish persistence.',
+  examWeight: '5%',
+  estimatedQuestions: 6,
+  duration: '3h 15m',
+  topics: [
+    {
+      id: 'm13-t01',
+      title: 'Web Server Architecture & Vulnerabilities',
+      content: 'Web servers (Apache, Nginx, IIS) form the foundation of the modern internet. Attacks against the web server target the infrastructure itself, rather than the custom application code (PHP/Java/Node) running on top of it. Vulnerabilities stem from default configurations, unpatched server daemons, poor file system permissions, and architectural flaws in how HTTP requests are parsed.',
+      keyPoints: [
+        'Open Source vs Commercial: Apache and Nginx dominate the open-source market (Linux), while Microsoft IIS dominates the enterprise commercial market (Windows).',
+        'Default Configurations: Servers are often deployed with default admin credentials (e.g., Tomcat manager), sample applications (which contain known flaws), and verbose error messages enabled.',
+        'Misconfigurations: Improper file permissions can allow attackers to overwrite configuration files (`httpd.conf`, `web.config`) or execute arbitrary code.',
+        'Software Flaws: Buffer overflows or zero-days in the web server daemon itself (e.g., Apache Struts CVE-2017-5638, IIS WebDAV CVE-2017-7269).',
+        'DMZ Architecture: Web servers are typically placed in a Demilitarized Zone (DMZ) — a subnet separated from the internal network by firewalls. Compromising a web server often provides a pivot point into the internal network.',
+      ],
+    },
+    {
+      id: 'm13-t02',
+      title: 'Information Gathering & Footprinting',
+      content: 'Before attacking a web server, an attacker must identify its exact software, version, supported HTTP methods, and the underlying operating system. This is achieved through banner grabbing, analyzing HTTP responses, enumerating server features, and discovering hidden administrative directories.',
+      commands: [
+        { command: 'nc -nv 192.168.1.100 80', description: 'Use Netcat to connect to port 80 and grab the HTTP Server banner manually by typing "HEAD / HTTP/1.0" and hitting Enter twice' },
+        { command: 'httprint -h 192.168.1.100 -s signatures.txt', description: 'Advanced web server fingerprinting tool that analyzes HTTP responses against a database of signatures to defeat banner obfuscation' },
+        { command: 'whatweb -a 3 http://192.168.1.100', description: 'Aggressive WhatWeb scan: Identify web technologies, CMS platforms, server versions, HTTP headers, and analytic tags' },
+        { command: 'gobuster dir -u http://192.168.1.100 -w common.txt -t 50', description: 'Gobuster: High-speed directory enumeration to find hidden admin panels, backups, and configuration files' },
+        { command: 'nikto -h http://192.168.1.100 -Tuning 123', description: 'Nikto: Comprehensive web server scanner focusing on server misconfigurations, default files, and outdated software' },
+      ],
+      keyPoints: [
+        'Banner Grabbing: The `Server` HTTP response header often explicitly states the software and version (e.g., `Server: Apache/2.4.41 (Ubuntu)`).',
+        'HTTP Methods: Using the `OPTIONS` method determines which HTTP methods the server supports. Finding `PUT` or `DELETE` enabled is highly dangerous as it may allow arbitrary file uploads.',
+        'Error Messages: Triggering a 404 or 500 error often reveals detailed stack traces and exact server version information if custom error pages are not properly configured.',
+        'Directory Enumeration: Brute-forcing URLs to find unlinked content like `/admin`, `/backup.zip`, or `/.git/config`.',
+      ],
+    },
+    {
+      id: 'm13-t03',
+      title: 'Directory Traversal & Path Manipulation',
+      content: 'Directory traversal (Path Traversal or Local File Inclusion - LFI) exploits insufficient security validation of user-supplied input file names, allowing an attacker to access files and directories stored outside the intended web root folder.',
+      commands: [
+        { command: 'curl "http://example.com/view?file=../../../../etc/passwd"', description: 'Basic directory traversal attempting to read the Linux password file' },
+        { command: 'curl "http://example.com/view?file=..%2f..%2f..%2f..%2fwindows%2fsystem32%2fdrivers%2fetc%2fhosts"', description: 'URL-encoded traversal targeting the Windows hosts file' },
+        { command: 'wfuzz -c -z file,traversal_payloads.txt http://example.com/view?file=FUZZ', description: 'Automated fuzzing for directory traversal vulnerabilities using a payload wordlist' },
+      ],
+      keyPoints: [
+        'The Attack: Using dot-dot-slash (`../`) sequences to navigate up the directory tree to access sensitive files like `/etc/passwd` (Linux) or `C:\\Windows\\System32\\config\\SAM` (Windows).',
+        'Encoding Bypasses: If the server filters `../`, attackers use URL encoding (`%2e%2e%2f`), double URL encoding (`%252e%252e%252f`), 16-bit Unicode encoding, or null byte injection (`%00.jpg`) to bypass the Web Application Firewall (WAF).',
+        'Directory Listing: If a web directory lacks an index file (e.g., `index.html`) and directory listing (mod_autoindex) is enabled, the server displays all files in that directory, often exposing sensitive backups or source code.',
+      ],
+    },
+    {
+      id: 'm13-t04',
+      title: 'Advanced Web Server Attacks (SSRF & Smuggling)',
+      content: 'Modern web architectures utilize reverse proxies, load balancers, and internal microservices. Attackers exploit discrepancies in how these different layers parse HTTP requests to execute advanced attacks like Server-Side Request Forgery (SSRF) and HTTP Request Smuggling.',
+      keyPoints: [
+        'Server-Side Request Forgery (SSRF): Forcing the web server to make an HTTP request on behalf of the attacker. Used to scan internal networks, access cloud metadata APIs (e.g., AWS `169.254.169.254` to steal IAM keys), or bypass firewalls.',
+        'HTTP Request Smuggling (Desync Attacks): Exploiting discrepancies between how a front-end load balancer and a back-end server parse the `Content-Length` (CL) and `Transfer-Encoding` (TE) headers. Allows attackers to "smuggle" a hidden request within a legitimate one, bypassing WAFs and poisoning web caches.',
+        'Web Cache Poisoning: Manipulating HTTP headers to trick the caching server (like Varnish or Cloudflare) into saving a malicious response, which is then served to all subsequent legitimate users.',
+        'HTTP Response Splitting (CRLF Injection): Exploiting a lack of input validation to inject Carriage Return/Line Feed characters (`%0d%0a`), allowing the attacker to inject arbitrary HTTP headers or construct entirely new HTTP responses.',
+      ],
+    },
+    {
+      id: 'm13-t05',
+      title: 'Web Shells & Post-Exploitation',
+      content: 'Once a vulnerability is successfully exploited (e.g., via a file upload bypass or RCE), the attacker typically uploads a Web Shell. A web shell is a malicious script that provides a persistent, web-based command-line interface to the underlying operating system.',
+      commands: [
+        { command: 'weevely generate password shell.php', description: 'Generate a highly stealthy, polymorphic PHP web shell using Weevely' },
+        { command: 'weevely http://example.com/uploads/shell.php password', description: 'Connect to the deployed Weevely web shell for an interactive terminal experience' },
+        { command: '<?php system($_GET["cmd"]); ?>', description: 'The absolute simplest PHP web shell (executed via `shell.php?cmd=whoami`)' },
+      ],
+      keyPoints: [
+        'Web Shell Languages: Match the server\'s capabilities — PHP (`.php`) for Apache/Nginx, ASP/ASPX (`.asp`, `.aspx`) for IIS, JSP (`.jsp`) for Tomcat.',
+        'Privilege Escalation: A web shell initially runs with the privileges of the web service account (e.g., `www-data` or `Network Service`). The attacker must then perform local privilege escalation to gain `root` or `SYSTEM`.',
+        'Pivoting: The compromised web server is used as a proxy (using tools like Chisel or Proxychains) to attack internal database servers or Active Directory domain controllers.',
+        'Persistence: Web shells are often hidden inside legitimate files (e.g., appended to the bottom of a core WordPress file) or timestomped to avoid detection by file integrity monitors.',
+      ],
+    },
+  ],
+  keyTools: ['Netcat', 'WhatWeb', 'Nikto', 'Gobuster/ffuf', 'Weevely', 'Burp Suite', 'curl'],
+  countermeasures: [
+    'Apply the Principle of Least Privilege: The web server daemon should run under a dedicated, low-privilege service account, never root/SYSTEM.',
+    'Disable Directory Browsing/Listing globally in the web server configuration (`Options -Indexes` in Apache).',
+    'Remove default installations, sample files, admin interfaces (unless restricted by IP), and unnecessary CGI scripts.',
+    'Configure custom error pages to avoid leaking stack traces, database errors, and exact server version information.',
+    'Disable unused HTTP methods, specifically `PUT`, `DELETE`, `TRACE`, and `OPTIONS`.',
+    'Deploy a Web Application Firewall (WAF) to inspect Layer 7 traffic and block path traversal, SQLi, and known web server exploits.',
+    'Implement strict egress filtering (outbound firewall rules) on the web server to prevent SSRF attacks from reaching the internet or sensitive internal subnets.',
+  ],
+  examTips: [
+    'Directory Traversal uses `../` to access files OUTSIDE the web root (e.g., `/etc/passwd`). If they ask about `%2e%2e%2f`, it is URL encoding bypass for traversal.',
+    'HTTP `OPTIONS` method reveals which methods the server accepts. `PUT` allows file uploads and is very dangerous.',
+    'IIS is Microsoft (Windows), Apache/Nginx are open-source (primarily Linux). Tomcat is for Java applications.',
+    'Website defacement usually involves replacing `index.html` or `default.aspx`.',
+    'A Web Shell provides persistent OS command execution via a web browser. It runs as the web server user account.',
+    'If a question mentions attacking AWS metadata (`169.254...`), the attack is SSRF (Server-Side Request Forgery).',
+    'Nikto is the primary tool tested for discovering web server misconfigurations and default files.',
+  ],
+  realWorldScenarios: [
+    'During an assessment, you run `curl -X OPTIONS -I http://target.com` and note the server accepts the `PUT` HTTP method. You craft an HTTP request to `PUT /uploads/shell.php` containing a simple PHP web shell. You then navigate to that URL and gain arbitrary command execution on the Linux server.',
+    'You discover an image export feature: `http://example.com/export?url=http://internal-api:8080/data`. You modify it to `?url=http://169.254.169.254/latest/meta-data/iam/security-credentials/`. This SSRF attack forces the AWS EC2 instance to hand over its temporary IAM access keys.',
+    'An unpatched IIS 6.0 server is found on a legacy network. You use Metasploit to exploit the well-known WebDAV buffer overflow vulnerability (CVE-2017-7269), gaining an instant SYSTEM shell on the machine without needing any credentials.',
+    'You use Gobuster to brute-force directories and discover a hidden `/.git/` directory exposed on the web server. Using a tool like `GitTools`, you download the entire repository, extracting hardcoded database credentials from the source code history.',
+  ],
+  prerequisites: ['M04 — Enumeration provides the initial port and service details for web servers.'],
+};

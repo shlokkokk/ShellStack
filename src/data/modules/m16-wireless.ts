@@ -1,0 +1,110 @@
+import type { Module } from '../cehModules';
+
+export const m16: Module = {
+  id: 'm16',
+  number: 'M16',
+  title: 'Hacking Wireless Networks',
+  description: 'Exploit vulnerabilities in wireless communication protocols (Wi-Fi and Bluetooth). Master the Aircrack-ng suite to capture handshakes, crack WEP/WPA/WPA2 encryption, and deploy Rogue Access Points (Evil Twins). Analyze enterprise wireless authentication mechanisms (802.1X, EAP) and the security improvements introduced by WPA3.',
+  examWeight: '5%',
+  estimatedQuestions: 6,
+  duration: '3h 30m',
+  topics: [
+    {
+      id: 'm16-t01',
+      title: 'Wireless Concepts & Encryption Protocols',
+      content: 'Wireless networks transmit data over the air using radio frequencies, making physical perimeter security irrelevant; anyone within range can intercept the traffic. To secure this, various encryption protocols have been developed and subsequently broken over time.',
+      keyPoints: [
+        'WEP (Wired Equivalent Privacy): The original standard. Uses RC4 encryption with a weak 24-bit Initialization Vector (IV). It is fundamentally broken and can be cracked in minutes by capturing enough IVs using the PTW or FMS attacks. Never use it.',
+        'WPA (Wi-Fi Protected Access): Replaced WEP. Uses TKIP (Temporal Key Integrity Protocol) to dynamically change keys. Still vulnerable to certain attacks (like the Beck-Tews attack) and considered deprecated.',
+        'WPA2: The long-standing standard. Uses AES (Advanced Encryption Standard) and CCMP. Highly secure against brute-force, BUT vulnerable to dictionary attacks if the pre-shared key (PSK) is weak, and vulnerable to the KRACK attack (Key Reinstallation Attack).',
+        'WPA3: The modern standard. Introduces SAE (Simultaneous Authentication of Equals) to replace the PSK handshake, making offline dictionary attacks impossible. Also provides forward secrecy.',
+        'Antennas: Omni-directional (broadcasts 360 degrees, like standard home routers, 2-9 dBi) vs Directional (Yagi, Parabolic, Cantenna—focuses the signal in one direction, great for long-distance sniffing, 12-24+ dBi).',
+      ],
+    },
+    {
+      id: 'm16-t02',
+      title: 'Aircrack-ng Suite & Packet Capture',
+      content: 'The Aircrack-ng suite is the industry standard for auditing wireless networks. Before attacking, a wireless network adapter must be placed into "Monitor Mode" to capture all wireless traffic in the air at Layer 2 (802.11 frames), regardless of the destination MAC address.',
+      commands: [
+        { command: 'airmon-ng start wlan0', description: 'Put the wireless interface (wlan0) into Monitor Mode (typically creates an interface named wlan0mon)' },
+        { command: 'airmon-ng check kill', description: 'Kill network managers (NetworkManager, wpa_supplicant) that interfere with Monitor Mode' },
+        { command: 'airodump-ng wlan0mon', description: 'Scan the airwaves to identify all nearby Access Points (APs) and connected clients (Stations), noting BSSIDs, Channels, and Encryption' },
+        { command: 'airodump-ng -c 6 --bssid 00:11:22:33:44:55 -w capture wlan0mon', description: 'Lock the capture to Channel 6, target a specific AP by its BSSID, and write all packets to a file (capture.cap)' },
+      ],
+      keyPoints: [
+        'Monitor Mode: Required to capture raw 802.11 wireless packets. Only specific wireless chipsets (e.g., Atheros AR9271, Ralink RT3070) support Monitor Mode and packet injection. Promiscuous mode only captures packets after they are decrypted by the NIC.',
+        'BSSID: The MAC address of the wireless Access Point (Base Service Set Identifier).',
+        'SSID: The human-readable name of the wireless network (Service Set Identifier, e.g., "Guest_WiFi").',
+        'Hidden SSIDs: An AP configured not to broadcast its name in beacon frames. Easily uncloaked by sniffing a legitimate client authenticating to it or sending a targeted deauth attack.',
+      ],
+    },
+    {
+      id: 'm16-t03',
+      title: 'Cracking WPA/WPA2 (The 4-Way Handshake)',
+      content: 'To crack WPA/WPA2-Personal (PSK), an attacker must capture the 4-way cryptographic handshake that occurs when a legitimate client connects to the AP. Once captured, the attacker takes the packet capture offline and runs a dictionary attack to guess the password. It cannot be brute-forced online.',
+      commands: [
+        { command: 'aireplay-ng -0 10 -a <AP_MAC> -c <CLIENT_MAC> wlan0mon', description: 'Deauthentication Attack: Send 10 forged deauth frames to forcefully disconnect a specific client from the AP. They will automatically reconnect, generating the 4-way handshake for you to capture.' },
+        { command: 'aircrack-ng -w /usr/share/wordlists/rockyou.txt capture.cap', description: 'Offline dictionary attack: Attempt to crack the captured WPA2 handshake using the rockyou.txt password list (CPU based)' },
+        { command: 'hcxpcapngtool -o capture.hc22000 capture.cap', description: 'Convert the raw PCAP file containing the handshake into Hashcat\'s modern format (hc22000)' },
+        { command: 'hashcat -m 22000 capture.hc22000 rockyou.txt', description: 'Modern Hashcat GPU-accelerated cracking against the WPA2 handshake' },
+      ],
+      keyPoints: [
+        'Deauthentication (Deauth) Attack: Sending forged management frames (which are unencrypted in WPA2) telling the client it has been disconnected. This forces them to reconnect automatically.',
+        'The 4-Way Handshake: Contains the cryptographic material (ANonce, SNonce, MACs) needed to verify the password. Capturing this is the absolute prerequisite for cracking WPA2.',
+        'WPS (Wi-Fi Protected Setup) PIN Attack: Many older routers allow connection via an 8-digit PIN. Tools like Reaver or Bully can brute-force this PIN in hours because the PIN is validated in two 4-digit halves, completely bypassing the complex WPA2 password.',
+        'PMKID Attack: A modern WPA2 attack targeting the AP itself. If the AP has roaming enabled (802.11r), an attacker can extract the PMKID directly from the AP without needing a client to be connected or deauthenticated.',
+      ],
+    },
+    {
+      id: 'm16-t04',
+      title: 'Rogue Access Points & Evil Twins',
+      content: 'Instead of cracking complex encryption, attackers often bypass it entirely by tricking users into connecting to a malicious Access Point controlled by the attacker. Once connected, the attacker has a full Man-in-the-Middle (MitM) position to sniff traffic, strip SSL, and steal credentials.',
+      commands: [
+        { command: 'hostapd hostapd.conf', description: 'Spin up a software-based Access Point (Rogue AP/Evil Twin)' },
+        { command: 'wifiphisher', description: 'Automated Evil Twin framework that deauthenticates users and forces them onto a cloned AP with a captive portal' },
+      ],
+      keyPoints: [
+        'Rogue AP: An unauthorized Access Point physically plugged into the corporate network (e.g., an employee bringing a home router to get better Wi-Fi in their office), bypassing physical security and creating a massive backdoor.',
+        'Evil Twin: An attacker creates an AP with the EXACT SAME SSID (name) and MAC address as the legitimate corporate AP, but with a stronger signal. Client devices will automatically roam and connect to the stronger Evil Twin without user interaction.',
+        'Karma Attack: Devices constantly probe the air for networks they\'ve saved previously (e.g., "Home_Network"). A Karma attack (using tools like WiFi Pineapple) listens to these probes and dynamically creates an Evil Twin with that exact name, catching the device.',
+        'Captive Portals: Once connected to the Evil Twin, the attacker presents a fake login page (e.g., "Firmware Update Required - Please enter Wi-Fi password" or "OAuth Google Login") to steal the PSK or corporate credentials.',
+      ],
+    },
+    {
+      id: 'm16-t05',
+      title: 'Bluetooth Security',
+      content: 'Bluetooth operates on the 2.4GHz spectrum using frequency hopping spread spectrum (FHSS). It is a short-range protocol (typically 10 meters for Class 2 devices) but is vulnerable to several specific attack classes, particularly on older or unpatched devices.',
+      keyPoints: [
+        'Bluejacking: Sending unsolicited messages or business cards to Bluetooth-enabled devices. Annoying, but generally harmless (mostly spam and social engineering).',
+        'Bluesnarfing: Exploiting vulnerabilities in older Bluetooth implementations (OBEX protocol) to steal information (contacts, emails, text messages) from the device without the user\'s knowledge. High severity.',
+        'Bluebugging: Taking complete control of a Bluetooth device, allowing the attacker to make calls, send texts, and listen to conversations. The most severe Bluetooth attack.',
+        'BlueBorne: A critical set of vulnerabilities (CVE-2017-0781, etc.) that allows remote code execution (RCE) over Bluetooth without any user interaction or pairing.',
+        'Countermeasure: Set Bluetooth devices to "Non-Discoverable" mode, disable Bluetooth when not in use, and avoid pairing in public places.',
+      ],
+    },
+  ],
+  keyTools: ['Aircrack-ng', 'Airodump-ng', 'Aireplay-ng', 'Hashcat', 'Reaver', 'Wifite2', 'Kismet', 'WiFi Pineapple (Hak5)'],
+  countermeasures: [
+    'Enterprise Authentication: Use WPA2/WPA3-Enterprise (802.1X + RADIUS/EAP-TLS) instead of Personal (PSK). This requires individual usernames/passwords or certificates, eliminating the shared password weakness and preventing offline dictionary attacks.',
+    'Disable WPS (Wi-Fi Protected Setup) entirely on all routers to prevent PIN brute-forcing attacks via Reaver.',
+    'Implement a Wireless Intrusion Prevention System (WIPS) to actively detect and neutralize Rogue APs and Evil Twins by sending targeted deauth frames to clients trying to connect to them.',
+    'Use strong, random Pre-Shared Keys (minimum 20 characters, highly complex) if WPA2-Personal must be used.',
+    'Segment wireless networks: Guests and IoT devices should be on entirely separate VLANs with strict firewall rules and zero access to the internal corporate network.',
+    'Disable SSID broadcasting for highly sensitive networks (though this provides only minimal security via obscurity and can actually increase the risk of Karma attacks).',
+  ],
+  examTips: [
+    'WEP uses RC4 and a weak 24-bit IV. It is fundamentally broken and cracked via statistical attacks (PTW).',
+    'WPA uses TKIP. WPA2 uses AES-CCMP. WPA3 uses SAE.',
+    'To crack WPA2, you MUST capture the 4-way handshake. You use a Deauthentication Attack (`aireplay-ng`) to force a client to disconnect and reconnect to capture it.',
+    'Monitor Mode is required to capture wireless 802.11 frames. Promiscuous mode is the equivalent for wired ethernet networks.',
+    'An Evil Twin is a malicious AP with the same SSID as the legitimate AP. A Rogue AP is an unauthorized AP physically plugged into the internal network.',
+    'Bluejacking = Sending spam messages. Bluesnarfing = Stealing data (contacts/emails). Bluebugging = Taking full control of the device.',
+  ],
+  realWorldScenarios: [
+    'You are performing a red team assessment of a corporate office. You sit in the parking lot with a high-gain directional Yagi antenna. Using Airodump-ng, you capture the WPA2 handshake. You then run Hashcat against the capture using a custom wordlist based on the company\'s name, local sports teams, and seasons, cracking the password "CompanyNameSpring2026!" in 15 minutes.',
+    'You find an older perimeter router with WPS enabled. You launch Reaver to brute-force the 8-digit PIN. Because the PIN is verified in two halves, the math makes it trivial to crack (only 11,000 attempts max). Within 4 hours, Reaver recovers the PIN and automatically reveals the complex WPA2 24-character password.',
+    'At an airport, you set up an Evil Twin named "Free_Airport_WiFi" using a WiFi Pineapple. When business travelers connect, the Pineapple strips SSL and intercepts their POP3/IMAP email syncs, capturing dozens of corporate email credentials in cleartext.',
+    'The target network uses WPA2-Enterprise with PEAP. Instead of cracking it, you deploy a rogue RADIUS server using `eaphammer` and broadcast an Evil Twin. When employees connect, your server captures their MSCHAPv2 domain hashes, which you then crack offline using Hashcat.',
+  ],
+  prerequisites: ['M08 — Sniffing concepts (MitM, SSL Stripping) are highly applicable to wireless network traffic interception once connected.'],
+};

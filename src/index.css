@@ -493,3 +493,72 @@
   overflow: hidden !important;
   height: 100vh !important;
 }
+
+/* God-Tier Cyber Utilities */
+.cyber-grid-bg {
+  background-image: 
+    linear-gradient(rgba(57, 255, 20, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(57, 255, 20, 0.03) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.scanning-light {
+  position: relative;
+  overflow: hidden;
+}
+
+.scanning-light::after {
+  content: '';
+  position: absolute;
+  top: -100%;
+  left: -100%;
+  width: 300%;
+  height: 300%;
+  background: linear-gradient(
+    45deg,
+    transparent 0%,
+    rgba(57, 255, 20, 0.03) 45%,
+    rgba(57, 255, 20, 0.1) 50%,
+    rgba(57, 255, 20, 0.03) 55%,
+    transparent 100%
+  );
+  transform: rotate(-45deg);
+  animation: scanning 10s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes scanning {
+  0% { transform: translateY(-50%) translateX(-50%) rotate(-45deg); }
+  100% { transform: translateY(50%) translateX(50%) rotate(-45deg); }
+}
+
+.text-glow-green {
+  text-shadow: 0 0 10px rgba(57, 255, 20, 0.5);
+}
+
+.text-glow-cyan {
+  text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+}
+
+.border-glow-green {
+  box-shadow: 0 0 15px rgba(57, 255, 20, 0.15);
+}
+
+.pixel-border {
+  position: relative;
+  border: 1px solid rgba(57, 255, 20, 0.2);
+}
+
+.pixel-border::before,
+.pixel-border::after {
+  content: '';
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: #39FF14;
+  z-index: 10;
+}
+
+.pixel-border::before { top: -2px; left: -2px; }
+.pixel-border::after { top: -2px; right: -2px; }
+
