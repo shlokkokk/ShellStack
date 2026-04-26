@@ -4,41 +4,48 @@ export const informationGatheringTools: Tool[] = [
   {
     id: 'nmap',
     name: 'Nmap',
-    description: 'The world\'s most popular network scanner. Discover hosts, ports, services, and operating systems on networks.',
+    description: 'The world\'s most powerful and popular network scanner. Discovers hosts, open ports, running services, OS versions, and vulnerabilities across any network. Used by every security professional on the planet — if you learn one tool, learn Nmap.',
     category: 'information-gathering',
     difficulty: 'beginner',
     tags: ['network', 'recon', 'port-scanning', 'os-detection', 'must-know'],
     commands: [
-      { command: 'nmap -sn 192.168.1.0/24', description: 'Ping sweep - discover live hosts without port scanning' },
-      { command: 'nmap -sV -sC -O 192.168.1.1', description: 'Version detection, default scripts, and OS fingerprinting' },
-      { command: 'nmap -p- --min-rate 5000 -T4 192.168.1.1', description: 'Full port scan (all 65535 ports) at high speed' },
-      { command: 'nmap -sU --top-ports 200 192.168.1.1', description: 'UDP scan of top 200 ports' },
-      { command: 'nmap -sS -sV -p 22,80,443 192.168.1.1', description: 'Stealth SYN scan on specific ports' },
-      { command: 'nmap --script vuln 192.168.1.1', description: 'Run vulnerability detection scripts' },
-      { command: 'nmap -oN scan-results.txt 192.168.1.1', description: 'Save output to normal format file' },
-      { command: 'nmap -A 192.168.1.1', description: 'Aggressive scan - enables OS detection, version detection, script scanning, and traceroute' },
-      { command: 'nmap -sP 192.168.1.0/24', description: 'ARP ping sweep for local network discovery' },
-      { command: 'nmap -f 192.168.1.1', description: 'Fragment packets to bypass simple firewalls/IDS' },
-      { command: 'nmap -D RND:10,ME 192.168.1.1', description: 'Use decoys to hide scan source' },
-      { command: 'nmap --script smb-enum-shares,smb-enum-users -p 445 192.168.1.1', description: 'Enumerate SMB shares and users' },
+      { command: 'nmap -sn 192.168.1.0/24', description: 'Ping sweep — discover live hosts without port scanning. Always run this first to map the network' },
+      { command: 'nmap -sV -sC -O 192.168.1.1', description: 'The classic combo: version detection + default scripts + OS fingerprinting. Your go-to initial scan' },
+      { command: 'nmap -p- --min-rate 5000 -T4 192.168.1.1', description: 'Full port scan (all 65535 ports) at high speed — finds services running on non-standard ports' },
+      { command: 'nmap -sU --top-ports 200 192.168.1.1', description: 'UDP scan of top 200 ports — critical for finding DNS (53), SNMP (161), TFTP (69) services' },
+      { command: 'nmap -sS -sV -p 22,80,443 192.168.1.1', description: 'Stealth SYN scan on specific ports — fast, targeted, and stealthy' },
+      { command: 'nmap --script vuln 192.168.1.1', description: 'Run all vulnerability detection NSE scripts — checks for EternalBlue, Heartbleed, ShellShock, etc.' },
+      { command: 'nmap -oA full_scan 192.168.1.1', description: 'Save output in ALL formats (.nmap, .xml, .gnmap) — XML is importable into Metasploit/Faraday' },
+      { command: 'nmap -A 192.168.1.1', description: 'Aggressive scan — enables OS detection, version detection, script scanning, and traceroute in one command' },
+      { command: 'nmap -sn -PA 192.168.1.0/24', description: 'TCP ACK ping sweep — bypasses hosts that block ICMP ping' },
+      { command: 'nmap -f 192.168.1.1', description: 'Fragment packets into 8-byte chunks to bypass simple firewalls and IDS that cannot reassemble fragments' },
+      { command: 'nmap -D RND:10,ME 192.168.1.1', description: 'Decoy scan — mixes your IP with 10 random fake IPs to obscure the real scan source' },
+      { command: 'nmap --script smb-enum-shares,smb-enum-users -p 445 192.168.1.1', description: 'Enumerate SMB shares and users — essential when port 445 is open' },
+      { command: 'nmap --script ssl-heartbleed -p 443 192.168.1.1', description: 'Check specifically for the Heartbleed vulnerability on HTTPS services' },
+      { command: 'nmap -sS -sV -sC -O -p- -T4 192.168.1.1 -oA comprehensive', description: 'The ULTIMATE scan — stealth SYN + versions + scripts + OS + all ports. Takes time but misses nothing' },
     ],
     whenToUse: [
-      'At the start of every penetration test for network discovery',
-      'To identify open ports and running services',
-      'For OS fingerprinting and version detection',
-      'To check for common vulnerabilities with NSE scripts',
-      'For compliance scanning and asset inventory',
+      'At the absolute start of every penetration test — Nmap is always step one',
+      'To identify open ports, running services, and their exact versions for exploit matching',
+      'For OS fingerprinting — knowing the target OS narrows your attack vectors dramatically',
+      'To check for known vulnerabilities using the built-in NSE script library (600+ scripts)',
+      'For compliance scanning, asset inventory, and network auditing',
+      'To evade firewalls/IDS using fragmentation, decoys, and timing controls',
     ],
     commonFlags: [
-      { flag: '-sS', description: 'TCP SYN scan (stealth)' },
-      { flag: '-sT', description: 'TCP Connect scan' },
-      { flag: '-sU', description: 'UDP scan' },
-      { flag: '-sV', description: 'Version detection' },
-      { flag: '-O', description: 'OS detection' },
-      { flag: '-A', description: 'Aggressive scan (all features)' },
-      { flag: '-T0-5', description: 'Timing template (0=paranoid, 5=insane)' },
-      { flag: '-p-', description: 'Scan all ports' },
-      { flag: '--script', description: 'Run NSE scripts' },
+      { flag: '-sS', description: 'TCP SYN scan (stealth) — sends SYN, never completes handshake. Default and fastest scan type' },
+      { flag: '-sT', description: 'TCP Connect scan — full 3-way handshake. Use when you do not have raw socket privileges' },
+      { flag: '-sU', description: 'UDP scan — slow but essential for finding DNS, SNMP, TFTP services' },
+      { flag: '-sV', description: 'Version detection — probes open ports to determine service/version info' },
+      { flag: '-sC', description: 'Default script scan — equivalent to --script=default. Runs safe, useful NSE scripts' },
+      { flag: '-O', description: 'OS detection — uses TCP/IP fingerprinting to guess the operating system' },
+      { flag: '-A', description: 'Aggressive scan — enables -O, -sV, -sC, and --traceroute all at once' },
+      { flag: '-T0-5', description: 'Timing template — T0=paranoid (IDS evasion), T3=normal, T4=aggressive, T5=insane' },
+      { flag: '-p-', description: 'Scan all 65535 ports (default only scans top 1000)' },
+      { flag: '-oA', description: 'Output in all formats simultaneously (.nmap, .xml, .gnmap)' },
+      { flag: '--script', description: 'Run specific NSE scripts (e.g., --script vuln, --script smb*)' },
+      { flag: '-Pn', description: 'Skip host discovery — treat all hosts as online. Essential when ICMP is blocked' },
+      { flag: '--min-rate', description: 'Send packets no slower than this rate (packets/sec)' },
     ],
     outputExample: [
       'Starting Nmap 7.94 ( https://nmap.org )',
@@ -51,13 +58,108 @@ export const informationGatheringTools: Tool[] = [
       '443/tcp open  https   Apache httpd 2.4.52',
       '3306/tcp open mysql   MySQL 8.0.32',
     ],
-    relatedTools: ['masscan', 'unicornscan', 'zenmap'],
+    relatedTools: ['masscan', 'unicornscan', 'zenmap', 'rustscan'],
+    installation: 'sudo apt install nmap -y   # Pre-installed on Kali Linux',
     website: 'https://nmap.org',
+    interactiveCommands: [
+      {
+        name: 'Nmap Tactical Scan Builder',
+        description: 'Build a precise Nmap scan with advanced evasion, scripting, and custom port options.',
+        inputs: [
+          {
+            id: 'target',
+            label: 'Target (IP or CIDR)',
+            type: 'text',
+            defaultValue: '192.168.1.0/24',
+            placeholder: 'e.g., 10.10.10.1 or target.com'
+          },
+          {
+            id: 'scanType',
+            label: 'Scan Type',
+            type: 'select',
+            options: ['-sS (Stealth SYN)', '-sT (TCP Connect)', '-sU (UDP)', '-sn (Ping Sweep)', '-sS -sC -sV (Standard Recon)', '-A (Aggressive)'],
+            defaultValue: '-sS -sC -sV (Standard Recon)'
+          },
+          {
+            id: 'timing',
+            label: 'Timing Template',
+            type: 'select',
+            options: ['-T3 (Normal)', '-T4 (Aggressive)', '-T5 (Insane)', '-T2 (Polite)', '-T0 (Paranoid)'],
+            defaultValue: '-T4 (Aggressive)',
+            helpText: 'T4 is fast/loud. T0-T2 are slow and used to evade Intrusion Detection Systems (IDS).'
+          },
+          {
+            id: 'portPreset',
+            label: 'Port Preset',
+            type: 'select',
+            options: ['Top 1000 (default)', 'All 65535 (-p-)', 'Web Only (80,443)', 'Custom'],
+            defaultValue: 'Top 1000 (default)'
+          },
+          {
+            id: 'customPorts',
+            label: 'Custom Ports (If Custom)',
+            type: 'text',
+            defaultValue: '',
+            placeholder: 'e.g., 22,80,445'
+          },
+          {
+            id: 'scripts',
+            label: 'NSE Scripts',
+            type: 'select',
+            options: ['None', 'Default (-sC)', 'Vuln (--script vuln)', 'Safe (--script safe)'],
+            defaultValue: 'None'
+          },
+          {
+            id: 'evasion',
+            label: 'Evasion & Masking',
+            type: 'select',
+            options: ['None', 'Decoy (-D RND:10)', 'Fragment (-f)'],
+            defaultValue: 'None',
+            helpText: 'Decoy hides your IP among 10 random fake IPs. Fragment splits packets to bypass simple firewalls.'
+          },
+          {
+            id: 'output',
+            label: 'Save Output All Formats (-oA)',
+            type: 'checkbox',
+            defaultValue: 'false',
+            placeholder: 'Enable Logging (-oA)',
+            helpText: 'Saves scan results as XML, standard, and grepable formats.'
+          }
+        ],
+        generator: (inputs) => {
+          const type = inputs.scanType.split(' (')[0];
+          const timing = inputs.timing.split(' (')[0];
+          const target = inputs.target || '127.0.0.1';
+          
+          let ports = '';
+          if (inputs.portPreset === 'All 65535 (-p-)') ports = '-p-';
+          else if (inputs.portPreset === 'Web Only (80,443)') ports = '-p 80,443';
+          else if (inputs.portPreset === 'Custom' && inputs.customPorts) ports = `-p ${inputs.customPorts}`;
+
+          let scripts = '';
+          if (inputs.scripts === 'Default (-sC)') scripts = '-sC';
+          else if (inputs.scripts === 'Vuln (--script vuln)') scripts = '--script vuln';
+          else if (inputs.scripts === 'Safe (--script safe)') scripts = '--script safe';
+
+          let evasion = '';
+          if (inputs.evasion === 'Decoy (-D RND:10)') evasion = '-D RND:10';
+          else if (inputs.evasion === 'Fragment (-f)') evasion = '-f';
+
+          let output = inputs.output === 'true' ? '-oA nmap_scan' : '';
+
+          // Avoid duplicating -sC if it's already in scanType
+          if (type.includes('-sC') && scripts === '-sC') scripts = '';
+
+          const parts = ['nmap', type, timing, ports, scripts, evasion, output, target].filter(Boolean);
+          return parts.join(' ');
+        }
+      }
+    ],
   },
   {
     id: 'masscan',
     name: 'Masscan',
-    description: 'Internet-scale port scanner capable of scanning the entire Internet in under 6 minutes.',
+    description: 'Asynchronous TCP port scanner that can scan the entire internet in under 6 minutes. Uses its own custom TCP/IP stack to bypass the kernel and achieve insane speeds. Use Masscan to find open ports fast, then follow up with Nmap for detailed service analysis.',
     category: 'information-gathering',
     difficulty: 'intermediate',
     tags: ['network', 'port-scanning', 'fast', 'large-scale'],
@@ -79,6 +181,9 @@ export const informationGatheringTools: Tool[] = [
       { flag: '--rate', description: 'Transmit rate in packets per second' },
       { flag: '--exclude', description: 'Exclude IP or range from scan' },
       { flag: '-oG', description: 'Output in grepable format' },
+      { flag: '-oX', description: 'Output in XML format (importable into other tools)' },
+      { flag: '--banners', description: 'Grab service banners on open ports' },
+      { flag: '--excludefile', description: 'File containing IPs to exclude from scanning' },
     ],
     outputExample: [
       'Starting masscan 1.3.2 (http://bit.ly/14GZzcT) at 2026-05-14 12:00:00 GMT',
@@ -86,14 +191,17 @@ export const informationGatheringTools: Tool[] = [
       'Scanning 256 hosts [1 port/host]',
       'Discovered open port 80/tcp on 192.168.1.15',
       'Discovered open port 80/tcp on 192.168.1.42',
+      'Discovered open port 443/tcp on 192.168.1.42',
+      'Discovered open port 22/tcp on 192.168.1.100',
     ],
-    relatedTools: ['nmap', 'zmap'],
+    relatedTools: ['nmap', 'zmap', 'rustscan'],
+    installation: 'sudo apt install masscan -y',
     website: 'https://github.com/robertdavidgraham/masscan',
   },
   {
     id: 'theharvester',
     name: 'theHarvester',
-    description: 'OSINT tool for gathering emails, subdomains, hosts, employee names, open ports, and banners from public sources.',
+    description: 'Passive OSINT reconnaissance tool that harvests emails, subdomains, IPs, employee names, and open ports from 30+ public data sources including Google, Bing, LinkedIn, Shodan, and GitHub. Never touches the target directly — completely passive intelligence gathering.',
     category: 'information-gathering',
     difficulty: 'beginner',
     tags: ['osint', 'recon', 'passive', 'emails', 'subdomains'],
@@ -138,11 +246,13 @@ export const informationGatheringTools: Tool[] = [
       '192.168.1.2:mail.example.com',
     ],
     relatedTools: ['amass', 'sublist3r', 'recon-ng'],
+    installation: 'sudo apt install theharvester -y   # Pre-installed on Kali',
+    website: 'https://github.com/laramies/theHarvester',
   },
   {
     id: 'amass',
     name: 'Amass',
-    description: 'In-depth attack surface mapping and asset discovery. The most thorough subdomain enumeration tool available.',
+    description: 'OWASP\'s premier attack surface mapping tool. Performs the most thorough subdomain enumeration available by querying 50+ data sources, DNS brute-forcing, web scraping, and certificate transparency logs. Maintains a persistent graph database for tracking infrastructure changes over time.',
     category: 'information-gathering',
     difficulty: 'intermediate',
     tags: ['osint', 'subdomains', 'recon', 'attack-surface'],
@@ -168,13 +278,14 @@ export const informationGatheringTools: Tool[] = [
       { flag: '-passive', description: 'Use only passive data sources' },
       { flag: '-active', description: 'Enable active recon methods' },
     ],
-    relatedTools: ['sublist3r', 'assetfinder', 'findomain'],
+    relatedTools: ['sublist3r', 'assetfinder', 'findomain', 'subfinder'],
+    installation: 'sudo apt install amass -y   # or: go install github.com/owasp-amass/amass/v4/...@master',
     website: 'https://github.com/OWASP/Amass',
   },
   {
     id: 'recon-ng',
     name: 'Recon-ng',
-    description: 'Full-featured Web Reconnaissance framework written in Python with a modular approach similar to Metasploit.',
+    description: 'Metasploit-style modular OSINT framework for automated reconnaissance. Uses a workspace/module/run workflow to query APIs (Shodan, Censys, VirusTotal, HaveIBeenPwned) and stores all results in a local database. Chain modules together for deep automated intelligence gathering.',
     category: 'information-gathering',
     difficulty: 'intermediate',
     tags: ['osint', 'framework', 'recon', 'modular'],
@@ -194,13 +305,21 @@ export const informationGatheringTools: Tool[] = [
       'To chain API queries from services like Shodan, Censys, HaveIBeenPwned',
       'When working on long-term red team engagements',
     ],
+    commonFlags: [
+      { flag: 'marketplace install', description: 'Install modules from the marketplace' },
+      { flag: 'workspaces create', description: 'Create isolated workspace for each engagement' },
+      { flag: 'modules load', description: 'Load a specific module for execution' },
+      { flag: 'options set', description: 'Configure module parameters' },
+      { flag: 'keys add', description: 'Add API keys for data sources (Shodan, VirusTotal, etc.)' },
+    ],
     relatedTools: ['maltego', 'theharvester', 'spiderfoot'],
+    installation: 'sudo apt install recon-ng -y   # Pre-installed on Kali',
     website: 'https://github.com/lanmaster53/recon-ng',
   },
   {
     id: 'gobuster',
     name: 'Gobuster',
-    description: 'Fast directory/file, DNS, and VHost brute-forcing tool written in Go.',
+    description: 'High-speed directory/file, DNS subdomain, and virtual host brute-forcing tool written in Go. Uses concurrent goroutines to achieve significantly faster enumeration than dirb/dirbuster. Supports custom status code filtering, extensions, and recursive discovery.',
     category: 'information-gathering',
     difficulty: 'beginner',
     tags: ['web', 'brute-force', 'directories', 'dns', 'vhosts'],
@@ -225,13 +344,14 @@ export const informationGatheringTools: Tool[] = [
       { flag: '-w', description: 'Path to the wordlist' },
       { flag: '-t', description: 'Number of concurrent threads (default 10)' },
     ],
-    relatedTools: ['dirb', 'ffuf', 'wfuzz'],
+    relatedTools: ['dirb', 'ffuf', 'wfuzz', 'feroxbuster'],
+    installation: 'sudo apt install gobuster -y',
     website: 'https://github.com/OJ/gobuster',
   },
   {
     id: 'ffuf',
     name: 'ffuf',
-    description: 'Fast web fuzzer written in Go. Extremely fast and flexible for directory discovery and parameter fuzzing.',
+    description: 'The fastest and most flexible web fuzzer available. Fuzzes URLs, headers, POST data, and any part of an HTTP request using the FUZZ keyword. Supports multiple wordlists simultaneously, advanced filtering by response size/words/lines, and recursive discovery. The modern replacement for wfuzz.',
     category: 'information-gathering',
     difficulty: 'intermediate',
     tags: ['web', 'fuzzing', 'directories', 'fast'],
@@ -249,13 +369,27 @@ export const informationGatheringTools: Tool[] = [
       'To brute force directories with advanced response body filtering',
       'When you need to fuzz non-standard web architectures like JSON endpoints',
     ],
-    relatedTools: ['gobuster', 'wfuzz', 'dirsearch'],
+    commonFlags: [
+      { flag: '-u', description: 'Target URL with FUZZ keyword as placeholder' },
+      { flag: '-w', description: 'Wordlist file path' },
+      { flag: '-fc', description: 'Filter by HTTP status code (e.g., -fc 404)' },
+      { flag: '-fs', description: 'Filter by response size (e.g., -fs 0 to hide empty responses)' },
+      { flag: '-fw', description: 'Filter by word count in response' },
+      { flag: '-mc', description: 'Match only specific status codes (e.g., -mc 200,301)' },
+      { flag: '-e', description: 'Comma-separated list of extensions to append' },
+      { flag: '-X', description: 'HTTP method (GET, POST, PUT, etc.)' },
+      { flag: '-H', description: 'Custom header (e.g., -H "Host: FUZZ.example.com")' },
+      { flag: '-t', description: 'Number of concurrent threads (default: 40)' },
+      { flag: '-recursion', description: 'Enable recursive fuzzing on found directories' },
+    ],
+    relatedTools: ['gobuster', 'wfuzz', 'dirsearch', 'feroxbuster'],
+    installation: 'sudo apt install ffuf -y   # or: go install github.com/ffuf/ffuf/v2@latest',
     website: 'https://github.com/ffuf/ffuf',
   },
   {
     id: 'shodan',
     name: 'Shodan CLI',
-    description: 'Command-line interface for Shodan, the search engine for internet-connected devices.',
+    description: 'Command-line interface for Shodan — the search engine that indexes every internet-connected device. Finds exposed webcams, databases, industrial control systems, routers with default credentials, and vulnerable servers worldwide. 100% passive — you never touch the target, Shodan already scanned it.',
     category: 'information-gathering',
     difficulty: 'beginner',
     tags: ['osint', 'iot', 'search-engine', 'passive'],
@@ -273,13 +407,23 @@ export const informationGatheringTools: Tool[] = [
       'To identify vulnerable IoT devices across IP ranges',
       'As an initial recon layer to complement active scanning with Nmap',
     ],
+    commonFlags: [
+      { flag: 'init', description: 'Set your API key (required for all commands)' },
+      { flag: 'search', description: 'Search Shodan for hosts matching a query' },
+      { flag: 'host', description: 'Get all information about a specific IP' },
+      { flag: 'count', description: 'Count results without showing details (free tier friendly)' },
+      { flag: 'download', description: 'Download search results as a compressed JSON file' },
+      { flag: 'honeyscore', description: 'Check probability of an IP being a honeypot (0.0-1.0)' },
+      { flag: 'stats', description: 'Show faceted statistics for a search query' },
+    ],
     relatedTools: ['censys', 'zoomeye', 'fofa'],
+    installation: 'pip install shodan   # Requires API key from https://account.shodan.io',
     website: 'https://cli.shodan.io',
   },
   {
     id: 'dnsrecon',
     name: 'DNSRecon',
-    description: 'DNS enumeration and zone transfer testing tool.',
+    description: 'Comprehensive DNS enumeration tool that performs standard record queries, zone transfer testing, brute-force subdomain discovery, reverse lookups, and cache snooping. Outputs in multiple formats and integrates with other tools for pipeline analysis.',
     category: 'information-gathering',
     difficulty: 'beginner',
     tags: ['dns', 'enumeration', 'zone-transfer'],
@@ -296,13 +440,23 @@ export const informationGatheringTools: Tool[] = [
       'For quick Google-level external enumeration',
       'To perform mass reverse DNS sweeps of entire subnet blocks',
     ],
+    commonFlags: [
+      { flag: '-d', description: 'Target domain for enumeration' },
+      { flag: '-t', description: 'Scan type: std, axfr, brt, rvl, snoop, zonewalk' },
+      { flag: '-D', description: 'Wordlist file for brute-force subdomain enumeration' },
+      { flag: '-r', description: 'IP range for reverse lookups (CIDR notation)' },
+      { flag: '-n', description: 'Target nameserver to query' },
+      { flag: '--csv', description: 'Output results to CSV file' },
+      { flag: '--json', description: 'Output results to JSON file' },
+    ],
     relatedTools: ['dnsenum', 'fierce', 'dig'],
+    installation: 'sudo apt install dnsrecon -y   # Pre-installed on Kali',
     website: 'https://github.com/darkoperator/dnsrecon',
   },
   {
     id: 'enum4linux',
     name: 'Enum4linux',
-    description: 'Tool for enumerating information from Windows and Samba systems via SMB.',
+    description: 'Automated Windows/Samba enumeration tool that extracts users, groups, shares, password policies, and OS information via SMB/NetBIOS (ports 139/445). Performs null session attacks, RID cycling, and share enumeration — essential when you find SMB open on a target.',
     category: 'information-gathering',
     difficulty: 'beginner',
     tags: ['smb', 'windows', 'enumeration', 'samba'],
@@ -319,7 +473,17 @@ export const informationGatheringTools: Tool[] = [
       'To discover unprotected open file shares for sensitive data',
       'To automatically pull RID cycles and fetch password requirement policies',
     ],
-    relatedTools: ['smbclient', 'crackmapexec', 'rpcclient'],
+    commonFlags: [
+      { flag: '-a', description: 'Full enumeration — runs ALL checks (users, shares, groups, policies, OS info)' },
+      { flag: '-U', description: 'Enumerate users via RID cycling' },
+      { flag: '-S', description: 'Enumerate SMB shares' },
+      { flag: '-P', description: 'Get password policy (min length, complexity, lockout)' },
+      { flag: '-G', description: 'Enumerate groups and their members' },
+      { flag: '-r', description: 'Enumerate users via RID cycling (more thorough than -U)' },
+      { flag: '-u user -p pass', description: 'Authenticate with credentials instead of null session' },
+    ],
+    relatedTools: ['smbclient', 'crackmapexec', 'rpcclient', 'enum4linux-ng'],
+    installation: 'sudo apt install enum4linux -y   # Pre-installed on Kali',
     website: 'https://github.com/CiscoCXSecurity/enum4linux',
   }
 ];

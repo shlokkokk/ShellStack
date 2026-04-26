@@ -4,6 +4,23 @@ export interface Command {
   example?: string;
 }
 
+export interface InteractiveCommandInput {
+  id: string;
+  label: string;
+  type: 'text' | 'number' | 'select' | 'checkbox';
+  options?: string[]; // Only used if type is 'select'
+  defaultValue: string;
+  placeholder?: string;
+  helpText?: string;
+}
+
+export interface InteractiveCommand {
+  name: string;
+  description: string;
+  inputs: InteractiveCommandInput[];
+  generator: (inputs: Record<string, string>) => string;
+}
+
 export interface Tool {
   id: string;
   name: string;
@@ -25,6 +42,7 @@ export interface Tool {
     useCases: { title: string; context: string; commands: string[] }[];
     legalWarning: string;
   };
+  interactiveCommands?: InteractiveCommand[];
 }
 
 export interface Category {

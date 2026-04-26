@@ -1,7 +1,26 @@
 import { useState } from 'react';
 import { tools, categories, type Tool } from '../data/kaliTools';
-import { Terminal, Search, ChevronRight, Code, Info, TerminalSquare } from 'lucide-react';
-import ToolDetailModal from '../components/ToolDetailModal'; // Reuse modal for now, or display inline? User said "all of it with outputs when to use all of like we jus did" - modal covers this perfectly and is already built, but we can also do expanded inline. Let's stick to the modal for full details to preserve screen space, or render them natively expanded.
+import { 
+  Terminal, Search, ChevronRight, Code, Info, TerminalSquare, Layers, 
+  Globe, Database, Key, Wifi, Zap, Users, FileText, Cpu, Eye, Radio, Fingerprint, ShieldAlert, Crosshair, ArrowRight
+} from 'lucide-react';
+import ToolDetailModal from '../components/ToolDetailModal'; 
+
+const categoryIcons: Record<string, React.ElementType> = {
+  'information-gathering': Eye,
+  'vulnerability-analysis': ShieldAlert,
+  'web-application': Globe,
+  'database-assessment': Database,
+  'password-attacks': Key,
+  'wireless-attacks': Wifi,
+  'exploitation-tools': Crosshair,
+  'sniffing-spoofing': Radio,
+  'post-exploitation': Zap,
+  'forensics': Fingerprint,
+  'reporting': FileText,
+  'social-engineering': Users,
+  'reverse-engineering': Cpu,
+};
 // "a page full new diff super super coollooking page only for all all alllll tools that we jus added with thier proper content definition short ones and their commands"
 // Let's render them in an accordion or full cards!
 
@@ -57,40 +76,60 @@ const ToolsDirectory = () => {
           </div>
 
           {/* Category List */}
-          <div className="cyber-panel p-4 max-h-[60vh] overflow-y-auto custom-scrollbar">
-            <h3 className="text-xs font-mono text-[#A7B0BC] uppercase tracking-wider mb-4 px-2">
+          <div className="cyber-panel p-4 max-h-[60vh] flex flex-col">
+            <h3 className="text-xs font-mono text-[#A7B0BC] uppercase tracking-wider mb-4 px-2 flex items-center gap-2 shrink-0">
+              <Layers className="w-4 h-4 text-[#39FF14]" />
               Categories
             </h3>
-            <div className="space-y-1">
+            <div className="overflow-y-auto custom-scrollbar pr-2 flex-1 space-y-1">
               <button
                 onClick={() => setSelectedCategory('all')}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all duration-300 ${
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition-all duration-300 group ${
                   selectedCategory === 'all'
-                    ? 'bg-[rgba(57,255,20,0.1)] text-[#39FF14]'
-                    : 'text-[#F2F5F9] hover:bg-[rgba(243,245,249,0.05)]'
+                    ? 'bg-[rgba(57,255,20,0.1)] border border-[rgba(57,255,20,0.2)] text-[#39FF14] shadow-[inset_0_0_15px_rgba(57,255,20,0.05)]'
+                    : 'text-[#F2F5F9] border border-transparent hover:bg-[rgba(243,245,249,0.05)] hover:border-[rgba(243,245,249,0.1)]'
                 }`}
               >
-                <span>All Tools</span>
-                <span className="text-xs font-mono px-2 py-0.5 bg-[#05060B] rounded border border-[rgba(243,245,249,0.1)]">
+                <div className="flex items-center gap-3">
+                  <Terminal className={`w-4 h-4 transition-colors ${selectedCategory === 'all' ? 'text-[#39FF14]' : 'text-[#A7B0BC] group-hover:text-[#F2F5F9]'}`} />
+                  <span>All Tools</span>
+                </div>
+                <span className={`text-xs font-mono px-2 py-0.5 rounded border transition-colors ${
+                  selectedCategory === 'all'
+                    ? 'bg-[#39FF14]/10 border-[#39FF14]/30 text-[#39FF14]'
+                    : 'bg-[#05060B] border-[rgba(243,245,249,0.1)] text-[#A7B0BC]'
+                }`}>
                   {tools.length}
                 </span>
               </button>
-              {categories.map((cat) => (
-                <button
-                  key={cat.id}
-                  onClick={() => setSelectedCategory(cat.id)}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all duration-300 ${
-                    selectedCategory === cat.id
-                      ? 'bg-[rgba(57,255,20,0.1)] text-[#39FF14]'
-                      : 'text-[#F2F5F9] hover:bg-[rgba(243,245,249,0.05)]'
-                  }`}
-                >
-                  <span className="truncate pr-3">{cat.name}</span>
-                  <span className="text-xs font-mono px-2 py-0.5 bg-[#05060B] rounded border border-[rgba(243,245,249,0.1)]">
-                    {cat.toolCount}
-                  </span>
-                </button>
-              ))}
+              {categories.map((cat) => {
+                const Icon = categoryIcons[cat.id] || Terminal;
+                const isSelected = selectedCategory === cat.id;
+                
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => setSelectedCategory(cat.id)}
+                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition-all duration-300 group ${
+                      isSelected
+                        ? 'bg-[rgba(57,255,20,0.1)] border border-[rgba(57,255,20,0.2)] text-[#39FF14] shadow-[inset_0_0_15px_rgba(57,255,20,0.05)]'
+                        : 'text-[#F2F5F9] border border-transparent hover:bg-[rgba(243,245,249,0.05)] hover:border-[rgba(243,245,249,0.1)]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 truncate">
+                      <Icon className={`w-4 h-4 shrink-0 transition-colors ${isSelected ? 'text-[#39FF14]' : 'text-[#A7B0BC] group-hover:text-[#F2F5F9]'}`} />
+                      <span className="truncate pr-3">{cat.name}</span>
+                    </div>
+                    <span className={`text-xs font-mono px-2 py-0.5 rounded border transition-colors shrink-0 ${
+                      isSelected
+                        ? 'bg-[#39FF14]/10 border-[#39FF14]/30 text-[#39FF14]'
+                        : 'bg-[#05060B] border-[rgba(243,245,249,0.1)] text-[#A7B0BC]'
+                    }`}>
+                      {cat.toolCount}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -156,11 +195,10 @@ const ToolsDirectory = () => {
                   </ul>
                 </div>
 
-                {/* Actions */}
                 <div className="pt-4 mt-auto">
                   <button 
                     onClick={() => setSelectedTool(tool)}
-                    className="cyber-btn w-full justify-center flex items-center gap-2 group"
+                    className="w-full flex items-center justify-center gap-2 px-6 py-3 font-mono text-sm font-bold uppercase tracking-wider text-[#39FF14] bg-[rgba(57,255,20,0.05)] border border-[rgba(57,255,20,0.3)] rounded-lg hover:bg-[rgba(57,255,20,0.15)] hover:border-[#39FF14] hover:shadow-[0_0_15px_rgba(57,255,20,0.2)] transition-all group"
                   >
                     View Full Tool Documentation
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -186,7 +224,5 @@ const ToolsDirectory = () => {
   );
 };
 
-// We need an arrow right icon
-import { ArrowRight } from 'lucide-react';
 
 export default ToolsDirectory;

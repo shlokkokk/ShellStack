@@ -17,20 +17,20 @@ const ModuleDetailModal = ({ module, isOpen, onClose }: ModuleDetailModalProps) 
 
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      document.documentElement.style.overflow = 'hidden';
+      document.body.classList.add('no-scroll');
+      
       // Expand first topic by default
       if (module && module.topics.length > 0) {
         setExpandedTopics([module.topics[0].id]);
       }
-    } else {
-      document.body.style.overflow = 'auto';
-      document.documentElement.style.overflow = 'auto';
+
+      return () => {
+        const activeModals = document.querySelectorAll('[data-modal-open="true"]');
+        if (activeModals.length <= 1) {
+          document.body.classList.remove('no-scroll');
+        }
+      };
     }
-    return () => {
-      document.body.style.overflow = 'auto';
-      document.documentElement.style.overflow = 'auto';
-    };
   }, [isOpen, module]);
 
   useEffect(() => {
@@ -52,7 +52,10 @@ const ModuleDetailModal = ({ module, isOpen, onClose }: ModuleDetailModalProps) 
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div 
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+      data-modal-open="true"
+    >
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-[#05060B]/90 backdrop-blur-sm"

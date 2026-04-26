@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Copy, Check, Terminal, ExternalLink, BookOpen, AlertTriangle, Zap, Target } from 'lucide-react';
 import type { Tool } from '../data/kaliTools';
+import InteractiveCommandBuilder from './InteractiveCommandBuilder';
 
 interface ToolDetailModalProps {
   tool: Tool | null;
@@ -22,13 +23,14 @@ const ToolDetailModal = ({ tool, isOpen, onClose }: ToolDetailModalProps) => {
 
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
+      document.body.classList.add('no-scroll');
+      return () => {
+        const activeModals = document.querySelectorAll('[data-modal-open="true"]');
+        if (activeModals.length <= 1) {
+          document.body.classList.remove('no-scroll');
+        }
+      };
     }
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
   }, [isOpen]);
 
   useEffect(() => {
@@ -58,7 +60,10 @@ const ToolDetailModal = ({ tool, isOpen, onClose }: ToolDetailModalProps) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div 
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 pt-20"
+      data-modal-open="true"
+    >
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-[#05060B]/90 backdrop-blur-sm"
@@ -237,13 +242,28 @@ const ToolDetailModal = ({ tool, isOpen, onClose }: ToolDetailModalProps) => {
           )}
 
           {activeTab === 'commands' && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-bold text-[#F2F5F9] flex items-center gap-2">
-                <Terminal className="w-5 h-5 text-[#39FF14]" />
-                Essential Commands
-              </h3>
-              
-              <div className="space-y-3">
+            <div className="space-y-8">
+              {/* Interactive Builders */}
+              {tool.interactiveCommands && tool.interactiveCommands.length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-bold text-[#F2F5F9] flex items-center gap-2 mb-2">
+                    <Zap className="w-5 h-5 text-[#00F0FF]" />
+                    Interactive Command Builders
+                  </h3>
+                  {tool.interactiveCommands.map((interactiveCmd, index) => (
+                    <InteractiveCommandBuilder key={index} command={interactiveCmd} />
+                  ))}
+                </div>
+              )}
+
+              {/* Static Commands */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-bold text-[#F2F5F9] flex items-center gap-2">
+                  <Terminal className="w-5 h-5 text-[#39FF14]" />
+                  Essential Commands
+                </h3>
+                
+                <div className="space-y-3">
                 {tool.commands.map((cmd, index) => (
                   <div
                     key={index}
@@ -294,6 +314,7 @@ const ToolDetailModal = ({ tool, isOpen, onClose }: ToolDetailModalProps) => {
                 </div>
               )}
             </div>
+          </div>
           )}
 
           {activeTab === 'info' && (
