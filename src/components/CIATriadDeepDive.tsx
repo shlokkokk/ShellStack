@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, Lock, Activity, X, ChevronRight } from 'lucide-react';
+import { Shield, Lock, Activity, X } from 'lucide-react';
 
 interface Props {
   onClose: () => void;
