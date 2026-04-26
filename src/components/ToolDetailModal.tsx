@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { X, Copy, Check, Terminal, ExternalLink, BookOpen, AlertTriangle, Zap, Target } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { X, Copy, Check, Terminal, ExternalLink, BookOpen, AlertTriangle, Zap, Target, ArrowDown } from 'lucide-react';
 import type { Tool } from '../data/kaliTools';
 import InteractiveCommandBuilder from './InteractiveCommandBuilder';
 
@@ -12,6 +12,28 @@ interface ToolDetailModalProps {
 const ToolDetailModal = ({ tool, isOpen, onClose }: ToolDetailModalProps) => {
   const [copiedCommand, setCopiedCommand] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'commands' | 'info' | 'examples' | 'guide'>('commands');
+  const [canScroll, setCanScroll] = useState(false);
+  const [hasScrolled, setHasScrolled] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const checkScroll = () => {
+    if (scrollRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+      setCanScroll(scrollHeight - scrollTop > clientHeight + 10);
+      if (scrollTop > 20) {
+        setHasScrolled(true);
+      }
+    }
+  };
+
+  useEffect(() => {
+    setHasScrolled(false);
+    checkScroll();
+    // Re-check after a short delay to account for content rendering/images
+    setTimeout(checkScroll, 100);
+    window.addEventListener('resize', checkScroll);
+    return () => window.removeEventListener('resize', checkScroll);
+  }, [activeTab, tool]);
 
   useEffect(() => {
     if (tool?.detailedReport) {
@@ -129,7 +151,11 @@ const ToolDetailModal = ({ tool, isOpen, onClose }: ToolDetailModalProps) => {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 scrollbar-hide">
+        <div 
+          ref={scrollRef}
+          onScroll={checkScroll}
+          className="flex-1 overflow-y-auto p-6 scrollbar-hide relative"
+        >
           {activeTab === 'guide' && tool.detailedReport && (
             <div className="space-y-8 pb-8">
               {/* Legal Warning */}
@@ -416,6 +442,18 @@ const ToolDetailModal = ({ tool, isOpen, onClose }: ToolDetailModalProps) => {
               </div>
             </div>
           )}
+        </div>
+
+        {/* Scroll Indicator Fade */}
+        <div 
+          className={`absolute bottom-[61px] left-0 right-0 h-16 bg-gradient-to-t from-[#05060B] to-transparent pointer-events-none flex items-end justify-center pb-2 transition-opacity duration-300 ${
+            (canScroll && !hasScrolled) ? 'opacity-100' : 'opacity-0'
+          }`}
+        >
+          <span className="text-[#39FF14] text-[10px] font-mono uppercase tracking-widest animate-bounce flex flex-col items-center gap-1 opacity-70">
+            Scroll for more
+            <ArrowDown className="w-3 h-3" />
+          </span>
         </div>
 
         {/* Footer */}
