@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { tools, categories, searchTools, type Tool } from '../data/kaliTools';
 import { 
   Terminal, Search, ChevronRight, Code, Info, TerminalSquare, Layers, 
   Globe, Database, Key, Wifi, Zap, Users, FileText, Cpu, Eye, Radio, Fingerprint, ShieldAlert, Crosshair, ArrowRight
 } from 'lucide-react';
 import ToolDetailModal from '../components/ToolDetailModal'; 
+import { Skeleton } from '../components/ui/skeleton';
 
 const categoryIcons: Record<string, React.ElementType> = {
   'information-gathering': Eye,
@@ -28,6 +29,9 @@ const ToolsDirectory = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedTool, setSelectedTool] = useState<Tool | null>(null);
+  const [visibleTools, setVisibleTools] = useState<Tool[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
 
   // Use scored search results and then apply category filtering.
   const filteredTools = useMemo(() => {
@@ -37,6 +41,21 @@ const ToolsDirectory = () => {
       (tool) => selectedCategory === 'all' || tool.category === selectedCategory
     );
   }, [searchQuery, selectedCategory]);
+
+  useEffect(() => {
+    if (!hasSearched) {
+      setVisibleTools(filteredTools);
+      return;
+    }
+
+    setIsSearching(true);
+    const timeout = window.setTimeout(() => {
+      setVisibleTools(filteredTools);
+      setIsSearching(false);
+    }, 220);
+
+    return () => window.clearTimeout(timeout);
+  }, [filteredTools, hasSearched]);
 
   return (
     <div className="relative w-full pt-28 pb-20 px-6 lg:px-12 max-w-screen-2xl mx-auto">
@@ -67,7 +86,10 @@ const ToolsDirectory = () => {
               type="text"
               placeholder="Search tools..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setHasSearched(true);
+                setSearchQuery(e.target.value);
+              }}
               className="w-full pl-11 pr-4 py-3 bg-[#0B0E16] border border-[rgba(243,245,249,0.08)] rounded-xl text-sm text-[#F2F5F9] placeholder:text-[#A7B0BC]/50 focus:outline-none focus:border-[#39FF14] transition-colors"
             />
           </div>
@@ -133,8 +155,37 @@ const ToolsDirectory = () => {
 
         {/* Main Content: Tools Grid */}
         <div className="flex-1 w-full flex flex-col gap-6 lg:gap-8">
-          {filteredTools.length > 0 ? (
-            filteredTools.map((tool) => (
+          {isSearching ? (
+            Array.from({ length: 3 }).map((_, idx) => (
+              <div key={`skeleton-${idx}`} className="cyber-panel p-6 lg:p-8 flex flex-col gap-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[rgba(243,245,249,0.08)] pb-5">
+                  <div className="w-full sm:w-3/4 space-y-2.5">
+                    <Skeleton className="h-7 w-2/3 bg-[rgba(243,245,249,0.12)]" />
+                    <Skeleton className="h-4 w-full bg-[rgba(243,245,249,0.08)]" />
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    <Skeleton className="h-6 w-16 bg-[rgba(57,255,20,0.12)]" />
+                    <Skeleton className="h-6 w-20 bg-[rgba(57,255,20,0.12)]" />
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <Skeleton className="h-4 w-40 bg-[rgba(243,245,249,0.08)]" />
+                  <Skeleton className="h-14 w-full bg-[rgba(243,245,249,0.06)]" />
+                  <Skeleton className="h-14 w-full bg-[rgba(243,245,249,0.06)]" />
+                </div>
+
+                <div className="space-y-3">
+                  <Skeleton className="h-4 w-44 bg-[rgba(243,245,249,0.08)]" />
+                  <Skeleton className="h-4 w-4/5 bg-[rgba(243,245,249,0.06)]" />
+                  <Skeleton className="h-4 w-3/5 bg-[rgba(243,245,249,0.06)]" />
+                </div>
+
+                <Skeleton className="h-11 w-full bg-[rgba(57,255,20,0.1)]" />
+              </div>
+            ))
+          ) : visibleTools.length > 0 ? (
+            visibleTools.map((tool) => (
               <div key={tool.id} className="cyber-panel p-6 lg:p-8 flex flex-col gap-6 hover:border-[rgba(57,255,20,0.3)] transition-all">
                 {/* Tool Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[rgba(243,245,249,0.08)] pb-5">

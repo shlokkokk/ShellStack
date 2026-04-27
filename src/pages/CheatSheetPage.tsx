@@ -1,8 +1,68 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { gsap } from 'gsap';
-import { Copy, Check, Search, Target, Activity, ShieldCheck, Wifi, Fingerprint } from 'lucide-react';
+import {
+  Copy,
+  Check,
+  Search,
+  Target,
+  Activity,
+  ShieldCheck,
+  Wifi,
+  Fingerprint,
+  Globe,
+  Terminal,
+  Key,
+  Folder,
+  Shield,
+  ArrowRight,
+  Database,
+  Cpu,
+  Crosshair,
+  Radio,
+  BookOpen,
+  Users,
+  Zap,
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { masterCheatSheet } from '../data/masterCheatSheet';
+
+const categoryIconMap: Record<string, React.ElementType> = {
+  recon: Search,
+  scanning: Radio,
+  web: Globe,
+  'reverse-shells': Terminal,
+  passwords: Key,
+  transfers: Folder,
+  'linux-privesc': Shield,
+  'win-privesc': ShieldCheck,
+  pivoting: ArrowRight,
+  'active-directory': Users,
+  wireless: Wifi,
+  'post-exploit': Target,
+  crypto: Key,
+  metasploit: Crosshair,
+  payloads: Zap,
+  forensics: Fingerprint,
+  traffic: Activity,
+  'linux-essentials': Terminal,
+  'exploit-dev': Cpu,
+  'api-pentest': Database,
+  'cloud-aws': Globe,
+  'cloud-azure-gcp': Globe,
+  containers: Database,
+  'ad-advanced': ShieldCheck,
+  'red-team': Target,
+  'mobile-android': Activity,
+  'mobile-ios': Activity,
+  'ics-scada': Cpu,
+  'iot-hardware': Cpu,
+  'social-engineering': Users,
+  'bin-exploit-adv': Crosshair,
+};
+
+const getCategoryIcon = (categoryId: string): React.ElementType => {
+  return categoryIconMap[categoryId] || BookOpen;
+};
 
 const CheatSheetPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -136,6 +196,9 @@ const CheatSheetPage = () => {
             {/* Navigation List */}
             <nav className="p-4 space-y-2.5">
               {filteredCategories.map((cat, idx) => (
+                (() => {
+                  const CategoryIcon = getCategoryIcon(cat.id);
+                  return (
                 <button
                   key={cat.id}
                   onClick={() => setActiveCategory(cat.id)}
@@ -152,17 +215,27 @@ const CheatSheetPage = () => {
                   <div className={`flex-shrink-0 w-10 h-10 rounded-md flex items-center justify-center text-xl transition-all ${
                     activeCategory === cat.id ? 'bg-[#4ade80]/20 scale-110' : 'bg-white/5 group-hover:bg-white/10'
                   }`}>
-                    <span className="filter drop-shadow-[0_0_8px_rgba(255,255,255,0.1)]">{cat.icon}</span>
+                    <CategoryIcon className="w-5 h-5 filter drop-shadow-[0_0_8px_rgba(255,255,255,0.1)]" />
                   </div>
 
                   <div className="flex-grow text-left">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-mono font-black tracking-widest uppercase">
+                      <span className={`text-[10px] font-mono font-black tracking-widest uppercase ${
+                        activeCategory === cat.id ? 'text-[#eafff2]' : 'text-[#f1f5f9] group-hover:text-white'
+                      }`}>
                         {cat.name.split(' ')[0]}
                       </span>
-                      <span className="text-[8px] font-mono opacity-30">0{idx + 1}</span>
+                      <span className={`text-[10px] font-mono font-bold tracking-wider ${
+                        activeCategory === cat.id ? 'text-[#b8ffcf]' : 'text-[#e2e8f0] group-hover:text-white'
+                      }`}>
+                        0{idx + 1}
+                      </span>
                     </div>
-                    <div className={`text-[9px] font-mono mt-0.5 truncate max-w-[150px] ${activeCategory === cat.id ? 'text-[#4ade80]/60' : 'text-[#94a3b8]/40'}`}>
+                    <div className={`text-[10px] font-mono mt-0.5 truncate max-w-[150px] ${
+                      activeCategory === cat.id
+                        ? 'text-[#eafff2]'
+                        : 'text-[#f1f5f9] group-hover:text-white'
+                    }`}>
                       {cat.name.split(' ').slice(1).join(' ')}
                     </div>
                   </div>
@@ -175,6 +248,8 @@ const CheatSheetPage = () => {
                     </div>
                   )}
                 </button>
+                  );
+                })()
               ))}
             </nav>
 
@@ -213,13 +288,16 @@ const CheatSheetPage = () => {
           {currentCategory ? (
             <div className="space-y-12">
               {/* Category Lead */}
+              {(() => {
+                const CurrentCategoryIcon = getCategoryIcon(currentCategory.id);
+                return (
               <div className="relative cyber-panel p-10 overflow-hidden group bg-[#0B0E16]/60">
-                <div className="absolute -top-10 -right-10 text-[180px] opacity-[0.02] group-hover:opacity-[0.04] transition-opacity pointer-events-none select-none grayscale">
-                  {currentCategory.icon}
+                <div className="absolute -top-10 -right-10 opacity-[0.03] group-hover:opacity-[0.06] transition-opacity pointer-events-none select-none">
+                  <CurrentCategoryIcon className="w-44 h-44" />
                 </div>
                 <div className="flex flex-col md:flex-row md:items-center gap-8 relative z-10">
-                  <div className="w-20 h-20 bg-gradient-to-br from-[#4ade80]/20 to-[#4ade80]/5 rounded-2xl flex items-center justify-center text-4xl shadow-[0_0_40px_rgba(74,222,128,0.15)] border border-[#4ade80]/20">
-                    {currentCategory.icon}
+                  <div className="w-20 h-20 bg-gradient-to-br from-[#4ade80]/20 to-[#4ade80]/5 rounded-2xl flex items-center justify-center shadow-[0_0_40px_rgba(74,222,128,0.15)] border border-[#4ade80]/20">
+                    <CurrentCategoryIcon className="w-10 h-10 text-[#4ade80]" />
                   </div>
                   <div>
                     <div className="flex items-center gap-3 mb-2">
@@ -231,6 +309,8 @@ const CheatSheetPage = () => {
                   </div>
                 </div>
               </div>
+                );
+              })()}
 
               {/* Payload Sections */}
               {currentCategory.sections.map((section) => (
