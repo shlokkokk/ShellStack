@@ -27,12 +27,20 @@ const ToolDetailModal = ({ tool, isOpen, onClose }: ToolDetailModalProps) => {
   };
 
   useEffect(() => {
+    if (scrollRef.current) {
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      scrollRef.current.scrollTo({ top: 0, behavior: prefersReducedMotion ? 'auto' : 'smooth' });
+    }
+
     setHasScrolled(false);
     checkScroll();
     // Re-check after a short delay to account for content rendering/images
-    setTimeout(checkScroll, 100);
+    const timer = window.setTimeout(checkScroll, 100);
     window.addEventListener('resize', checkScroll);
-    return () => window.removeEventListener('resize', checkScroll);
+    return () => {
+      window.removeEventListener('resize', checkScroll);
+      window.clearTimeout(timer);
+    };
   }, [activeTab, tool]);
 
   useEffect(() => {
