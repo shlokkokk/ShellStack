@@ -138,49 +138,97 @@ const KaliHub = ({ onToolSelect }: KaliHubProps) => {
       <div className="w-full px-6 lg:px-12">
         {/* Intro Context Block */}
         <div className="mb-12 lg:mb-16 relative z-20">
-          <div className="relative overflow-hidden">
-            <div className="absolute -top-20 -left-20 w-60 h-60 rounded-full bg-[radial-gradient(circle,rgba(57,255,20,0.12)_0%,rgba(57,255,20,0)_70%)] pointer-events-none" />
-            <div className="absolute -bottom-24 right-0 w-72 h-72 rounded-full bg-[radial-gradient(circle,rgba(34,211,238,0.12)_0%,rgba(34,211,238,0)_70%)] pointer-events-none" />
-
-            <div className="relative">
-              <span className="text-xs font-mono text-[#39FF14] uppercase tracking-[0.28em]">
-                Platform Overview
+          <div className="relative overflow-hidden rounded-[28px] border border-[rgba(243,245,249,0.08)] bg-[linear-gradient(135deg,rgba(2,6,23,0.96)_0%,rgba(5,10,24,0.92)_45%,rgba(4,18,24,0.9)_100%)] px-6 py-8 shadow-[0_30px_80px_rgba(0,0,0,0.35)] lg:px-10 lg:py-10">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(57,255,20,0.13),transparent_28%),radial-gradient(circle_at_78%_22%,rgba(34,211,238,0.18),transparent_20%),linear-gradient(rgba(57,255,20,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(57,255,20,0.06)_1px,transparent_1px)] bg-[length:auto,auto,72px_72px,72px_72px] opacity-70 pointer-events-none" />
+            <div className="absolute inset-y-0 right-[18%] w-px bg-gradient-to-b from-transparent via-[rgba(34,211,238,0.5)] to-transparent pointer-events-none hidden lg:block" />
+            <div className="absolute top-8 right-8 hidden lg:flex items-center gap-2 rounded-full border border-[rgba(34,211,238,0.2)] bg-[rgba(5,10,24,0.82)] px-3 py-1.5 backdrop-blur-sm">
+              <div className="h-2 w-2 rounded-full bg-[#39FF14] shadow-[0_0_12px_rgba(57,255,20,0.9)]" />
+              <span className="text-[10px] font-mono uppercase tracking-[0.24em] text-[#C8F9FF]">
+                foundation online
               </span>
-              <h2 className="mt-3 text-4xl lg:text-6xl font-black tracking-tight text-[#F2F5F9] leading-[0.95]">
-                Learn the base.
-                <br />
-                <span className="text-[#39FF14]">Then run the tools.</span>
-              </h2>
-              <p className="mt-4 text-base lg:text-lg text-[#A7B0BC] max-w-3xl leading-relaxed">
-                Before category deep-dives, get the foundation clear: Linux is the operating system core, and Kali Linux is
-                a security-focused distro built for testing and assessment workflows.
-              </p>
             </div>
 
-            <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-              <article className="border-l-2 border-[rgba(57,255,20,0.35)] pl-5 lg:pl-6">
-                <div className="flex items-center gap-2 mb-2">
-                  <Cpu className="w-4 h-4 text-[#39FF14]" />
-                  <h3 className="text-xl lg:text-2xl font-bold text-[#F2F5F9]">Linux</h3>
+            <div className="relative grid gap-8 lg:grid-cols-[minmax(0,1.25fr)_minmax(340px,0.9fr)] lg:items-end">
+              <div className="max-w-4xl">
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-[rgba(57,255,20,0.22)] bg-[rgba(57,255,20,0.08)] px-3 py-1.5 text-[11px] font-mono uppercase tracking-[0.28em] text-[#39FF14]">
+                    <Terminal className="h-3.5 w-3.5" />
+                    Platform Overview
+                  </span>
+                  <span className="inline-flex items-center gap-2 rounded-full border border-[rgba(243,245,249,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-1.5 text-[11px] font-mono uppercase tracking-[0.24em] text-[#A7B0BC]">
+                    Linux core
+                    <ArrowRight className="h-3.5 w-3.5 text-[#22d3ee]" />
+                    Kali workflow
+                  </span>
                 </div>
-                <p className="text-[#A7B0BC] leading-relaxed">
-                  Linux is an open-source operating system used across servers, cloud infrastructure, desktops, and labs.
-                  It is trusted for stability, granular permissions, and command-line power.
-                </p>
-                <p className="mt-3 text-sm font-mono text-[#39FF14]/90">Open source. Modular. Built for control.</p>
-              </article>
 
-              <article className="border-l-2 border-[rgba(34,211,238,0.35)] pl-5 lg:pl-6">
-                <div className="flex items-center gap-2 mb-2">
-                  <Lock className="w-4 h-4 text-[#22d3ee]" />
-                  <h3 className="text-xl lg:text-2xl font-bold text-[#F2F5F9]">Kali Linux</h3>
-                </div>
-                <p className="text-[#A7B0BC] leading-relaxed">
-                  Kali Linux is a Debian-based distribution tailored for penetration testing, digital forensics, and
-                  security auditing. It bundles specialized tools so professionals can assess and harden systems faster.
+                <h2 className="mt-5 max-w-5xl text-4xl font-black uppercase tracking-[-0.04em] text-[#F2F5F9] leading-[0.9] sm:text-5xl lg:text-7xl">
+                  Master the
+                  <span className="mx-3 text-[#39FF14] drop-shadow-[0_0_18px_rgba(57,255,20,0.28)]">system.</span>
+                  <br />
+                  Command the
+                  <span className="mx-3 text-[#22d3ee] drop-shadow-[0_0_20px_rgba(34,211,238,0.22)]">toolkit.</span>
+                </h2>
+
+                <p className="mt-5 max-w-3xl text-base leading-relaxed text-[#A7B0BC] lg:text-lg">
+                  Strong security work starts below the tools. Learn how Linux behaves first, then use Kali Linux as a
+                  purpose-built environment for testing, auditing, and offensive workflows.
                 </p>
-                <p className="mt-3 text-sm font-mono text-[#22d3ee]/90">Security testing distro. Practical by default.</p>
-              </article>
+
+                <div className="mt-7 flex flex-wrap gap-3">
+                  {[
+                    'Permissions, processes, and shell fluency',
+                    'Debian-based testing environment',
+                    'Fast pivot from fundamentals to execution',
+                  ].map((item) => (
+                    <div
+                      key={item}
+                      className="inline-flex items-center gap-2 rounded-full border border-[rgba(243,245,249,0.08)] bg-[rgba(255,255,255,0.03)] px-4 py-2 text-sm text-[#D7DEE7] backdrop-blur-sm"
+                    >
+                      <div className="h-1.5 w-1.5 rounded-full bg-[#39FF14]" />
+                      <span>{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid gap-4">
+                <article className="relative overflow-hidden rounded-[24px] border border-[rgba(57,255,20,0.14)] bg-[linear-gradient(180deg,rgba(57,255,20,0.08)_0%,rgba(8,12,20,0.92)_100%)] p-5 lg:p-6">
+                  <div className="absolute right-4 top-4 rounded-full border border-[rgba(57,255,20,0.18)] bg-[rgba(57,255,20,0.08)] p-2">
+                    <Cpu className="h-4 w-4 text-[#39FF14]" />
+                  </div>
+                  <div className="mb-3 flex items-center gap-2">
+                    <span className="text-[11px] font-mono uppercase tracking-[0.28em] text-[#39FF14]">Layer 01</span>
+                    <div className="h-px flex-1 bg-gradient-to-r from-[rgba(57,255,20,0.35)] to-transparent" />
+                  </div>
+                  <h3 className="text-2xl font-black uppercase tracking-tight text-[#F2F5F9]">Linux</h3>
+                  <p className="mt-3 text-sm leading-relaxed text-[#A7B0BC] lg:text-base">
+                    Linux is the operating system layer underneath the workflow. It gives you control over files,
+                    permissions, networking, packages, and the shell that powers serious hands-on security work.
+                  </p>
+                  <p className="mt-4 font-mono text-xs uppercase tracking-[0.22em] text-[#89FF71]">
+                    Open source. Precise control. Built for depth.
+                  </p>
+                </article>
+
+                <article className="relative overflow-hidden rounded-[24px] border border-[rgba(34,211,238,0.16)] bg-[linear-gradient(180deg,rgba(34,211,238,0.08)_0%,rgba(8,12,20,0.94)_100%)] p-5 lg:p-6">
+                  <div className="absolute right-4 top-4 rounded-full border border-[rgba(34,211,238,0.2)] bg-[rgba(34,211,238,0.08)] p-2">
+                    <Lock className="h-4 w-4 text-[#22d3ee]" />
+                  </div>
+                  <div className="mb-3 flex items-center gap-2">
+                    <span className="text-[11px] font-mono uppercase tracking-[0.28em] text-[#22d3ee]">Layer 02</span>
+                    <div className="h-px flex-1 bg-gradient-to-r from-[rgba(34,211,238,0.35)] to-transparent" />
+                  </div>
+                  <h3 className="text-2xl font-black uppercase tracking-tight text-[#F2F5F9]">Kali Linux</h3>
+                  <p className="mt-3 text-sm leading-relaxed text-[#A7B0BC] lg:text-base">
+                    Kali Linux is a Debian-based security distribution that packages the tools, defaults, and workflow
+                    setup used for penetration testing, forensics, reconnaissance, and assessment.
+                  </p>
+                  <p className="mt-4 font-mono text-xs uppercase tracking-[0.22em] text-[#67E8F9]">
+                    Security-focused. Tool-ready. Field-tested.
+                  </p>
+                </article>
+              </div>
             </div>
           </div>
         </div>
