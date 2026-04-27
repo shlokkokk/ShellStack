@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { tools, categories, type Tool } from '../data/kaliTools';
+import { useMemo, useState } from 'react';
+import { tools, categories, searchTools, type Tool } from '../data/kaliTools';
 import { 
   Terminal, Search, ChevronRight, Code, Info, TerminalSquare, Layers, 
   Globe, Database, Key, Wifi, Zap, Users, FileText, Cpu, Eye, Radio, Fingerprint, ShieldAlert, Crosshair, ArrowRight
@@ -29,17 +29,14 @@ const ToolsDirectory = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedTool, setSelectedTool] = useState<Tool | null>(null);
 
-  // Filter tools based on search and category
-  const filteredTools = tools.filter((tool) => {
-    const matchesSearch =
-      tool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      tool.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      tool.tags.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()));
-    
-    const matchesCategory = selectedCategory === 'all' || tool.category === selectedCategory;
-    
-    return matchesSearch && matchesCategory;
-  });
+  // Use scored search results and then apply category filtering.
+  const filteredTools = useMemo(() => {
+    const searchResults = searchQuery.trim() ? searchTools(searchQuery) : searchTools('');
+
+    return searchResults.filter(
+      (tool) => selectedCategory === 'all' || tool.category === selectedCategory
+    );
+  }, [searchQuery, selectedCategory]);
 
   return (
     <div className="relative w-full pt-28 pb-20 px-6 lg:px-12 max-w-screen-2xl mx-auto">

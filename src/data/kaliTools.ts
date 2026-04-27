@@ -197,12 +197,99 @@ export const getToolsByDifficulty = (difficulty: Tool['difficulty']): Tool[] => 
   return tools.filter((tool) => tool.difficulty === difficulty);
 };
 
+const normalizeSearchText = (text: string): string => {
+  return text.toLowerCase().replace(/[\s_-]+/g, '');
+};
+
+const dedupeToolsById = (items: Tool[]): Tool[] => {
+  const uniqueTools = new Map<string, Tool>();
+
+  for (const tool of items) {
+    if (!uniqueTools.has(tool.id)) {
+      uniqueTools.set(tool.id, tool);
+    }
+  }
+
+  return Array.from(uniqueTools.values());
+};
+
+const getSearchScore = (tool: Tool, rawQuery: string): number => {
+  const query = rawQuery.toLowerCase().trim();
+  if (!query) {
+    return 1;
+  }
+
+  const queryNormalized = normalizeSearchText(query);
+  const queryTokens = query.split(/\s+/).filter(Boolean);
+
+  const name = tool.name.toLowerCase();
+  const description = tool.description.toLowerCase();
+  const tags = tool.tags.map((tag) => tag.toLowerCase());
+  const searchBlob = `${name} ${description} ${tags.join(' ')}`;
+  const nameNormalized = normalizeSearchText(name);
+
+  let score = 0;
+
+  if (name === query) {
+    score += 200;
+  }
+  if (nameNormalized === queryNormalized) {
+    score += 180;
+  }
+  if (name.startsWith(query)) {
+    score += 120;
+  }
+  if (name.includes(query)) {
+    score += 90;
+  }
+  if (nameNormalized.includes(queryNormalized)) {
+    score += 100;
+  }
+  if (description.includes(query)) {
+    score += 20;
+  }
+
+  for (const tag of tags) {
+    if (tag === query) {
+      score += 70;
+    } else if (tag.startsWith(query)) {
+      score += 45;
+    } else if (tag.includes(query)) {
+      score += 25;
+    }
+  }
+
+  const matchingTokens = queryTokens.filter((token) => searchBlob.includes(token));
+  score += matchingTokens.length * 15;
+
+  const tokenMatchInName = queryTokens.every((token) => name.includes(token));
+  if (queryTokens.length > 1 && tokenMatchInName) {
+    score += 50;
+  }
+
+  return score;
+};
+
 export const searchTools = (query: string): Tool[] => {
-  const lowerQuery = query.toLowerCase();
-  return tools.filter(
-    (tool) =>
-      tool.name.toLowerCase().includes(lowerQuery) ||
-      tool.description.toLowerCase().includes(lowerQuery) ||
-      tool.tags.some((tag) => tag.toLowerCase().includes(lowerQuery))
-  );
+  const uniqueTools = dedupeToolsById(tools);
+  const trimmedQuery = query.trim();
+
+  if (!trimmedQuery) {
+    return uniqueTools;
+  }
+
+  return uniqueTools
+    .map((tool) => ({
+      tool,
+      score: getSearchScore(tool, trimmedQuery),
+    }))
+    .filter((entry) => entry.score > 0)
+    .sort((a, b) => {
+      if (b.score !== a.score) {
+        return b.score - a.score;
+      }
+
+      return a.tool.name.localeCompare(b.tool.name);
+    })
+    .map((entry) => entry.tool);
 };
