@@ -42,7 +42,7 @@ const InteractiveCommandBuilder = ({ command }: InteractiveCommandBuilderProps) 
   };
 
   return (
-    <div className="cyber-panel p-5 bg-gradient-to-br from-[rgba(11,14,22,0.8)] to-[rgba(5,6,11,0.9)] border border-[rgba(57,255,20,0.2)] shadow-[inset_0_0_20px_rgba(57,255,20,0.02)]">
+    <div className="cyber-panel no-blur p-5 bg-gradient-to-br from-[rgba(11,14,22,0.8)] to-[rgba(5,6,11,0.9)] border border-[rgba(57,255,20,0.2)] shadow-[inset_0_0_20px_rgba(57,255,20,0.02)]">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6 border-b border-[rgba(243,245,249,0.08)] pb-4">
         <div className="p-2 bg-[rgba(57,255,20,0.1)] rounded-lg border border-[rgba(57,255,20,0.3)]">
@@ -126,9 +126,9 @@ const InteractiveCommandBuilder = ({ command }: InteractiveCommandBuilderProps) 
           <div className="absolute inset-0 bg-gradient-to-r from-[rgba(57,255,20,0.02)] to-transparent pointer-events-none" />
           
           <div className="flex items-start justify-between gap-4">
-            <div className="flex items-start gap-3 overflow-x-auto custom-scrollbar pb-2 pt-1">
+            <div className="flex items-start gap-3 overflow-x-auto custom-scrollbar will-change-scroll pb-2 pt-1">
               <Terminal className="w-5 h-5 text-[#39FF14] shrink-0 mt-0.5" />
-              <code className="text-sm font-mono text-[#F2F5F9] whitespace-nowrap">
+              <code className="text-sm font-mono text-[#F2F5F9] whitespace-nowrap select-all">
                 {generatedCommand}
               </code>
             </div>

@@ -197,6 +197,35 @@ export const informationGatheringTools: Tool[] = [
     relatedTools: ['nmap', 'zmap', 'rustscan'],
     installation: 'sudo apt install masscan -y',
     website: 'https://github.com/robertdavidgraham/masscan',
+    interactiveCommands: [
+      {
+        name: 'Masscan Speed Scanner',
+        description: 'Configure ultra-fast asynchronous port scanning across massive IP ranges with rate control and output options.',
+        inputs: [
+          { id: 'target', label: 'Target (IP / CIDR)', type: 'text', defaultValue: '192.168.1.0/24', placeholder: 'e.g., 10.0.0.0/8 or 192.168.1.100' },
+          { id: 'portPreset', label: 'Port Selection', type: 'select', options: ['All Ports (1-65535)', 'Top 100 (--top-ports)', 'Web (80,443,8080,8443)', 'Common (22,80,443,445,3389)', 'Custom'], defaultValue: 'All Ports (1-65535)' },
+          { id: 'customPorts', label: 'Custom Ports', type: 'text', defaultValue: '', placeholder: 'e.g., 22,80,443,3306' },
+          { id: 'rate', label: 'Packet Rate (--rate)', type: 'select', options: ['100 (Slow/Safe)', '1000 (Normal)', '5000 (Fast)', '10000 (Aggressive)', '100000 (Insane)'], defaultValue: '1000 (Normal)', helpText: 'Higher rates scan faster but may trigger IDS or drop packets' },
+          { id: 'banners', label: 'Grab Banners (--banners)', type: 'checkbox', defaultValue: 'false', placeholder: 'Capture service banners' },
+          { id: 'exclude', label: 'Exclude IPs (--exclude)', type: 'text', defaultValue: '', placeholder: 'e.g., 192.168.1.1 or excludes.txt' },
+          { id: 'outputFormat', label: 'Output Format', type: 'select', options: ['None', '-oG (Grepable)', '-oX (XML)', '-oJ (JSON)', '-oL (List)'], defaultValue: 'None' },
+          { id: 'outputFile', label: 'Output File', type: 'text', defaultValue: 'masscan_results', placeholder: 'Filename without extension' }
+        ],
+        generator: (inputs) => {
+          let ports = '-p1-65535';
+          if (inputs.portPreset.includes('--top-ports')) ports = '--top-ports 100';
+          else if (inputs.portPreset.includes('Web')) ports = '-p80,443,8080,8443';
+          else if (inputs.portPreset.includes('Common')) ports = '-p22,80,443,445,3389';
+          else if (inputs.portPreset === 'Custom' && inputs.customPorts) ports = `-p${inputs.customPorts}`;
+          const rate = `--rate=${inputs.rate.split(' ')[0]}`;
+          const banners = inputs.banners === 'true' ? ' --banners' : '';
+          const exclude = inputs.exclude ? ` --exclude ${inputs.exclude}` : '';
+          let output = '';
+          if (inputs.outputFormat !== 'None') output = ` ${inputs.outputFormat.split(' ')[0]} ${inputs.outputFile}`;
+          return `masscan ${ports} ${inputs.target} ${rate}${banners}${exclude}${output}`;
+        }
+      }
+    ]
   },
   {
     id: 'theharvester',
@@ -253,6 +282,26 @@ export const informationGatheringTools: Tool[] = [
     relatedTools: ['amass', 'sublist3r', 'recon-ng', 'maltego', 'spiderfoot', 'dnsenum'],
     installation: 'sudo apt install theharvester -y   # Pre-installed on Kali',
     website: 'https://github.com/laramies/theHarvester',
+    interactiveCommands: [
+      {
+        name: 'theHarvester OSINT Collector',
+        description: 'Harvest emails, subdomains, hosts, and employee names from 30+ public data sources without touching the target.',
+        inputs: [
+          { id: 'domain', label: 'Target Domain (-d)', type: 'text', defaultValue: 'example.com', placeholder: 'e.g., tesla.com, target.org' },
+          { id: 'source', label: 'Data Sources (-b)', type: 'select', options: ['all', 'google', 'bing', 'linkedin', 'shodan', 'github', 'hunter', 'censys', 'google,bing,linkedin', 'google,shodan,github'], defaultValue: 'all' },
+          { id: 'limit', label: 'Result Limit (-l)', type: 'select', options: ['100', '200', '500', '1000', '5000'], defaultValue: '500' },
+          { id: 'dnsResolve', label: 'DNS Resolution (-n)', type: 'checkbox', defaultValue: 'false', placeholder: 'Resolve discovered hosts' },
+          { id: 'output', label: 'Save Output (-f)', type: 'text', defaultValue: '', placeholder: 'e.g., results (saves .xml and .json)' },
+          { id: 'screenshot', label: 'Take Screenshots', type: 'checkbox', defaultValue: 'false', placeholder: 'Capture web screenshots of found hosts' }
+        ],
+        generator: (inputs) => {
+          const dns = inputs.dnsResolve === 'true' ? ' -n' : '';
+          const output = inputs.output ? ` -f ${inputs.output}` : '';
+          const screenshot = inputs.screenshot === 'true' ? ' --screenshot' : '';
+          return `theHarvester -d ${inputs.domain} -b ${inputs.source} -l ${inputs.limit}${dns}${output}${screenshot}`;
+        }
+      }
+    ]
   },
   {
     id: 'amass',
@@ -286,6 +335,31 @@ export const informationGatheringTools: Tool[] = [
     relatedTools: ['sublist3r', 'assetfinder', 'findomain', 'subfinder'],
     installation: 'sudo apt install amass -y   # or: go install github.com/owasp-amass/amass/v4/...@master',
     website: 'https://github.com/OWASP/Amass',
+    interactiveCommands: [
+      {
+        name: 'Amass Attack Surface Mapper',
+        description: 'Configure comprehensive subdomain enumeration using passive OSINT, active DNS probing, and brute-force discovery.',
+        inputs: [
+          { id: 'mode', label: 'Operation Mode', type: 'select', options: ['enum (Enumerate)', 'intel (Discover)', 'db -list (View DB)'], defaultValue: 'enum (Enumerate)' },
+          { id: 'domain', label: 'Target Domain (-d)', type: 'text', defaultValue: 'example.com', placeholder: 'e.g., target.com' },
+          { id: 'scanType', label: 'Scan Type', type: 'select', options: ['Passive Only (-passive)', 'Active (-active)', 'Balanced (Default)'], defaultValue: 'Balanced (Default)' },
+          { id: 'brute', label: 'Brute Force (-brute)', type: 'checkbox', defaultValue: 'false', placeholder: 'DNS brute-force subdomains' },
+          { id: 'wordlist', label: 'Brute Wordlist (-w)', type: 'text', defaultValue: '', placeholder: 'e.g., /usr/share/seclists/Discovery/DNS/subdomains-top1million-5000.txt' },
+          { id: 'output', label: 'Output File (-o)', type: 'text', defaultValue: '', placeholder: 'e.g., amass_results.txt' },
+          { id: 'maxDns', label: 'Max DNS Queries (-max-dns-queries)', type: 'select', options: ['Auto', '1000', '5000', '20000'], defaultValue: 'Auto' }
+        ],
+        generator: (inputs) => {
+          const mode = inputs.mode.split(' ')[0];
+          if (mode === 'db') return 'amass db -list';
+          const scanType = inputs.scanType.includes('-passive') ? ' -passive' : inputs.scanType.includes('-active') ? ' -active' : '';
+          const brute = inputs.brute === 'true' ? ' -brute' : '';
+          const wordlist = inputs.brute === 'true' && inputs.wordlist ? ` -w ${inputs.wordlist}` : '';
+          const output = inputs.output ? ` -o ${inputs.output}` : '';
+          const maxDns = inputs.maxDns !== 'Auto' ? ` -max-dns-queries ${inputs.maxDns}` : '';
+          return `amass ${mode} -d ${inputs.domain}${scanType}${brute}${wordlist}${output}${maxDns}`;
+        }
+      }
+    ]
   },
   {
     id: 'recon-ng',
@@ -352,6 +426,33 @@ export const informationGatheringTools: Tool[] = [
     relatedTools: ['dirb', 'ffuf', 'wfuzz', 'feroxbuster'],
     installation: 'sudo apt install gobuster -y',
     website: 'https://github.com/OJ/gobuster',
+    interactiveCommands: [
+      {
+        name: 'Gobuster Multi-Mode Enumerator',
+        description: 'Configure directory brute-forcing, DNS subdomain enumeration, or virtual host discovery with threading and filtering.',
+        inputs: [
+          { id: 'mode', label: 'Enumeration Mode', type: 'select', options: ['dir (Directories)', 'dns (DNS Subdomains)', 'vhost (Virtual Hosts)', 'fuzz (Fuzz Mode)'], defaultValue: 'dir (Directories)' },
+          { id: 'target', label: 'Target URL / Domain', type: 'text', defaultValue: 'http://example.com', placeholder: 'URL for dir/vhost, domain for dns' },
+          { id: 'wordlist', label: 'Wordlist (-w)', type: 'select', options: ['/usr/share/wordlists/dirb/common.txt', '/usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt', '/usr/share/seclists/Discovery/Web-Content/raft-large-directories.txt', '/usr/share/seclists/Discovery/DNS/subdomains-top1million-5000.txt', 'Custom'], defaultValue: '/usr/share/wordlists/dirb/common.txt' },
+          { id: 'customWordlist', label: 'Custom Wordlist Path', type: 'text', defaultValue: '', placeholder: 'Only if Wordlist = Custom' },
+          { id: 'extensions', label: 'File Extensions (-x)', type: 'text', defaultValue: '', placeholder: 'e.g., php,html,txt,bak,zip', helpText: 'Only for dir mode. Appends extensions to every word.' },
+          { id: 'threads', label: 'Threads (-t)', type: 'select', options: ['10 (Default)', '20', '50', '100'], defaultValue: '50' },
+          { id: 'statusCodes', label: 'Show Status Codes (-s)', type: 'text', defaultValue: '', placeholder: 'e.g., 200,204,301,302,307,401,403', helpText: 'Filter results to only show these codes' },
+          { id: 'output', label: 'Output File (-o)', type: 'text', defaultValue: '', placeholder: 'e.g., gobuster_results.txt' }
+        ],
+        generator: (inputs) => {
+          const mode = inputs.mode.split(' ')[0];
+          const wordlist = inputs.wordlist === 'Custom' && inputs.customWordlist ? inputs.customWordlist : inputs.wordlist;
+          const ext = inputs.extensions && mode === 'dir' ? ` -x ${inputs.extensions}` : '';
+          const threads = ` -t ${inputs.threads.split(' ')[0]}`;
+          const status = inputs.statusCodes ? ` --status-codes ${inputs.statusCodes}` : '';
+          const output = inputs.output ? ` -o ${inputs.output}` : '';
+          if (mode === 'dns') return `gobuster dns -d ${inputs.target} -w ${wordlist}${threads}${output}`;
+          if (mode === 'vhost') return `gobuster vhost -u ${inputs.target} -w ${wordlist}${threads}${output}`;
+          return `gobuster dir -u ${inputs.target} -w ${wordlist}${ext}${threads}${status}${output}`;
+        }
+      }
+    ]
   },
   {
     id: 'ffuf',
@@ -390,6 +491,37 @@ export const informationGatheringTools: Tool[] = [
     relatedTools: ['gobuster', 'wfuzz', 'dirsearch', 'feroxbuster'],
     installation: 'sudo apt install ffuf -y   # or: go install github.com/ffuf/ffuf/v2@latest',
     website: 'https://github.com/ffuf/ffuf',
+    interactiveCommands: [
+      {
+        name: 'ffuf Fuzzing Command Builder',
+        description: 'Build advanced web fuzzing commands for directories, parameters, headers, POST data, and virtual hosts.',
+        inputs: [
+          { id: 'fuzzTarget', label: 'Fuzz Target', type: 'select', options: ['Directory/File (URL/FUZZ)', 'Parameter Value (?param=FUZZ)', 'Virtual Host (Host: FUZZ.domain)', 'POST Data (body FUZZ)', 'Header Value'], defaultValue: 'Directory/File (URL/FUZZ)' },
+          { id: 'url', label: 'Target URL', type: 'text', defaultValue: 'http://example.com/FUZZ', placeholder: 'Include FUZZ keyword where injection occurs' },
+          { id: 'wordlist', label: 'Wordlist (-w)', type: 'select', options: ['/usr/share/wordlists/dirb/common.txt', '/usr/share/seclists/Discovery/Web-Content/raft-large-directories.txt', '/usr/share/seclists/Discovery/Web-Content/common.txt', 'Custom'], defaultValue: '/usr/share/wordlists/dirb/common.txt' },
+          { id: 'customWordlist', label: 'Custom Wordlist', type: 'text', defaultValue: '', placeholder: 'Only if Wordlist = Custom' },
+          { id: 'extensions', label: 'Extensions (-e)', type: 'text', defaultValue: '', placeholder: 'e.g., .php,.html,.txt,.bak' },
+          { id: 'filterCode', label: 'Filter Status Codes (-fc)', type: 'text', defaultValue: '404', placeholder: 'e.g., 404,403,500' },
+          { id: 'matchCode', label: 'Match Status Codes (-mc)', type: 'text', defaultValue: '', placeholder: 'e.g., 200,301 (overrides filter)' },
+          { id: 'filterSize', label: 'Filter Response Size (-fs)', type: 'text', defaultValue: '', placeholder: 'e.g., 0 or 1234' },
+          { id: 'threads', label: 'Threads (-t)', type: 'select', options: ['20', '40 (Default)', '80', '150'], defaultValue: '40 (Default)' },
+          { id: 'method', label: 'HTTP Method (-X)', type: 'select', options: ['GET', 'POST', 'PUT', 'DELETE'], defaultValue: 'GET' },
+          { id: 'recursion', label: 'Recursive (-recursion)', type: 'checkbox', defaultValue: 'false', placeholder: 'Recurse into found directories' }
+        ],
+        generator: (inputs) => {
+          const wordlist = inputs.wordlist === 'Custom' && inputs.customWordlist ? inputs.customWordlist : inputs.wordlist;
+          const ext = inputs.extensions ? ` -e ${inputs.extensions}` : '';
+          const fc = inputs.filterCode ? ` -fc ${inputs.filterCode}` : '';
+          const mc = inputs.matchCode ? ` -mc ${inputs.matchCode}` : '';
+          const fs = inputs.filterSize ? ` -fs ${inputs.filterSize}` : '';
+          const threads = ` -t ${inputs.threads.split(' ')[0]}`;
+          const method = inputs.method !== 'GET' ? ` -X ${inputs.method}` : '';
+          const recursion = inputs.recursion === 'true' ? ' -recursion' : '';
+          const filter = mc || fc; // mc overrides fc
+          return `ffuf -u ${inputs.url} -w ${wordlist}${ext}${filter}${fs}${threads}${method}${recursion}`;
+        }
+      }
+    ]
   },
   {
     id: 'shodan',
@@ -424,6 +556,46 @@ export const informationGatheringTools: Tool[] = [
     relatedTools: ['censys', 'zoomeye', 'fofa'],
     installation: 'pip install shodan   # Requires API key from https://account.shodan.io',
     website: 'https://cli.shodan.io',
+    interactiveCommands: [
+      {
+        name: 'Shodan CLI Query Builder',
+        description: 'Generate advanced Shodan queries to search for specific services, devices, and vulnerabilities without touching the target.',
+        inputs: [
+          { id: 'command', label: 'Command', type: 'select', options: ['search', 'host', 'count', 'honeyscore', 'download', 'stats'], defaultValue: 'search' },
+          { id: 'query', label: 'Search Query / Target', type: 'text', defaultValue: 'apache', placeholder: 'e.g., apache, 8.8.8.8, or "port:3389"' },
+          { id: 'port', label: 'Filter: Port', type: 'text', defaultValue: '', placeholder: 'e.g., 22, 80, 445' },
+          { id: 'os', label: 'Filter: OS', type: 'text', defaultValue: '', placeholder: 'e.g., windows, linux' },
+          { id: 'country', label: 'Filter: Country', type: 'text', defaultValue: '', placeholder: 'e.g., US, IN, CN' },
+          { id: 'vuln', label: 'Filter: Vulnerability', type: 'text', defaultValue: '', placeholder: 'e.g., CVE-2021-44228' },
+          { id: 'fields', label: 'Display Fields (--fields)', type: 'text', defaultValue: 'ip_str,port,org,hostnames', placeholder: 'Comma-separated fields to display' },
+          { id: 'limit', label: 'Result Limit (--limit)', type: 'text', defaultValue: '100', placeholder: 'Number of results to return' }
+        ],
+        generator: (inputs) => {
+          if (inputs.command === 'host' || inputs.command === 'honeyscore') {
+            return `shodan ${inputs.command} ${inputs.query}`;
+          }
+          
+          let filterString = '';
+          if (inputs.port) filterString += ` port:${inputs.port}`;
+          if (inputs.os) filterString += ` os:${inputs.os}`;
+          if (inputs.country) filterString += ` country:${inputs.country}`;
+          if (inputs.vuln) filterString += ` vuln:${inputs.vuln}`;
+          
+          const fullQuery = `"${inputs.query}${filterString}"`.trim();
+          let cmd = `shodan ${inputs.command} ${fullQuery}`;
+          
+          if (inputs.command === 'search') {
+            if (inputs.fields) cmd += ` --fields ${inputs.fields}`;
+            if (inputs.limit && inputs.limit !== '100') cmd += ` --limit ${inputs.limit}`;
+          }
+          if (inputs.command === 'download') {
+             cmd = `shodan download results ${fullQuery}`;
+             if (inputs.limit && inputs.limit !== '100') cmd += ` --limit ${inputs.limit}`;
+          }
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'dnsrecon',
@@ -457,6 +629,37 @@ export const informationGatheringTools: Tool[] = [
     relatedTools: ['dnsenum', 'fierce', 'dig'],
     installation: 'sudo apt install dnsrecon -y   # Pre-installed on Kali',
     website: 'https://github.com/darkoperator/dnsrecon',
+    interactiveCommands: [
+      {
+        name: 'DNSRecon Enumerator',
+        description: 'Construct advanced DNS enumeration commands including zone transfers, brute-forcing, and reverse lookups.',
+        inputs: [
+          { id: 'domain', label: 'Target Domain (-d)', type: 'text', defaultValue: 'example.com', placeholder: 'e.g., target.com' },
+          { id: 'scanType', label: 'Scan Type (-t)', type: 'select', options: ['std (Standard)', 'axfr (Zone Transfer)', 'brt (Brute Force)', 'rvl (Reverse Lookup)', 'snoop (Cache Snoop)', 'zonewalk'], defaultValue: 'std (Standard)' },
+          { id: 'nameserver', label: 'Name Server (-n)', type: 'text', defaultValue: '', placeholder: 'Specific NS to query' },
+          { id: 'wordlist', label: 'Brute Wordlist (-D)', type: 'text', defaultValue: '', placeholder: '/path/to/subdomains.txt', helpText: 'Only used for brt scan type' },
+          { id: 'range', label: 'IP Range (-r)', type: 'text', defaultValue: '', placeholder: 'e.g., 192.168.1.0/24', helpText: 'Only used for rvl scan type' },
+          { id: 'outputFormat', label: 'Output Format', type: 'select', options: ['None', 'CSV (--csv)', 'JSON (--json)'], defaultValue: 'None' },
+          { id: 'outputFile', label: 'Output File', type: 'text', defaultValue: 'dnsrecon_results', placeholder: 'Filename without extension' }
+        ],
+        generator: (inputs) => {
+          let cmd = `dnsrecon`;
+          if (inputs.scanType === 'rvl (Reverse Lookup)' && inputs.range) {
+             cmd += ` -r ${inputs.range}`;
+          } else {
+             cmd += ` -d ${inputs.domain} -t ${inputs.scanType.split(' ')[0]}`;
+             if (inputs.scanType === 'brt (Brute Force)' && inputs.wordlist) cmd += ` -D ${inputs.wordlist}`;
+          }
+          
+          if (inputs.nameserver) cmd += ` -n ${inputs.nameserver}`;
+          
+          if (inputs.outputFormat === 'CSV (--csv)' && inputs.outputFile) cmd += ` --csv ${inputs.outputFile}.csv`;
+          if (inputs.outputFormat === 'JSON (--json)' && inputs.outputFile) cmd += ` --json ${inputs.outputFile}.json`;
+          
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'enum4linux',
@@ -490,6 +693,32 @@ export const informationGatheringTools: Tool[] = [
     relatedTools: ['smbclient', 'crackmapexec', 'rpcclient', 'enum4linux-ng'],
     installation: 'sudo apt install enum4linux -y   # Pre-installed on Kali',
     website: 'https://github.com/CiscoCXSecurity/enum4linux',
+    interactiveCommands: [
+      {
+        name: 'Enum4linux SMB Mapper',
+        description: 'Generate specific enumeration commands for SMB/Samba to extract users, shares, groups, and policies.',
+        inputs: [
+          { id: 'target', label: 'Target IP', type: 'text', defaultValue: '192.168.1.100', placeholder: 'Target Windows/Samba machine' },
+          { id: 'mode', label: 'Enumeration Mode', type: 'select', options: ['All (-a)', 'Users (-U)', 'Shares (-S)', 'Policies (-P)', 'Groups (-G)', 'RID Cycling (-r)'], defaultValue: 'All (-a)' },
+          { id: 'username', label: 'Username (-u)', type: 'text', defaultValue: '', placeholder: 'Leave empty for null session' },
+          { id: 'password', label: 'Password (-p)', type: 'text', defaultValue: '', placeholder: 'Credentials if null session fails' },
+          { id: 'workgroup', label: 'Workgroup/Domain (-w)', type: 'text', defaultValue: '', placeholder: 'Optional domain override' },
+          { id: 'maxRid', label: 'Max RID (-R)', type: 'text', defaultValue: '10000', placeholder: 'Only used for RID cycling (-r)' }
+        ],
+        generator: (inputs) => {
+          const modeFlag = inputs.mode.split(' ')[1].replace(/[()]/g, '');
+          let cmd = `enum4linux ${modeFlag}`;
+          
+          if (inputs.username) cmd += ` -u "${inputs.username}"`;
+          if (inputs.password) cmd += ` -p "${inputs.password}"`;
+          if (inputs.workgroup) cmd += ` -w "${inputs.workgroup}"`;
+          if (modeFlag === '-r' && inputs.maxRid && inputs.maxRid !== '10000') cmd += ` -R ${inputs.maxRid}`;
+          
+          cmd += ` ${inputs.target}`;
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'dnsenum',
@@ -537,6 +766,37 @@ export const informationGatheringTools: Tool[] = [
     relatedTools: ['dnsrecon', 'fierce', 'dig', 'amass'],
     installation: 'sudo apt install dnsenum -y   # Pre-installed on Kali',
     website: 'https://github.com/fwaeytens/dnsenum',
+    interactiveCommands: [
+      {
+        name: 'DNSEnum Suite Builder',
+        description: 'Build comprehensive DNSEnum commands with custom threading, timeout, and output options.',
+        inputs: [
+          { id: 'domain', label: 'Target Domain', type: 'text', defaultValue: 'example.com', placeholder: 'e.g., target.com' },
+          { id: 'mode', label: 'Scan Mode', type: 'select', options: ['Standard', 'Full Enumeration (--enum)', 'Brute Force'], defaultValue: 'Full Enumeration (--enum)' },
+          { id: 'wordlist', label: 'Wordlist (-f)', type: 'text', defaultValue: '/usr/share/wordlists/dnsmap.txt', placeholder: 'Path to subdomain list' },
+          { id: 'threads', label: 'Threads (--threads)', type: 'select', options: ['5', '10', '20', '50'], defaultValue: '10' },
+          { id: 'timeout', label: 'Timeout (-t)', type: 'text', defaultValue: '15', placeholder: 'Seconds to wait for query' },
+          { id: 'noReverse', label: 'Skip Reverse Lookups', type: 'checkbox', defaultValue: 'true', placeholder: '--noreverse' },
+          { id: 'output', label: 'XML Output (-o)', type: 'text', defaultValue: 'dnsenum_results.xml', placeholder: 'Filename for results' }
+        ],
+        generator: (inputs) => {
+          let cmd = 'dnsenum';
+          
+          if (inputs.mode === 'Full Enumeration (--enum)') cmd += ' --enum';
+          if (inputs.mode === 'Brute Force' || inputs.mode === 'Full Enumeration (--enum)') {
+             if (inputs.wordlist) cmd += ` -f ${inputs.wordlist}`;
+          }
+          
+          if (inputs.threads && inputs.threads !== '5') cmd += ` --threads ${inputs.threads}`;
+          if (inputs.timeout && inputs.timeout !== '15') cmd += ` -t ${inputs.timeout}`;
+          if (inputs.noReverse === 'true') cmd += ' --noreverse';
+          if (inputs.output) cmd += ` -o ${inputs.output}`;
+          
+          cmd += ` ${inputs.domain}`;
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'foca',
@@ -616,6 +876,35 @@ export const informationGatheringTools: Tool[] = [
     relatedTools: ['shodan', 'zoomeye', 'crt.sh'],
     installation: 'pip install censys   # Requires API credentials from censys.io',
     website: 'https://search.censys.io',
+    interactiveCommands: [
+      {
+        name: 'Censys Search Query Builder',
+        description: 'Construct advanced Censys queries to find hosts and certificates based on exposed services and metadata.',
+        inputs: [
+          { id: 'command', label: 'Command', type: 'select', options: ['search', 'view ipv4', 'view certs'], defaultValue: 'search' },
+          { id: 'query', label: 'Base Query / IP', type: 'text', defaultValue: 'example.com', placeholder: 'Domain, IP, or search term' },
+          { id: 'port', label: 'Filter: Port', type: 'text', defaultValue: '', placeholder: 'e.g., 443' },
+          { id: 'service', label: 'Filter: Service Name', type: 'text', defaultValue: '', placeholder: 'e.g., HTTP, SSH' },
+          { id: 'country', label: 'Filter: Country Code', type: 'text', defaultValue: '', placeholder: 'e.g., US' },
+          { id: 'limit', label: 'Max Records', type: 'text', defaultValue: '100', placeholder: 'Number of results to fetch' }
+        ],
+        generator: (inputs) => {
+          if (inputs.command.startsWith('view')) {
+            return `censys ${inputs.command} ${inputs.query}`;
+          }
+          
+          let filters = [];
+          if (inputs.port) filters.push(`services.port: ${inputs.port}`);
+          if (inputs.service) filters.push(`services.service_name: ${inputs.service}`);
+          if (inputs.country) filters.push(`location.country_code: ${inputs.country}`);
+          
+          let fullQuery = inputs.query;
+          if (filters.length > 0) fullQuery += ` and ${filters.join(' and ')}`;
+          
+          return `censys search "${fullQuery}" --max-records ${inputs.limit}`;
+        }
+      }
+    ]
   },
   {
     id: 'p0f',
@@ -655,6 +944,30 @@ export const informationGatheringTools: Tool[] = [
     relatedTools: ['nmap', 'wireshark', 'tcpdump', 'ettercap'],
     installation: 'sudo apt install p0f -y   # Pre-installed on Kali',
     website: 'https://lcamtuf.coredump.cx/p0f3/',
+    interactiveCommands: [
+      {
+        name: 'p0f Passive Fingerprinter',
+        description: 'Configure passive network OS fingerprinting for stealthy reconnaissance.',
+        inputs: [
+          { id: 'mode', label: 'Input Mode', type: 'select', options: ['Live Interface (-i)', 'PCAP File (-r)'], defaultValue: 'Live Interface (-i)' },
+          { id: 'target', label: 'Interface / PCAP Path', type: 'text', defaultValue: 'eth0', placeholder: 'e.g., eth0 or capture.pcap' },
+          { id: 'promiscuous', label: 'Promiscuous Mode (-p)', type: 'checkbox', defaultValue: 'false', placeholder: 'Listen to all traffic' },
+          { id: 'daemon', label: 'Daemon Mode (-d)', type: 'checkbox', defaultValue: 'false', placeholder: 'Run in background' },
+          { id: 'output', label: 'Log Output (-o)', type: 'text', defaultValue: 'p0f_log.txt', placeholder: 'Save to file' }
+        ],
+        generator: (inputs) => {
+          let cmd = 'p0f';
+          const flag = inputs.mode === 'Live Interface (-i)' ? '-i' : '-r';
+          cmd += ` ${flag} ${inputs.target}`;
+          
+          if (inputs.mode === 'Live Interface (-i)' && inputs.promiscuous === 'true') cmd += ' -p';
+          if (inputs.daemon === 'true') cmd += ' -d';
+          if (inputs.output) cmd += ` -o ${inputs.output}`;
+          
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'angryipscanner',
@@ -722,6 +1035,38 @@ export const informationGatheringTools: Tool[] = [
     relatedTools: ['snmp-check', 'onesixtyone', 'nmap (snmp-enum script)'],
     installation: 'sudo apt install snmp -y',
     website: 'http://www.net-snmp.org',
+    interactiveCommands: [
+      {
+        name: 'SNMPWalk Enumerator',
+        description: 'Generate advanced SNMP queries to extract routing, hardware, and process data from misconfigured devices.',
+        inputs: [
+          { id: 'target', label: 'Target IP', type: 'text', defaultValue: '192.168.1.100', placeholder: 'IP of SNMP device' },
+          { id: 'version', label: 'SNMP Version (-v)', type: 'select', options: ['1', '2c', '3'], defaultValue: '2c' },
+          { id: 'community', label: 'Community String (-c)', type: 'text', defaultValue: 'public', placeholder: 'Used for v1/v2c' },
+          { id: 'oid', label: 'Target OID', type: 'text', defaultValue: '', placeholder: 'e.g., 1.3.6.1.2.1 (leave blank for full walk)' },
+          { id: 'user', label: 'SNMPv3 Username (-u)', type: 'text', defaultValue: '', placeholder: 'Used for v3 only' },
+          { id: 'authPass', label: 'SNMPv3 Auth Pass (-A)', type: 'text', defaultValue: '', placeholder: 'Used for v3 only' },
+          { id: 'privPass', label: 'SNMPv3 Priv Pass (-X)', type: 'text', defaultValue: '', placeholder: 'Used for v3 only' }
+        ],
+        generator: (inputs) => {
+          let cmd = `snmpwalk -v ${inputs.version}`;
+          
+          if (inputs.version === '3') {
+             cmd += ` -l authPriv`;
+             if (inputs.user) cmd += ` -u ${inputs.user}`;
+             if (inputs.authPass) cmd += ` -a MD5 -A "${inputs.authPass}"`;
+             if (inputs.privPass) cmd += ` -x DES -X "${inputs.privPass}"`;
+          } else {
+             if (inputs.community) cmd += ` -c ${inputs.community}`;
+          }
+          
+          cmd += ` ${inputs.target}`;
+          if (inputs.oid) cmd += ` ${inputs.oid}`;
+          
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'ldapsearch',
@@ -768,6 +1113,37 @@ export const informationGatheringTools: Tool[] = [
     relatedTools: ['bloodhound', 'enum4linux', 'crackmapexec', 'windapsearch'],
     installation: 'sudo apt install ldap-utils -y',
     website: 'https://linux.die.net/man/1/ldapsearch',
+    interactiveCommands: [
+      {
+        name: 'LDAPSearch Query Builder',
+        description: 'Construct powerful LDAP queries to extract users, groups, and AD structures using authenticated or anonymous binds.',
+        inputs: [
+          { id: 'target', label: 'LDAP Server (-h)', type: 'text', defaultValue: '192.168.1.100', placeholder: 'IP of Domain Controller' },
+          { id: 'baseDn', label: 'Base DN (-b)', type: 'text', defaultValue: 'dc=example,dc=local', placeholder: 'e.g., dc=domain,dc=local' },
+          { id: 'bindType', label: 'Bind Type', type: 'select', options: ['Anonymous (-x)', 'Authenticated (-D)'], defaultValue: 'Anonymous (-x)' },
+          { id: 'bindDn', label: 'Bind DN (-D)', type: 'text', defaultValue: '', placeholder: 'e.g., cn=user,dc=example,dc=local' },
+          { id: 'password', label: 'Password (-w)', type: 'text', defaultValue: '', placeholder: 'Password for Bind DN' },
+          { id: 'filter', label: 'LDAP Filter', type: 'text', defaultValue: '', placeholder: 'e.g., (objectclass=user)' },
+          { id: 'attributes', label: 'Attributes to Extract', type: 'text', defaultValue: '', placeholder: 'e.g., sAMAccountName description' }
+        ],
+        generator: (inputs) => {
+          let cmd = `ldapsearch -h ${inputs.target} -b "${inputs.baseDn}"`;
+          
+          if (inputs.bindType === 'Anonymous (-x)') {
+             cmd += ' -x';
+          } else {
+             cmd += ' -x'; // usually required even with -D
+             if (inputs.bindDn) cmd += ` -D "${inputs.bindDn}"`;
+             if (inputs.password) cmd += ` -w "${inputs.password}"`;
+          }
+          
+          if (inputs.filter) cmd += ` "${inputs.filter}"`;
+          if (inputs.attributes) cmd += ` ${inputs.attributes}`;
+          
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'smbmap',
@@ -810,6 +1186,38 @@ export const informationGatheringTools: Tool[] = [
     relatedTools: ['crackmapexec', 'smbclient', 'enum4linux'],
     installation: 'sudo apt install smbmap -y',
     website: 'https://github.com/ShawnDEvans/smbmap',
+    interactiveCommands: [
+      {
+        name: 'SMBMap Execution Engine',
+        description: 'Generate comprehensive commands to map SMB shares, list files recursively, or execute commands via WMI.',
+        inputs: [
+          { id: 'target', label: 'Target IP (-H)', type: 'text', defaultValue: '192.168.1.100', placeholder: 'Target Windows Host' },
+          { id: 'auth', label: 'Authentication', type: 'select', options: ['Null Session', 'Authenticated'], defaultValue: 'Null Session' },
+          { id: 'username', label: 'Username (-u)', type: 'text', defaultValue: '', placeholder: 'Domain user' },
+          { id: 'password', label: 'Password (-p)', type: 'text', defaultValue: '', placeholder: 'Password or NTLM hash' },
+          { id: 'domain', label: 'Domain (-d)', type: 'text', defaultValue: '', placeholder: 'e.g., CORP' },
+          { id: 'action', label: 'Action', type: 'select', options: ['List Shares', 'Recursive List (-r)', 'Execute Command (-x)'], defaultValue: 'List Shares' },
+          { id: 'actionTarget', label: 'Action Target', type: 'text', defaultValue: '', placeholder: 'Share name (for -r) or command (for -x)' }
+        ],
+        generator: (inputs) => {
+          let cmd = `smbmap -H ${inputs.target}`;
+          
+          if (inputs.auth === 'Authenticated') {
+             if (inputs.username) cmd += ` -u "${inputs.username}"`;
+             if (inputs.password) cmd += ` -p "${inputs.password}"`;
+             if (inputs.domain) cmd += ` -d "${inputs.domain}"`;
+          }
+          
+          if (inputs.action === 'Recursive List (-r)' && inputs.actionTarget) {
+             cmd += ` -r "${inputs.actionTarget}"`;
+          } else if (inputs.action === 'Execute Command (-x)' && inputs.actionTarget) {
+             cmd += ` -x "${inputs.actionTarget}"`;
+          }
+          
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'fierce',
@@ -852,6 +1260,32 @@ export const informationGatheringTools: Tool[] = [
     relatedTools: ['dnsrecon', 'dnsenum', 'amass'],
     installation: 'sudo apt install fierce -y',
     website: 'https://github.com/mschwager/fierce',
+    interactiveCommands: [
+      {
+        name: 'Fierce Recon Builder',
+        description: 'Configure automated DNS reconnaissance and zone transfer attempts targeting corporate domains.',
+        inputs: [
+          { id: 'domain', label: 'Target Domain (--domain)', type: 'text', defaultValue: 'example.com', placeholder: 'Target domain' },
+          { id: 'mode', label: 'Mode', type: 'select', options: ['Standard', 'Wide Scan (--wide)', 'Custom Subdomains (--subdomains)'], defaultValue: 'Standard' },
+          { id: 'subdomains', label: 'Subdomains List', type: 'text', defaultValue: 'corp admin mail', placeholder: 'Space separated (for custom mode)' },
+          { id: 'wordlist', label: 'Wordlist (--wordlist)', type: 'text', defaultValue: '', placeholder: 'Custom wordlist path' },
+          { id: 'dnsServers', label: 'DNS Servers (--dns-servers)', type: 'text', defaultValue: '', placeholder: 'e.g., 8.8.8.8 1.1.1.1' },
+          { id: 'threads', label: 'Threads (--threads)', type: 'text', defaultValue: '10', placeholder: 'Concurrent tasks' }
+        ],
+        generator: (inputs) => {
+          let cmd = `fierce --domain ${inputs.domain}`;
+          
+          if (inputs.mode === 'Wide Scan (--wide)') cmd += ' --wide';
+          if (inputs.mode === 'Custom Subdomains (--subdomains)' && inputs.subdomains) cmd += ` --subdomains ${inputs.subdomains}`;
+          
+          if (inputs.wordlist) cmd += ` --wordlist ${inputs.wordlist}`;
+          if (inputs.dnsServers) cmd += ` --dns-servers ${inputs.dnsServers}`;
+          if (inputs.threads && inputs.threads !== '10') cmd += ` --threads ${inputs.threads}`;
+          
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'rpcclient',
@@ -894,6 +1328,35 @@ export const informationGatheringTools: Tool[] = [
     relatedTools: ['enum4linux', 'smbclient', 'impacket-rpcdump'],
     installation: 'sudo apt install smbclient -y   # Included in the smbclient suite',
     website: 'https://www.samba.org/samba/docs/current/man-html/rpcclient.1.html',
+    interactiveCommands: [
+      {
+        name: 'RPCClient Access Configuration',
+        description: 'Construct MS-RPC client connections with null session or authenticated credentials.',
+        inputs: [
+          { id: 'target', label: 'Target IP', type: 'text', defaultValue: '192.168.1.100', placeholder: 'Windows Host' },
+          { id: 'auth', label: 'Authentication', type: 'select', options: ['Null Session (-U "")', 'Authenticated'], defaultValue: 'Null Session (-U "")' },
+          { id: 'username', label: 'Username', type: 'text', defaultValue: 'admin', placeholder: 'Domain user' },
+          { id: 'password', label: 'Password', type: 'text', defaultValue: 'password123', placeholder: 'User password' },
+          { id: 'noPrompt', label: 'No Prompt (-N)', type: 'checkbox', defaultValue: 'true', placeholder: 'Do not ask for password' },
+          { id: 'command', label: 'Direct Command (-c)', type: 'text', defaultValue: '', placeholder: 'e.g., enumdomusers' }
+        ],
+        generator: (inputs) => {
+          let cmd = 'rpcclient';
+          
+          if (inputs.auth === 'Null Session (-U "")') {
+             cmd += ` -U ""`;
+             if (inputs.noPrompt === 'true') cmd += ' -N';
+          } else {
+             cmd += ` -U "${inputs.username}%${inputs.password}"`;
+          }
+          
+          if (inputs.command) cmd += ` -c "${inputs.command}"`;
+          cmd += ` ${inputs.target}`;
+          
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'autorecon',
@@ -935,35 +1398,28 @@ export const informationGatheringTools: Tool[] = [
     interactiveCommands: [
       {
         name: 'AutoRecon Automated Execution',
-        description: 'Configure and launch a massive automated enumeration workflow against a target.',
+        description: 'Configure and launch a massive automated enumeration workflow against a target with extensive tuning options.',
         inputs: [
-          {
-            id: 'target',
-            label: 'Target (IP or File)',
-            type: 'text',
-            defaultValue: '10.10.10.10',
-            placeholder: 'IP address or targets.txt'
-          },
-          {
-            id: 'outputDir',
-            label: 'Output Directory',
-            type: 'text',
-            defaultValue: 'results',
-            placeholder: 'Folder to store results'
-          },
-          {
-            id: 'heartbeat',
-            label: 'Heartbeat Interval (sec)',
-            type: 'text',
-            defaultValue: '60',
-            placeholder: 'e.g., 60'
-          }
+          { id: 'target', label: 'Target (IP or File)', type: 'text', defaultValue: '10.10.10.10', placeholder: 'IP address or targets.txt' },
+          { id: 'outputDir', label: 'Output Directory (--dir)', type: 'text', defaultValue: 'results', placeholder: 'Folder to store results' },
+          { id: 'heartbeat', label: 'Heartbeat Interval (--heartbeat)', type: 'text', defaultValue: '60', placeholder: 'Seconds between updates' },
+          { id: 'onlyScans', label: 'Only Scans Dir', type: 'checkbox', defaultValue: 'false', placeholder: '--only-scans-dir' },
+          { id: 'nmapFlags', label: 'Custom Nmap Flags (--nmap)', type: 'text', defaultValue: '', placeholder: 'e.g., -T4 -A' },
+          { id: 'excludeTags', label: 'Exclude Tags (--exclude-tags)', type: 'text', defaultValue: '', placeholder: 'e.g., dirb,nikto' },
+          { id: 'concurrent', label: 'Concurrent Targets', type: 'text', defaultValue: '5', placeholder: 'Concurrent hosts to scan' }
         ],
         generator: (inputs) => {
-          return `autorecon ${inputs.target} --dir ${inputs.outputDir} --heartbeat ${inputs.heartbeat}`;
+          let cmd = `autorecon ${inputs.target} --dir ${inputs.outputDir}`;
+          
+          if (inputs.heartbeat && inputs.heartbeat !== '60') cmd += ` --heartbeat ${inputs.heartbeat}`;
+          if (inputs.onlyScans === 'true') cmd += ' --only-scans-dir';
+          if (inputs.nmapFlags) cmd += ` --nmap "${inputs.nmapFlags}"`;
+          if (inputs.excludeTags) cmd += ` --exclude-tags ${inputs.excludeTags}`;
+          if (inputs.concurrent && inputs.concurrent !== '5') cmd += ` -c ${inputs.concurrent}`;
+          
+          return cmd;
         }
       }
     ]
-
   }
 ];

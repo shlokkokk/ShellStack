@@ -33,6 +33,38 @@ export const reportingTools: Tool[] = [
     relatedTools: ['dradis', 'defectdojo', 'plextrac'],
     installation: 'sudo apt install faraday -y\n# or Docker: docker run -d faradaysec/faraday',
     website: 'https://www.faradaysec.com',
+    interactiveCommands: [
+      {
+        name: 'Faraday CLI Automation',
+        description: 'Generate commands to authenticate and push tool results into Faraday workspaces automatically.',
+        inputs: [
+          { id: 'action', label: 'Action', type: 'select', options: ['Authenticate (auth)', 'Import Scan (import-data)', 'List Agents'], defaultValue: 'Import Scan (import-data)' },
+          { id: 'server', label: 'Server URL (-f)', type: 'text', defaultValue: 'https://localhost:5985', placeholder: 'Faraday server URL' },
+          { id: 'user', label: 'Username (-u)', type: 'text', defaultValue: 'admin', placeholder: 'Required for auth' },
+          { id: 'password', label: 'Password (-p)', type: 'text', defaultValue: 'password', placeholder: 'Required for auth' },
+          { id: 'workspace', label: 'Workspace (-w)', type: 'text', defaultValue: 'pentest_1', placeholder: 'Target workspace' },
+          { id: 'file', label: 'Scan File', type: 'text', defaultValue: 'nmap_scan.xml', placeholder: 'XML/JSON result file' }
+        ],
+        generator: (inputs) => {
+          let cmd = 'faraday-cli';
+          
+          if (inputs.action === 'Authenticate (auth)') {
+            return `${cmd} auth -f ${inputs.server} -u ${inputs.user} -p ${inputs.password}`;
+          }
+          if (inputs.action === 'List Agents') {
+            return `${cmd} list-agents`;
+          }
+          if (inputs.action === 'Import Scan (import-data)') {
+            let importCmd = `${cmd} import-data`;
+            if (inputs.workspace) importCmd += ` -w ${inputs.workspace}`;
+            importCmd += ` ${inputs.file}`;
+            return importCmd;
+          }
+          
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'dradis',
@@ -140,6 +172,28 @@ export const reportingTools: Tool[] = [
     relatedTools: ['john', 'hashcat', 'pack'],
     installation: 'git clone https://github.com/digininja/pipal\ncd pipal && ruby pipal.rb --help',
     website: 'https://github.com/digininja/pipal',
+    interactiveCommands: [
+      {
+        name: 'Pipal Stats Analyzer',
+        description: 'Generate Pipal commands to extract actionable metrics and patterns from cracked password lists.',
+        inputs: [
+          { id: 'targetFile', label: 'Cracked Passwords File', type: 'text', defaultValue: 'passwords.txt', placeholder: 'Text file of passwords' },
+          { id: 'topList', label: 'Top N Limit (-t)', type: 'text', defaultValue: '10', placeholder: 'Default 10' },
+          { id: 'output', label: 'Output File (-o)', type: 'text', defaultValue: 'pipal_report.txt', placeholder: 'Save results to file' },
+          { id: 'external', label: 'External Lookups (--external)', type: 'checkbox', defaultValue: 'false', placeholder: 'Query external services' }
+        ],
+        generator: (inputs) => {
+          let cmd = 'pipal';
+          
+          if (inputs.topList && inputs.topList !== '10') cmd += ` -t ${inputs.topList}`;
+          if (inputs.output) cmd += ` -o ${inputs.output}`;
+          if (inputs.external === 'true') cmd += ' --external';
+          
+          cmd += ` ${inputs.targetFile}`;
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'cherrytree',

@@ -123,7 +123,7 @@ const TerminalHero = () => {
                   <span className="text-[#4ade80]">root@shellstack:</span>
                   <span className="text-[#22d3ee]">~</span>
                   <span className="text-white">$</span>
-                  <span className="text-white">./init_shellstack --god-tier</span>
+                  <span className="text-white">./init_shellstack --optimized</span>
                 </div>
                 
                 <div className="space-y-2 opacity-80">
@@ -148,7 +148,7 @@ const TerminalHero = () => {
                 </div>
 
                 <div className="mt-6 space-y-1">
-                  <div className="text-[#4ade80]/50">[SYS] CORE_INTEGRITY: GOD_TIER</div>
+                  <div className="text-[#4ade80]/50">[SYS] CORE_INTEGRITY: VERIFIED</div>
                   <div className="text-[#4ade80]/50">[SYS] UPLINK: SECURE_v1.4</div>
                   <div className="flex items-center gap-1 mt-4">
                     <span className="text-[#4ade80]">#</span>

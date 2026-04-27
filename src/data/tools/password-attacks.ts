@@ -42,40 +42,102 @@ export const passwordAttacksTools: Tool[] = [
     website: 'https://hashcat.net/hashcat',
     interactiveCommands: [
       {
-        name: 'Dynamic Mask Attack Generator',
-        description: 'Generate an exact mask for brute forcing based on target password length and complexity.',
+        name: 'Hashcat Ultimate Cracking Engine',
+        description: 'Configure GPU-accelerated password cracking with full control over attack mode, hash type, wordlists, rules, and performance tuning.',
         inputs: [
           {
             id: 'hashType',
-            label: 'Hash Type',
+            label: 'Hash Type (-m)',
             type: 'select',
-            options: ['0 (MD5)', '1000 (NTLM)', '1800 (SHA512)', '22000 (WPA-PBKDF2)', '3200 (bcrypt)'],
-            defaultValue: '0 (MD5)'
+            options: ['0 (MD5)', '100 (SHA1)', '1000 (NTLM)', '1800 (SHA512crypt)', '3200 (bcrypt)', '5600 (NetNTLMv2)', '13100 (Kerberoast)', '22000 (WPA-PBKDF2)', '1400 (SHA256)', '500 (MD5crypt)'],
+            defaultValue: '0 (MD5)',
+            helpText: 'Use hashcat --example-hashes to identify unknown hash types'
           },
           {
-            id: 'charSet',
-            label: 'Character Set',
+            id: 'attackMode',
+            label: 'Attack Mode (-a)',
             type: 'select',
-            options: ['?a (All Characters)', '?d (Digits Only)', '?l (Lowercase)', '?u (Uppercase)', 'Custom (?l?d)'],
-            defaultValue: '?a (All Characters)'
+            options: ['Dictionary (-a 0)', 'Combination (-a 1)', 'Brute-Force/Mask (-a 3)', 'Hybrid: Wordlist+Mask (-a 6)', 'Hybrid: Mask+Wordlist (-a 7)'],
+            defaultValue: 'Dictionary (-a 0)'
           },
           {
-            id: 'length',
-            label: 'Password Length',
-            type: 'number',
-            defaultValue: '6'
+            id: 'hashFile',
+            label: 'Hash File',
+            type: 'text',
+            defaultValue: 'hashes.txt',
+            placeholder: 'Path to file containing hashes'
+          },
+          {
+            id: 'wordlist',
+            label: 'Wordlist',
+            type: 'select',
+            options: ['rockyou.txt', '/usr/share/wordlists/rockyou.txt', '/usr/share/seclists/Passwords/Common-Credentials/10k-most-common.txt', 'Custom'],
+            defaultValue: 'rockyou.txt'
+          },
+          {
+            id: 'customWordlist',
+            label: 'Custom Wordlist Path',
+            type: 'text',
+            defaultValue: '',
+            placeholder: 'Only if Wordlist = Custom'
+          },
+          {
+            id: 'mask',
+            label: 'Mask Pattern (Brute/Hybrid)',
+            type: 'text',
+            defaultValue: '?a?a?a?a?a?a',
+            placeholder: '?a=all ?d=digit ?l=lower ?u=upper ?s=special',
+            helpText: '?a=all chars, ?d=0-9, ?l=a-z, ?u=A-Z, ?s=symbols. Example: Pass?d?d?d?d'
+          },
+          {
+            id: 'rules',
+            label: 'Rule File',
+            type: 'select',
+            options: ['None', 'best64.rule', 'dive.rule', 'rockyou-30000.rule', 'toggles1.rule', 'OneRuleToRuleThemAll.rule'],
+            defaultValue: 'None',
+            helpText: 'Rules mangle wordlist entries (capitalize, leet speak, append digits, etc.)'
+          },
+          {
+            id: 'workload',
+            label: 'Workload Profile (-w)',
+            type: 'select',
+            options: ['1 (Low — laptop safe)', '2 (Default)', '3 (High — desktop)', '4 (Nightmare — max GPU)'],
+            defaultValue: '2 (Default)'
+          },
+          {
+            id: 'optimized',
+            label: 'Optimized Kernels (-O)',
+            type: 'checkbox',
+            defaultValue: 'false',
+            placeholder: 'Faster but limits password to 32 chars'
+          },
+          {
+            id: 'outputFile',
+            label: 'Output Cracked to File (-o)',
+            type: 'text',
+            defaultValue: '',
+            placeholder: 'e.g., cracked.txt (leave empty for potfile)'
           }
         ],
         generator: (inputs) => {
-          const type = inputs.hashType.split(' ')[0];
-          const len = parseInt(inputs.length) || 6;
-          const maxLen = Math.min(len, 256); // Prevent crazy values
-          const setStr = inputs.charSet.split(' ')[0];
-          
-          if (setStr === 'Custom') {
-            return `hashcat -m ${type} hashes.txt -a 3 -1 ?l?d ${'?1'.repeat(maxLen)}`;
+          const hashType = inputs.hashType.split(' ')[0];
+          const attackMode = inputs.attackMode.includes('-a 0') ? '0' : inputs.attackMode.includes('-a 1') ? '1' : inputs.attackMode.includes('-a 3') ? '3' : inputs.attackMode.includes('-a 6') ? '6' : '7';
+          const wordlist = inputs.wordlist === 'Custom' && inputs.customWordlist ? inputs.customWordlist : inputs.wordlist;
+          const rules = inputs.rules !== 'None' ? ` -r /usr/share/hashcat/rules/${inputs.rules}` : '';
+          const workload = ` -w ${inputs.workload.split(' ')[0]}`;
+          const optimized = inputs.optimized === 'true' ? ' -O' : '';
+          const output = inputs.outputFile ? ` -o ${inputs.outputFile}` : '';
+
+          if (attackMode === '3') {
+            return `hashcat -m ${hashType} -a 3 ${inputs.hashFile} ${inputs.mask}${workload}${optimized}${output}`;
           }
-          return `hashcat -m ${type} hashes.txt -a 3 ${setStr.repeat(maxLen)}`;
+          if (attackMode === '6') {
+            return `hashcat -m ${hashType} -a 6 ${inputs.hashFile} ${wordlist} ${inputs.mask}${rules}${workload}${optimized}${output}`;
+          }
+          if (attackMode === '7') {
+            return `hashcat -m ${hashType} -a 7 ${inputs.hashFile} ${inputs.mask} ${wordlist}${workload}${optimized}${output}`;
+          }
+          return `hashcat -m ${hashType} -a ${attackMode} ${inputs.hashFile} ${wordlist}${rules}${workload}${optimized}${output}`;
         }
       }
     ],
@@ -115,6 +177,101 @@ export const passwordAttacksTools: Tool[] = [
     relatedTools: ['hashcat', 'rainbowcrack'],
     installation: 'sudo apt install john -y   # Pre-installed on Kali',
     website: 'https://www.openwall.com/john',
+    interactiveCommands: [
+      {
+        name: 'John the Ripper Crack Builder',
+        description: 'Configure CPU-based password cracking with format detection, wordlists, rules, and parallel processing.',
+        inputs: [
+          {
+            id: 'mode',
+            label: 'Attack Mode',
+            type: 'select',
+            options: ['Dictionary (--wordlist)', 'Incremental (Brute-Force)', 'Single Crack', 'Show Cracked (--show)', 'Extract Hash (*2john)'],
+            defaultValue: 'Dictionary (--wordlist)'
+          },
+          {
+            id: 'hashFile',
+            label: 'Hash File',
+            type: 'text',
+            defaultValue: 'hashes.txt',
+            placeholder: 'e.g., hashes.txt or combined.txt'
+          },
+          {
+            id: 'format',
+            label: 'Hash Format (--format)',
+            type: 'select',
+            options: ['Auto-Detect', 'NT (NTLM)', 'Raw-MD5', 'Raw-SHA1', 'Raw-SHA256', 'bcrypt', 'sha512crypt', 'PKZIP', 'SSH', 'KeePass', 'PDF'],
+            defaultValue: 'Auto-Detect',
+            helpText: 'Auto-detect works most of the time. Specify format if John guesses wrong.'
+          },
+          {
+            id: 'wordlist',
+            label: 'Wordlist',
+            type: 'select',
+            options: ['/usr/share/wordlists/rockyou.txt', '/usr/share/seclists/Passwords/Common-Credentials/10k-most-common.txt', 'Custom'],
+            defaultValue: '/usr/share/wordlists/rockyou.txt'
+          },
+          {
+            id: 'customWordlist',
+            label: 'Custom Wordlist Path',
+            type: 'text',
+            defaultValue: '',
+            placeholder: 'Only if Wordlist = Custom'
+          },
+          {
+            id: 'rules',
+            label: 'Enable Rules (--rules)',
+            type: 'checkbox',
+            defaultValue: 'false',
+            placeholder: 'Apply word mangling rules',
+            helpText: 'Append numbers, capitalize, leet speak, reverse — greatly increases coverage'
+          },
+          {
+            id: 'fork',
+            label: 'Parallel Processes (--fork)',
+            type: 'select',
+            options: ['1 (Single)', '2', '4', '8'],
+            defaultValue: '1 (Single)',
+            helpText: 'Split work across multiple CPU cores'
+          },
+          {
+            id: 'extractType',
+            label: 'File Type (Extract Mode)',
+            type: 'select',
+            options: ['zip2john', 'pdf2john', 'rar2john', 'ssh2john', 'keepass2john', 'office2john'],
+            defaultValue: 'zip2john',
+            helpText: 'Only used when Attack Mode = Extract Hash'
+          },
+          {
+            id: 'extractFile',
+            label: 'File to Extract From',
+            type: 'text',
+            defaultValue: '',
+            placeholder: 'e.g., secret.zip, doc.pdf, id_rsa'
+          }
+        ],
+        generator: (inputs) => {
+          const format = inputs.format !== 'Auto-Detect' ? ` --format=${inputs.format}` : '';
+          const wordlist = inputs.wordlist === 'Custom' && inputs.customWordlist ? inputs.customWordlist : inputs.wordlist;
+          const rules = inputs.rules === 'true' ? ' --rules' : '';
+          const fork = inputs.fork !== '1 (Single)' ? ` --fork=${inputs.fork}` : '';
+
+          if (inputs.mode === 'Show Cracked (--show)') {
+            return `john --show${format} ${inputs.hashFile}`;
+          }
+          if (inputs.mode === 'Extract Hash (*2john)') {
+            return `${inputs.extractType} ${inputs.extractFile || 'file'} > extracted.hash && john extracted.hash --wordlist=${wordlist}${rules}`;
+          }
+          if (inputs.mode === 'Incremental (Brute-Force)') {
+            return `john --incremental${format}${fork} ${inputs.hashFile}`;
+          }
+          if (inputs.mode === 'Single Crack') {
+            return `john --single${format}${fork} ${inputs.hashFile}`;
+          }
+          return `john --wordlist=${wordlist}${format}${rules}${fork} ${inputs.hashFile}`;
+        }
+      }
+    ]
   },
   {
     id: 'hydra',
@@ -151,6 +308,97 @@ export const passwordAttacksTools: Tool[] = [
     relatedTools: ['medusa', 'ncrack', 'patator'],
     installation: 'sudo apt install hydra -y   # Pre-installed on Kali',
     website: 'https://github.com/vanhauser-thc/thc-hydra',
+    interactiveCommands: [
+      {
+        name: 'Hydra Brute Force Configurator',
+        description: 'Build network login brute-force attacks across 50+ protocols with threading, evasion, and credential controls.',
+        inputs: [
+          {
+            id: 'service',
+            label: 'Target Service',
+            type: 'select',
+            options: ['ssh', 'ftp', 'rdp', 'smb', 'mysql', 'mssql', 'vnc', 'telnet', 'pop3', 'imap', 'smtp', 'http-post-form', 'http-get', 'snmp', 'ldap2'],
+            defaultValue: 'ssh'
+          },
+          {
+            id: 'target',
+            label: 'Target IP / Host',
+            type: 'text',
+            defaultValue: '192.168.1.100',
+            placeholder: 'e.g., 10.10.10.5 or target.com'
+          },
+          {
+            id: 'port',
+            label: 'Custom Port (-s)',
+            type: 'text',
+            defaultValue: '',
+            placeholder: 'Leave empty for default port',
+            helpText: 'Only needed if the service runs on a non-standard port'
+          },
+          {
+            id: 'userMode',
+            label: 'Username Mode',
+            type: 'select',
+            options: ['Single User (-l)', 'User List (-L)'],
+            defaultValue: 'Single User (-l)'
+          },
+          {
+            id: 'username',
+            label: 'Username / User File',
+            type: 'text',
+            defaultValue: 'admin',
+            placeholder: 'e.g., admin or /path/to/users.txt'
+          },
+          {
+            id: 'passwordList',
+            label: 'Password List (-P)',
+            type: 'text',
+            defaultValue: '/usr/share/wordlists/rockyou.txt',
+            placeholder: 'Path to password wordlist'
+          },
+          {
+            id: 'threads',
+            label: 'Threads (-t)',
+            type: 'select',
+            options: ['4 (Safe — SSH/RDP)', '8', '16 (Default)', '32 (Aggressive)', '64 (Max)'],
+            defaultValue: '16 (Default)',
+            helpText: 'Lower threads for SSH (4) to avoid lockouts. Higher for HTTP forms.'
+          },
+          {
+            id: 'stopOnFirst',
+            label: 'Stop After First Hit (-f)',
+            type: 'checkbox',
+            defaultValue: 'true',
+            placeholder: 'Stop on first valid credential'
+          },
+          {
+            id: 'verbose',
+            label: 'Verbose Output (-vV)',
+            type: 'checkbox',
+            defaultValue: 'false',
+            placeholder: 'Show every login attempt'
+          },
+          {
+            id: 'extraChecks',
+            label: 'Extra Credential Checks (-e)',
+            type: 'select',
+            options: ['None', 'nsr (null+same+reverse)', 'ns (null+same)', 'n (null only)'],
+            defaultValue: 'None',
+            helpText: 'n=null password, s=login as password, r=reversed login'
+          }
+        ],
+        generator: (inputs) => {
+          const userFlag = inputs.userMode.includes('-l') ? '-l' : '-L';
+          const port = inputs.port ? ` -s ${inputs.port}` : '';
+          const threads = ` -t ${inputs.threads.split(' ')[0]}`;
+          const stop = inputs.stopOnFirst === 'true' ? ' -f' : '';
+          const verbose = inputs.verbose === 'true' ? ' -vV' : '';
+          const extra = inputs.extraChecks !== 'None' ? ` -e ${inputs.extraChecks.split(' ')[0]}` : '';
+
+          return `hydra ${userFlag} ${inputs.username} -P ${inputs.passwordList}${threads}${stop}${verbose}${extra}${port} ${inputs.target} ${inputs.service}`;
+        }
+      }
+    ]
   },
   {
     id: 'crackmapexec',
@@ -188,6 +436,82 @@ export const passwordAttacksTools: Tool[] = [
     relatedTools: ['impacket', 'metasploit', 'psexec', 'netexec'],
     installation: 'pip install crackmapexec   # or: sudo apt install crackmapexec -y',
     website: 'https://github.com/byt3bl33d3r/CrackMapExec',
+    interactiveCommands: [
+      {
+        name: 'CrackMapExec AD Attack Builder',
+        description: 'Configure credential testing, share enumeration, hash dumping, and command execution across Active Directory networks.',
+        inputs: [
+          {
+            id: 'protocol',
+            label: 'Protocol',
+            type: 'select',
+            options: ['smb', 'winrm', 'ldap', 'mssql', 'ssh', 'rdp'],
+            defaultValue: 'smb'
+          },
+          {
+            id: 'target',
+            label: 'Target (IP / CIDR / File)',
+            type: 'text',
+            defaultValue: '192.168.1.0/24',
+            placeholder: 'e.g., 10.10.10.5 or 192.168.1.0/24'
+          },
+          {
+            id: 'authType',
+            label: 'Authentication Type',
+            type: 'select',
+            options: ['Password (-p)', 'NTLM Hash (-H)', 'No Auth (null session)'],
+            defaultValue: 'Password (-p)'
+          },
+          {
+            id: 'username',
+            label: 'Username (-u)',
+            type: 'text',
+            defaultValue: 'administrator',
+            placeholder: 'Domain user or local admin'
+          },
+          {
+            id: 'credential',
+            label: 'Password / Hash',
+            type: 'text',
+            defaultValue: 'Password123',
+            placeholder: 'Password or NTLM hash (aad3b435...)'
+          },
+          {
+            id: 'domain',
+            label: 'Domain (-d)',
+            type: 'text',
+            defaultValue: '',
+            placeholder: 'e.g., CORP.LOCAL (leave empty for local)'
+          },
+          {
+            id: 'action',
+            label: 'Post-Auth Action',
+            type: 'select',
+            options: ['Enumerate Only', '--shares', '--users', '--groups', '--sam', '--lsa', '--ntds', '--pass-pol', '-x (Execute CMD)', '--spider_plus'],
+            defaultValue: 'Enumerate Only'
+          },
+          {
+            id: 'command',
+            label: 'Command to Execute',
+            type: 'text',
+            defaultValue: 'whoami',
+            placeholder: 'Only used with -x action',
+            helpText: 'Command runs via wmiexec. Requires admin rights on target.'
+          }
+        ],
+        generator: (inputs) => {
+          const authFlag = inputs.authType.includes('-H') ? '-H' : inputs.authType.includes('-p') ? '-p' : '';
+          const cred = authFlag ? ` ${authFlag} '${inputs.credential}'` : '';
+          const user = authFlag ? ` -u ${inputs.username}` : '';
+          const domain = inputs.domain ? ` -d ${inputs.domain}` : '';
+          let action = '';
+          if (inputs.action === '-x (Execute CMD)') action = ` -x '${inputs.command}'`;
+          else if (inputs.action !== 'Enumerate Only') action = ` ${inputs.action}`;
+
+          return `crackmapexec ${inputs.protocol} ${inputs.target}${user}${cred}${domain}${action}`;
+        }
+      }
+    ]
   },
   {
     id: 'responder',
@@ -219,6 +543,67 @@ export const passwordAttacksTools: Tool[] = [
     relatedTools: ['impacket', 'ntlmrelayx', 'mitm6'],
     installation: 'sudo apt install responder -y   # Pre-installed on Kali',
     website: 'https://github.com/lgandx/Responder',
+    interactiveCommands: [
+      {
+        name: 'Responder Hash Capture Builder',
+        description: 'Configure LLMNR/NBT-NS/MDNS poisoning to capture NTLM hashes on internal networks.',
+        inputs: [
+          {
+            id: 'interface',
+            label: 'Network Interface (-I)',
+            type: 'text',
+            defaultValue: 'eth0',
+            placeholder: 'e.g., eth0, wlan0, tun0'
+          },
+          {
+            id: 'mode',
+            label: 'Mode',
+            type: 'select',
+            options: ['Poisoning (Active)', 'Analyze Only (-A)'],
+            defaultValue: 'Poisoning (Active)',
+            helpText: 'Analyze mode only listens — no poisoning. Safe for initial recon.'
+          },
+          {
+            id: 'wpad',
+            label: 'WPAD Proxy (-w)',
+            type: 'checkbox',
+            defaultValue: 'false',
+            placeholder: 'Start rogue WPAD proxy',
+            helpText: 'Captures HTTP NTLM auth from browsers checking for proxy configs'
+          },
+          {
+            id: 'rdwr',
+            label: 'NetBIOS Flags (-r -d)',
+            type: 'checkbox',
+            defaultValue: 'true',
+            placeholder: 'Answer wredir + domain queries'
+          },
+          {
+            id: 'fingerprint',
+            label: 'OS Fingerprint (-f)',
+            type: 'checkbox',
+            defaultValue: 'false',
+            placeholder: 'Fingerprint host OS after poisoning'
+          },
+          {
+            id: 'verbose',
+            label: 'Verbose (-v)',
+            type: 'checkbox',
+            defaultValue: 'true',
+            placeholder: 'Show detailed output'
+          }
+        ],
+        generator: (inputs) => {
+          const analyze = inputs.mode.includes('-A') ? ' -A' : '';
+          const wpad = inputs.wpad === 'true' ? ' -w' : '';
+          const rdwr = inputs.rdwr === 'true' ? ' -r -d' : '';
+          const fp = inputs.fingerprint === 'true' ? ' -f' : '';
+          const verbose = inputs.verbose === 'true' ? ' -v' : '';
+
+          return `responder -I ${inputs.interface}${analyze}${wpad}${rdwr}${fp}${verbose}`;
+        }
+      }
+    ]
   },
   {
     id: 'medusa',
@@ -249,6 +634,38 @@ export const passwordAttacksTools: Tool[] = [
     relatedTools: ['hydra', 'ncrack'],
     installation: 'sudo apt install medusa -y',
     website: 'http://foofus.net/goons/jmk/medusa/medusa.html',
+    interactiveCommands: [
+      {
+        name: 'Medusa Parallel Brute-Forcer',
+        description: 'Configure high-speed, parallel login brute-forcing across various network protocols.',
+        inputs: [
+          { id: 'targetMode', label: 'Target Mode', type: 'select', options: ['Single Host (-h)', 'Hosts File (-H)'], defaultValue: 'Single Host (-h)' },
+          { id: 'target', label: 'Target / File', type: 'text', defaultValue: '192.168.1.100', placeholder: 'IP or path to hosts.txt' },
+          { id: 'module', label: 'Module (-M)', type: 'select', options: ['ssh', 'ftp', 'http', 'mssql', 'mysql', 'smbnt', 'telnet', 'vnc'], defaultValue: 'ssh' },
+          { id: 'userMode', label: 'User Mode', type: 'select', options: ['Single User (-u)', 'User File (-U)'], defaultValue: 'Single User (-u)' },
+          { id: 'username', label: 'Username / File', type: 'text', defaultValue: 'admin', placeholder: 'admin or users.txt' },
+          { id: 'passwordFile', label: 'Password File (-P)', type: 'text', defaultValue: '/usr/share/wordlists/rockyou.txt', placeholder: 'Path to wordlist' },
+          { id: 'threads', label: 'Threads (-t)', type: 'text', defaultValue: '16', placeholder: 'Connections per host' }
+        ],
+        generator: (inputs) => {
+          let cmd = 'medusa';
+          
+          const targetFlag = inputs.targetMode === 'Single Host (-h)' ? '-h' : '-H';
+          cmd += ` ${targetFlag} ${inputs.target}`;
+          
+          const userFlag = inputs.userMode === 'Single User (-u)' ? '-u' : '-U';
+          cmd += ` ${userFlag} ${inputs.username}`;
+          
+          cmd += ` -P ${inputs.passwordFile} -M ${inputs.module}`;
+          
+          if (inputs.threads && inputs.threads !== '16') {
+            cmd += ` -t ${inputs.threads}`;
+          }
+          
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'cewl',
@@ -279,6 +696,37 @@ export const passwordAttacksTools: Tool[] = [
     relatedTools: ['crunch', 'mentalist', 'cupp'],
     installation: 'sudo apt install cewl -y   # Pre-installed on Kali',
     website: 'https://github.com/digininja/CeWL',
+    interactiveCommands: [
+      {
+        name: 'CeWL Wordlist Spider',
+        description: 'Extract highly targeted, custom wordlists by spidering an organization\'s website.',
+        inputs: [
+          { id: 'url', label: 'Target URL', type: 'text', defaultValue: 'http://example.com', placeholder: 'Must include http(s)://' },
+          { id: 'depth', label: 'Spider Depth (-d)', type: 'select', options: ['1', '2', '3', '5'], defaultValue: '2' },
+          { id: 'minLength', label: 'Min Word Length (-m)', type: 'text', defaultValue: '5', placeholder: 'Ignore short words' },
+          { id: 'lowercase', label: 'Force Lowercase', type: 'checkbox', defaultValue: 'true', placeholder: '--lowercase' },
+          { id: 'extractEmails', label: 'Extract Emails (-e)', type: 'checkbox', defaultValue: 'false', placeholder: 'Find email addresses' },
+          { id: 'emailFile', label: 'Email Output File', type: 'text', defaultValue: 'emails.txt', placeholder: 'Requires Extract Emails' },
+          { id: 'output', label: 'Wordlist Output (-w)', type: 'text', defaultValue: 'custom_wordlist.txt', placeholder: 'Filename to save words' }
+        ],
+        generator: (inputs) => {
+          let cmd = `cewl ${inputs.url}`;
+          
+          if (inputs.depth && inputs.depth !== '2') cmd += ` -d ${inputs.depth}`;
+          if (inputs.minLength && inputs.minLength !== '5') cmd += ` -m ${inputs.minLength}`;
+          if (inputs.lowercase === 'true') cmd += ' --lowercase';
+          
+          if (inputs.extractEmails === 'true') {
+             cmd += ' -e';
+             if (inputs.emailFile) cmd += ` --email_file ${inputs.emailFile}`;
+          }
+          
+          if (inputs.output) cmd += ` -w ${inputs.output}`;
+          
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'crunch',
@@ -308,6 +756,31 @@ export const passwordAttacksTools: Tool[] = [
     relatedTools: ['cewl', 'cupp', 'maskprocessor'],
     installation: 'sudo apt install crunch -y   # Pre-installed on Kali',
     website: 'https://sourceforge.net/projects/crunch-wordlist/',
+    interactiveCommands: [
+      {
+        name: 'Crunch Dictionary Generator',
+        description: 'Create exhaustive password dictionaries using length boundaries, character sets, and precise patterns.',
+        inputs: [
+          { id: 'minLength', label: 'Min Length', type: 'text', defaultValue: '6', placeholder: 'e.g., 6' },
+          { id: 'maxLength', label: 'Max Length', type: 'text', defaultValue: '8', placeholder: 'e.g., 8' },
+          { id: 'charset', label: 'Character Set', type: 'text', defaultValue: '', placeholder: 'e.g., 0123456789 or abc (Leave empty for default)' },
+          { id: 'usePattern', label: 'Use Pattern (-t)', type: 'checkbox', defaultValue: 'false', placeholder: 'Enable pattern matching' },
+          { id: 'pattern', label: 'Pattern String', type: 'text', defaultValue: 'pass@@@@', placeholder: '@=lower, ,=upper, %=num, ^=sym' },
+          { id: 'splitSize', label: 'Split File Size (-b)', type: 'text', defaultValue: '', placeholder: 'e.g., 20mb (creates multiple files)' },
+          { id: 'output', label: 'Output File (-o)', type: 'text', defaultValue: 'wordlist.txt', placeholder: 'Filename to save to' }
+        ],
+        generator: (inputs) => {
+          let cmd = `crunch ${inputs.minLength} ${inputs.maxLength}`;
+          
+          if (inputs.charset) cmd += ` ${inputs.charset}`;
+          if (inputs.usePattern === 'true' && inputs.pattern) cmd += ` -t ${inputs.pattern}`;
+          if (inputs.splitSize) cmd += ` -b ${inputs.splitSize}`;
+          if (inputs.output) cmd += ` -o ${inputs.output}`;
+          
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'ophcrack',
@@ -345,6 +818,30 @@ export const passwordAttacksTools: Tool[] = [
     ],
     relatedTools: ['ophcrack', 'hashcat'],
     website: 'http://project-rainbowcrack.com/',
+    interactiveCommands: [
+      {
+        name: 'RainbowCrack Table Configurator',
+        description: 'Build commands to generate, sort, and crack hashes using time-memory trade-off rainbow tables.',
+        inputs: [
+          { id: 'action', label: 'Action', type: 'select', options: ['Generate (rtgen)', 'Sort (rtsort)', 'Crack (rcrack)'], defaultValue: 'Crack (rcrack)' },
+          { id: 'hashAlgorithm', label: 'Hash Algorithm', type: 'select', options: ['md5', 'sha1', 'ntlm', 'lm'], defaultValue: 'md5', helpText: 'Only used for generation' },
+          { id: 'charset', label: 'Charset', type: 'select', options: ['loweralpha', 'loweralpha-numeric', 'numeric', 'mixalpha-numeric'], defaultValue: 'loweralpha', helpText: 'Only used for generation' },
+          { id: 'lenMin', label: 'Min Length', type: 'text', defaultValue: '1', placeholder: 'Min password length' },
+          { id: 'lenMax', label: 'Max Length', type: 'text', defaultValue: '7', placeholder: 'Max password length' },
+          { id: 'targetHash', label: 'Target Hash (-h)', type: 'text', defaultValue: '5d41402abc4b2a76b9719d911017c592', placeholder: 'Hash to crack' },
+          { id: 'tableDir', label: 'Table Directory', type: 'text', defaultValue: '.', placeholder: 'Path to .rt files' }
+        ],
+        generator: (inputs) => {
+          if (inputs.action === 'Generate (rtgen)') {
+             return `rtgen ${inputs.hashAlgorithm} ${inputs.charset} ${inputs.lenMin} ${inputs.lenMax} 0 1000 1000 0`;
+          } else if (inputs.action === 'Sort (rtsort)') {
+             return `rtsort ${inputs.tableDir}`;
+          } else {
+             return `rcrack ${inputs.tableDir} -h ${inputs.targetHash}`;
+          }
+        }
+      }
+    ]
   },
   {
     id: 'patator',
@@ -373,5 +870,47 @@ export const passwordAttacksTools: Tool[] = [
     relatedTools: ['hydra', 'medusa', 'ncrack'],
     installation: 'sudo apt install patator -y',
     website: 'https://github.com/lanjelot/patator',
+    interactiveCommands: [
+      {
+        name: 'Patator Modular Brute-Forcer',
+        description: 'Design highly customized brute-force pipelines targeting web services, archives, and infrastructure using dynamic variable binding.',
+        inputs: [
+          { id: 'module', label: 'Target Module', type: 'select', options: ['ssh_login', 'ftp_login', 'http_fuzz', 'smb_login', 'unzip_pass'], defaultValue: 'ssh_login' },
+          { id: 'target', label: 'Host / URL / File', type: 'text', defaultValue: '192.168.1.100', placeholder: 'IP, URL, or archive path' },
+          { id: 'userMode', label: 'User Source', type: 'select', options: ['Static (e.g., admin)', 'Wordlist (FILE0)'], defaultValue: 'Static (e.g., admin)' },
+          { id: 'username', label: 'Static Username', type: 'text', defaultValue: 'admin', placeholder: 'Only if Static' },
+          { id: 'passMode', label: 'Password Source', type: 'select', options: ['Static (e.g., pass)', 'Wordlist (FILE0)'], defaultValue: 'Wordlist (FILE0)' },
+          { id: 'staticPass', label: 'Static Password', type: 'text', defaultValue: 'password123', placeholder: 'Only if Static' },
+          { id: 'wordlist', label: 'Wordlist Path (0=)', type: 'text', defaultValue: 'passwords.txt', placeholder: 'Path to dictionary' },
+          { id: 'ignoreCode', label: 'Ignore HTTP Code', type: 'text', defaultValue: '401', placeholder: 'e.g., 401, 403 (for http_fuzz)' }
+        ],
+        generator: (inputs) => {
+          let cmd = `patator ${inputs.module}`;
+          
+          if (inputs.module === 'http_fuzz') {
+             cmd += ` url=${inputs.target} method=GET`;
+             if (inputs.ignoreCode) cmd += ` -x ignore:code=${inputs.ignoreCode}`;
+          } else if (inputs.module === 'unzip_pass') {
+             cmd += ` zip=${inputs.target}`;
+          } else {
+             cmd += ` host=${inputs.target}`;
+          }
+          
+          if (inputs.module !== 'unzip_pass') {
+             if (inputs.userMode === 'Wordlist (FILE0)') cmd += ` user=FILE0`;
+             else if (inputs.username) cmd += ` user=${inputs.username}`;
+          }
+          
+          if (inputs.passMode === 'Wordlist (FILE0)') cmd += ` password=FILE0`;
+          else if (inputs.staticPass) cmd += ` password=${inputs.staticPass}`;
+          
+          if (inputs.userMode === 'Wordlist (FILE0)' || inputs.passMode === 'Wordlist (FILE0)') {
+             cmd += ` 0=${inputs.wordlist}`;
+          }
+          
+          return cmd;
+        }
+      }
+    ]
   }
 ];

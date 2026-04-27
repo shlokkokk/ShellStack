@@ -31,6 +31,44 @@ export const sniffingSpoofingTools: Tool[] = [
     relatedTools: ['tshark', 'tcpdump', 'tcpflow'],
     installation: 'sudo apt install wireshark tshark -y',
     website: 'https://www.wireshark.org',
+    interactiveCommands: [
+      {
+        name: 'Wireshark/TShark Capture Configurator',
+        description: 'Configure and generate CLI packet capture or GUI launch commands.',
+        inputs: [
+          { id: 'mode', label: 'Launch Mode', type: 'select', options: ['tshark (CLI Capture)', 'wireshark (GUI)'], defaultValue: 'tshark (CLI Capture)' },
+          { id: 'interface', label: 'Interface (-i)', type: 'text', defaultValue: 'eth0', placeholder: 'e.g., eth0, wlan0' },
+          { id: 'writeFile', label: 'Write to PCAP (-w)', type: 'text', defaultValue: 'capture.pcap', placeholder: 'Filename to save' },
+          { id: 'readFile', label: 'Read PCAP (-r)', type: 'text', defaultValue: '', placeholder: 'Filename to read' },
+          { id: 'displayFilter', label: 'Display Filter (-Y)', type: 'text', defaultValue: '', placeholder: 'e.g., http.request.method == POST' },
+          { id: 'bpfFilter', label: 'Capture Filter (-f)', type: 'text', defaultValue: '', placeholder: 'e.g., tcp port 80' },
+          { id: 'fields', label: 'Extract Fields (-e)', type: 'text', defaultValue: '', placeholder: 'e.g., http.host (with -T fields)' }
+        ],
+        generator: (inputs) => {
+          let cmd = inputs.mode === 'wireshark (GUI)' ? 'wireshark' : 'tshark';
+          
+          if (inputs.readFile) {
+            cmd += ` -r ${inputs.readFile}`;
+          } else if (inputs.interface) {
+            cmd += ` -i ${inputs.interface}`;
+          }
+          
+          if (inputs.writeFile && !inputs.readFile) cmd += ` -w ${inputs.writeFile}`;
+          if (inputs.displayFilter) cmd += ` -Y "${inputs.displayFilter}"`;
+          if (inputs.bpfFilter && !inputs.readFile) cmd += ` -f "${inputs.bpfFilter}"`;
+          
+          if (inputs.fields && inputs.mode === 'tshark (CLI Capture)') {
+            cmd += ' -T fields';
+            const splitFields = inputs.fields.split(',');
+            for (const f of splitFields) {
+              cmd += ` -e ${f.trim()}`;
+            }
+          }
+          
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'tcpdump',
@@ -67,6 +105,37 @@ export const sniffingSpoofingTools: Tool[] = [
     relatedTools: ['wireshark', 'tshark', 'ngrep'],
     installation: 'sudo apt install tcpdump -y',
     website: 'https://www.tcpdump.org',
+    interactiveCommands: [
+      {
+        name: 'TCPDump Capture Builder',
+        description: 'Build precise packet capture commands with BPF filters, output options, and protocol selection.',
+        inputs: [
+          { id: 'interface', label: 'Interface (-i)', type: 'text', defaultValue: 'eth0', placeholder: 'e.g., eth0, wlan0, any' },
+          { id: 'filterType', label: 'Filter Preset', type: 'select', options: ['None', 'Host IP', 'Port', 'Network (CIDR)', 'Protocol', 'Custom BPF'], defaultValue: 'None' },
+          { id: 'filterValue', label: 'Filter Value', type: 'text', defaultValue: '', placeholder: 'IP, port number, net CIDR, or BPF expression' },
+          { id: 'protocol', label: 'Protocol Filter', type: 'select', options: ['Any', 'tcp', 'udp', 'icmp', 'arp'], defaultValue: 'Any' },
+          { id: 'writeFile', label: 'Write to File (-w)', type: 'text', defaultValue: '', placeholder: 'e.g., capture.pcap' },
+          { id: 'count', label: 'Packet Count (-c)', type: 'text', defaultValue: '', placeholder: 'e.g., 100 (unlimited if empty)' },
+          { id: 'verbose', label: 'Verbosity', type: 'select', options: ['Normal', '-v (Verbose)', '-vv (More Verbose)', '-vvv (Maximum)'], defaultValue: 'Normal' },
+          { id: 'ascii', label: 'Print ASCII (-A)', type: 'checkbox', defaultValue: 'false', placeholder: 'Show packet payloads in ASCII' },
+          { id: 'noResolve', label: 'No DNS Resolution (-nn)', type: 'checkbox', defaultValue: 'true', placeholder: 'Faster output, no lookups' }
+        ],
+        generator: (inputs) => {
+          let filter = '';
+          if (inputs.filterType === 'Host IP' && inputs.filterValue) filter = ` host ${inputs.filterValue}`;
+          else if (inputs.filterType === 'Port' && inputs.filterValue) filter = ` port ${inputs.filterValue}`;
+          else if (inputs.filterType === 'Network (CIDR)' && inputs.filterValue) filter = ` net ${inputs.filterValue}`;
+          else if (inputs.filterType === 'Custom BPF' && inputs.filterValue) filter = ` '${inputs.filterValue}'`;
+          const proto = inputs.protocol !== 'Any' ? ` ${inputs.protocol}` : '';
+          const writeFile = inputs.writeFile ? ` -w ${inputs.writeFile}` : '';
+          const count = inputs.count ? ` -c ${inputs.count}` : '';
+          const verbose = inputs.verbose !== 'Normal' ? ` ${inputs.verbose.split(' ')[0]}` : '';
+          const ascii = inputs.ascii === 'true' ? ' -A -s 0' : '';
+          const noResolve = inputs.noResolve === 'true' ? ' -nn' : '';
+          return `tcpdump -i ${inputs.interface}${noResolve}${verbose}${ascii}${count}${writeFile}${proto}${filter}`;
+        }
+      }
+    ]
   },
   {
     id: 'ettercap',
@@ -97,6 +166,30 @@ export const sniffingSpoofingTools: Tool[] = [
     relatedTools: ['bettercap', 'arpspoof', 'mitmf'],
     installation: 'sudo apt install ettercap-graphical -y',
     website: 'https://www.ettercap-project.org',
+    interactiveCommands: [
+      {
+        name: 'Ettercap MITM Attack Builder',
+        description: 'Configure ARP/DHCP/DNS poisoning attacks with plugin loading and target selection.',
+        inputs: [
+          { id: 'mode', label: 'Interface Mode', type: 'select', options: ['Text Mode (-T)', 'GTK GUI (-G)'], defaultValue: 'Text Mode (-T)' },
+          { id: 'interface', label: 'Interface (-i)', type: 'text', defaultValue: 'eth0', placeholder: 'e.g., eth0, wlan0' },
+          { id: 'attackType', label: 'MITM Attack (-M)', type: 'select', options: ['arp:remote (ARP Poisoning)', 'dhcp (DHCP Spoofing)', 'icmp (ICMP Redirect)', 'None (Sniff Only)'], defaultValue: 'arp:remote (ARP Poisoning)' },
+          { id: 'target1', label: 'Target 1 (Victim IP)', type: 'text', defaultValue: '192.168.1.100', placeholder: 'Victim IP' },
+          { id: 'target2', label: 'Target 2 (Gateway IP)', type: 'text', defaultValue: '192.168.1.1', placeholder: 'Gateway or second target' },
+          { id: 'plugin', label: 'Plugin (-P)', type: 'select', options: ['None', 'dns_spoof', 'autoadd', 'remote_browser', 'repoison_arp'], defaultValue: 'None' },
+          { id: 'quiet', label: 'Quiet Mode (-q)', type: 'checkbox', defaultValue: 'true', placeholder: 'Suppress packet contents' }
+        ],
+        generator: (inputs) => {
+          const mode = inputs.mode.includes('-T') ? '-T' : '-G';
+          const attack = inputs.attackType !== 'None (Sniff Only)' ? ` -M ${inputs.attackType.split(' ')[0]}` : '';
+          const t1 = `/${inputs.target1}//`;
+          const t2 = `/${inputs.target2}//`;
+          const plugin = inputs.plugin !== 'None' ? ` -P ${inputs.plugin}` : '';
+          const quiet = inputs.quiet === 'true' ? ' -q' : '';
+          return `ettercap ${mode}${quiet} -i ${inputs.interface}${attack} ${t1} ${t2}${plugin}`;
+        }
+      }
+    ]
   },
   {
     id: 'scapy',
@@ -130,6 +223,28 @@ export const sniffingSpoofingTools: Tool[] = [
     relatedTools: ['hping3', 'nping', 'libpcap'],
     installation: 'pip install scapy   # or: sudo apt install python3-scapy -y',
     website: 'https://scapy.net',
+    interactiveCommands: [
+      {
+        name: 'Scapy Interactive Shell',
+        description: 'Generate specific Python statements to execute natively within the Scapy interactive shell.',
+        inputs: [
+          { id: 'action', label: 'Pre-built Action', type: 'select', options: ['Launch Shell', 'ARP Ping Sweep', 'Craft TCP SYN', 'Send Custom Packet', 'Sniff Traffic'], defaultValue: 'Launch Shell' },
+          { id: 'interface', label: 'Interface', type: 'text', defaultValue: 'eth0', placeholder: 'For sending/sniffing' },
+          { id: 'dstIp', label: 'Destination IP', type: 'text', defaultValue: '192.168.1.100', placeholder: 'Target IP or Range' },
+          { id: 'dport', label: 'Destination Port', type: 'text', defaultValue: '80', placeholder: 'Target port' },
+          { id: 'filter', label: 'Sniff Filter', type: 'text', defaultValue: 'tcp port 80', placeholder: 'BPF filter' },
+          { id: 'count', label: 'Packet Count', type: 'text', defaultValue: '10', placeholder: 'How many to sniff' }
+        ],
+        generator: (inputs) => {
+          if (inputs.action === 'Launch Shell') return 'scapy';
+          if (inputs.action === 'ARP Ping Sweep') return `ans,unans = arping("${inputs.dstIp}/24")`;
+          if (inputs.action === 'Craft TCP SYN') return `pkt = IP(dst="${inputs.dstIp}")/TCP(dport=${inputs.dport}, flags="S")`;
+          if (inputs.action === 'Send Custom Packet') return `sendp(Ether()/IP(dst="${inputs.dstIp}")/ICMP(), iface="${inputs.interface}")`;
+          if (inputs.action === 'Sniff Traffic') return `sniff(iface="${inputs.interface}", prn=lambda x: x.summary(), filter="${inputs.filter}", count=${inputs.count})`;
+          return 'scapy';
+        }
+      }
+    ]
   },
   {
     id: 'arpspoof',
@@ -156,6 +271,36 @@ export const sniffingSpoofingTools: Tool[] = [
     relatedTools: ['ettercap', 'bettercap', 'dsniff'],
     installation: 'sudo apt install dsniff -y',
     website: 'https://github.com/ggreer/dsniff',
+    interactiveCommands: [
+      {
+        name: 'ArpSpoof Poisoner',
+        description: 'Configure and launch high-speed ARP spoofing attacks.',
+        inputs: [
+          { id: 'interface', label: 'Interface (-i)', type: 'text', defaultValue: 'eth0', placeholder: 'e.g., eth0, wlan0' },
+          { id: 'target', label: 'Target IP (-t)', type: 'text', defaultValue: '192.168.1.100', placeholder: 'Victim IP (leave blank for all)' },
+          { id: 'gateway', label: 'Host/Gateway IP', type: 'text', defaultValue: '192.168.1.1', placeholder: 'IP to impersonate' },
+          { id: 'bidirectional', label: 'Bidirectional (-r)', type: 'checkbox', defaultValue: 'false', placeholder: 'Poison both directions' },
+          { id: 'ipForward', label: 'Enable IP Forwarding', type: 'checkbox', defaultValue: 'true', placeholder: 'Crucial for MITM (prevents DoS)' },
+          { id: 'c', label: 'Hardware Address (-c)', type: 'select', options: ['None', 'own', 'host', 'both'], defaultValue: 'None' }
+        ],
+        generator: (inputs) => {
+          let cmd = '';
+          if (inputs.ipForward === 'true') {
+             cmd += 'echo 1 > /proc/sys/net/ipv4/ip_forward && ';
+          }
+          
+          cmd += `arpspoof -i ${inputs.interface}`;
+          
+          if (inputs.target) cmd += ` -t ${inputs.target}`;
+          if (inputs.bidirectional === 'true') cmd += ' -r';
+          if (inputs.c !== 'None') cmd += ` -c ${inputs.c}`;
+          
+          cmd += ` ${inputs.gateway}`;
+          
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'mitmproxy',
@@ -187,6 +332,33 @@ export const sniffingSpoofingTools: Tool[] = [
     relatedTools: ['burpsuite', 'owasp-zap', 'fiddler'],
     installation: 'sudo apt install mitmproxy -y',
     website: 'https://mitmproxy.org/',
+    interactiveCommands: [
+      {
+        name: 'mitmproxy Interception Configurator',
+        description: 'Launch the mitmproxy interactive CLI, Web GUI, or headless dump mode.',
+        inputs: [
+          { id: 'app', label: 'Application Mode', type: 'select', options: ['mitmproxy (CLI)', 'mitmweb (Web GUI)', 'mitmdump (Headless)'], defaultValue: 'mitmproxy (CLI)' },
+          { id: 'port', label: 'Listen Port (-p)', type: 'text', defaultValue: '8080', placeholder: 'Default is 8080' },
+          { id: 'mode', label: 'Proxy Mode (--mode)', type: 'select', options: ['regular', 'transparent', 'reverse', 'socks5'], defaultValue: 'regular' },
+          { id: 'script', label: 'Python Script (-s)', type: 'text', defaultValue: '', placeholder: 'Path to custom addon script' },
+          { id: 'saveFile', label: 'Save Traffic (-w)', type: 'text', defaultValue: '', placeholder: 'Path to save intercept' },
+          { id: 'showHost', label: 'Show Host (--showhost)', type: 'checkbox', defaultValue: 'false', placeholder: 'Use Host header for URLs' },
+          { id: 'insecure', label: 'Insecure SSL (--insecure)', type: 'checkbox', defaultValue: 'false', placeholder: 'Do not verify upstream certs' }
+        ],
+        generator: (inputs) => {
+          let cmd = inputs.app.split(' ')[0];
+          
+          if (inputs.port !== '8080') cmd += ` -p ${inputs.port}`;
+          if (inputs.mode !== 'regular') cmd += ` --mode ${inputs.mode}`;
+          if (inputs.script) cmd += ` -s ${inputs.script}`;
+          if (inputs.saveFile) cmd += ` -w ${inputs.saveFile}`;
+          if (inputs.showHost === 'true') cmd += ' --showhost';
+          if (inputs.insecure === 'true') cmd += ' --insecure';
+          
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'sslstrip',
@@ -214,6 +386,35 @@ export const sniffingSpoofingTools: Tool[] = [
     relatedTools: ['mitmproxy', 'bettercap', 'arpspoof'],
     installation: 'sudo apt install sslstrip -y',
     website: 'https://moxie.org/software/sslstrip/',
+    interactiveCommands: [
+      {
+        name: 'SSLStrip Downgrade Setup',
+        description: 'Configure iptables routing and launch SSLStrip for cleartext HTTPS interception.',
+        inputs: [
+          { id: 'port', label: 'Listen Port (-l)', type: 'text', defaultValue: '8080', placeholder: 'Port to listen on' },
+          { id: 'logFile', label: 'Log File (-w)', type: 'text', defaultValue: 'sslstrip.log', placeholder: 'File to save traffic' },
+          { id: 'logAll', label: 'Log All Traffic (-a)', type: 'checkbox', defaultValue: 'true', placeholder: 'Log entire HTTP payload' },
+          { id: 'favicon', label: 'Fake Favicon (-f)', type: 'checkbox', defaultValue: 'false', placeholder: 'Show fake padlock icon' },
+          { id: 'iptables', label: 'Auto-Configure iptables', type: 'checkbox', defaultValue: 'true', placeholder: 'Run iptables REDIRECT first' },
+          { id: 'targetPort', label: 'Target HTTP Port', type: 'text', defaultValue: '80', placeholder: 'Usually 80' }
+        ],
+        generator: (inputs) => {
+          let cmd = '';
+          
+          if (inputs.iptables === 'true') {
+             cmd += `iptables -t nat -A PREROUTING -p tcp --destination-port ${inputs.targetPort} -j REDIRECT --to-port ${inputs.port} && `;
+          }
+          
+          cmd += `sslstrip -l ${inputs.port}`;
+          
+          if (inputs.logFile) cmd += ` -w ${inputs.logFile}`;
+          if (inputs.logAll === 'true') cmd += ' -a';
+          if (inputs.favicon === 'true') cmd += ' -f';
+          
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'dnschef',
@@ -243,6 +444,39 @@ export const sniffingSpoofingTools: Tool[] = [
     relatedTools: ['bettercap', 'responder', 'dnsmasq'],
     installation: 'sudo apt install dnschef -y',
     website: 'https://github.com/iphelix/dnschef',
+    interactiveCommands: [
+      {
+        name: 'DNSChef Rogue Proxy',
+        description: 'Generate DNSChef commands to spoof DNS records for specific domains or wildcard routing.',
+        inputs: [
+          { id: 'interface', label: 'Listen Interface (--interface)', type: 'text', defaultValue: '0.0.0.0', placeholder: 'Listen on all IPs' },
+          { id: 'port', label: 'Listen Port (--port)', type: 'text', defaultValue: '53', placeholder: 'Standard DNS is 53' },
+          { id: 'fakeIp', label: 'Fake Target IP (--fakeip)', type: 'text', defaultValue: '192.168.1.50', placeholder: 'IP to redirect victims to' },
+          { id: 'fakeDomains', label: 'Domains to Spoof (--fakedomains)', type: 'text', defaultValue: '', placeholder: 'e.g., example.com (leave empty for ALL)' },
+          { id: 'configFile', label: 'INI Config (--file)', type: 'text', defaultValue: '', placeholder: 'Advanced multi-record config' },
+          { id: 'logFile', label: 'Log File (--logfile)', type: 'text', defaultValue: '', placeholder: 'Save DNS queries' },
+          { id: 'quiet', label: 'Quiet Mode (-q)', type: 'checkbox', defaultValue: 'false', placeholder: 'Less terminal noise' }
+        ],
+        generator: (inputs) => {
+          let cmd = 'dnschef';
+          
+          if (inputs.interface !== '127.0.0.1') cmd += ` --interface ${inputs.interface}`;
+          if (inputs.port !== '53') cmd += ` --port ${inputs.port}`;
+          
+          if (inputs.configFile) {
+             cmd += ` --file ${inputs.configFile}`;
+          } else {
+             if (inputs.fakeIp) cmd += ` --fakeip ${inputs.fakeIp}`;
+             if (inputs.fakeDomains) cmd += ` --fakedomains ${inputs.fakeDomains}`;
+          }
+          
+          if (inputs.logFile) cmd += ` --logfile ${inputs.logFile}`;
+          if (inputs.quiet === 'true') cmd += ' -q';
+          
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'macchanger',
@@ -274,6 +508,34 @@ export const sniffingSpoofingTools: Tool[] = [
     relatedTools: ['ifconfig', 'iproute2'],
     installation: 'sudo apt install macchanger -y',
     website: 'https://github.com/alobbs/macchanger',
+    interactiveCommands: [
+      {
+        name: 'Macchanger Spoofing Utility',
+        description: 'Generate safely bounded commands to bring down interfaces and alter hardware MAC addresses.',
+        inputs: [
+          { id: 'interface', label: 'Target Interface', type: 'text', defaultValue: 'eth0', placeholder: 'e.g., eth0, wlan0' },
+          { id: 'mode', label: 'Action Mode', type: 'select', options: ['Random MAC (-r)', 'Same Vendor Random (-e)', 'Specific MAC (-m)', 'Restore Original (-p)', 'Show Current (-s)'], defaultValue: 'Random MAC (-r)' },
+          { id: 'specificMac', label: 'Specific MAC Address', type: 'text', defaultValue: 'AA:BB:CC:DD:EE:FF', placeholder: 'If using Specific MAC mode' },
+          { id: 'autoToggle', label: 'Auto Interface Toggle', type: 'checkbox', defaultValue: 'true', placeholder: 'Automatically run ifconfig down/up' },
+          { id: 'bia', label: 'Show BIA (-b)', type: 'checkbox', defaultValue: 'false', placeholder: 'Pretend to be burned-in-address' }
+        ],
+        generator: (inputs) => {
+          let flag = '-r';
+          if (inputs.mode.includes('-e')) flag = '-e';
+          if (inputs.mode.includes('-p')) flag = '-p';
+          if (inputs.mode.includes('-s')) flag = '-s';
+          if (inputs.mode.includes('-m')) flag = `-m ${inputs.specificMac}`;
+          
+          const bia = inputs.bia === 'true' ? ' -b' : '';
+          
+          if (inputs.autoToggle === 'true' && !inputs.mode.includes('-s')) {
+             return `ifconfig ${inputs.interface} down && macchanger ${flag}${bia} ${inputs.interface} && ifconfig ${inputs.interface} up`;
+          } else {
+             return `macchanger ${flag}${bia} ${inputs.interface}`;
+          }
+        }
+      }
+    ]
   },
   {
     id: 'hping3',
@@ -305,6 +567,35 @@ export const sniffingSpoofingTools: Tool[] = [
     relatedTools: ['scapy', 'nmap', 'nping'],
     installation: 'sudo apt install hping3 -y',
     website: 'https://github.com/antirez/hping',
+    interactiveCommands: [
+      {
+        name: 'hping3 Packet Cannon',
+        description: 'Craft and fire custom TCP/UDP/ICMP packets for port scanning, firewall testing, and DoS stress testing.',
+        inputs: [
+          { id: 'target', label: 'Target IP', type: 'text', defaultValue: '192.168.1.100', placeholder: 'Target IP address' },
+          { id: 'scanMode', label: 'Packet Mode', type: 'select', options: ['TCP SYN (-S)', 'TCP ACK (-A)', 'TCP FIN (-F)', 'Xmas Scan (-F -P -U)', 'UDP Mode (--udp)', 'ICMP Ping (-1)'], defaultValue: 'TCP SYN (-S)' },
+          { id: 'port', label: 'Target Port (-p)', type: 'text', defaultValue: '80', placeholder: 'e.g., 80, 443, 22' },
+          { id: 'count', label: 'Packet Count (-c)', type: 'text', defaultValue: '4', placeholder: 'Number of packets (empty=infinite)' },
+          { id: 'flood', label: 'Flood Mode (--flood)', type: 'checkbox', defaultValue: 'false', placeholder: 'Send as fast as possible' },
+          { id: 'randSource', label: 'Random Source IP (--rand-source)', type: 'checkbox', defaultValue: 'false', placeholder: 'Spoof source addresses' },
+          { id: 'dataSize', label: 'Data Size (-d)', type: 'text', defaultValue: '', placeholder: 'e.g., 120 (bytes of payload)' }
+        ],
+        generator: (inputs) => {
+          let flags = '-S';
+          if (inputs.scanMode.includes('-A')) flags = '-A';
+          else if (inputs.scanMode.includes('Xmas')) flags = '-F -P -U';
+          else if (inputs.scanMode.includes('-F') && !inputs.scanMode.includes('Xmas')) flags = '-F';
+          else if (inputs.scanMode.includes('--udp')) flags = '--udp';
+          else if (inputs.scanMode.includes('-1')) flags = '-1';
+          const port = !inputs.scanMode.includes('-1') ? ` -p ${inputs.port}` : '';
+          const count = inputs.count && inputs.flood !== 'true' ? ` -c ${inputs.count}` : '';
+          const flood = inputs.flood === 'true' ? ' --flood' : '';
+          const rand = inputs.randSource === 'true' ? ' --rand-source' : '';
+          const data = inputs.dataSize ? ` -d ${inputs.dataSize}` : '';
+          return `hping3 ${flags}${port}${count}${flood}${rand}${data} ${inputs.target}`;
+        }
+      }
+    ]
   },
   {
     id: 'macof',
@@ -342,6 +633,36 @@ export const sniffingSpoofingTools: Tool[] = [
     relatedTools: ['yersinia', 'arpspoof', 'dsniff'],
     installation: 'sudo apt install dsniff -y',
     website: 'https://github.com/ggreer/dsniff',
+    interactiveCommands: [
+      {
+        name: 'macof CAM Flooder',
+        description: 'Generate massive Layer 2 MAC flooding attacks to overwhelm network switch CAM tables.',
+        inputs: [
+          { id: 'interface', label: 'Interface (-i)', type: 'text', defaultValue: 'eth0', placeholder: 'e.g., eth0' },
+          { id: 'count', label: 'Packet Count (-n)', type: 'text', defaultValue: '', placeholder: 'Leave blank for infinite' },
+          { id: 'dstIp', label: 'Destination IP (-d)', type: 'text', defaultValue: '', placeholder: 'Target specific IP' },
+          { id: 'srcIp', label: 'Source IP (-s)', type: 'text', defaultValue: '', placeholder: 'Spoof specific Source IP' },
+          { id: 'srcMac', label: 'Source MAC (-e)', type: 'text', defaultValue: '', placeholder: 'Spoof specific Source MAC' },
+          { id: 'dstMac', label: 'Destination MAC (-x)', type: 'text', defaultValue: '', placeholder: 'Target specific Dest MAC' },
+          { id: 'tcpdump', label: 'Run with tcpdump', type: 'checkbox', defaultValue: 'false', placeholder: 'Capture spillage simultaneously' }
+        ],
+        generator: (inputs) => {
+          let cmd = `macof -i ${inputs.interface}`;
+          
+          if (inputs.count) cmd += ` -n ${inputs.count}`;
+          if (inputs.dstIp) cmd += ` -d ${inputs.dstIp}`;
+          if (inputs.srcIp) cmd += ` -s ${inputs.srcIp}`;
+          if (inputs.srcMac) cmd += ` -e ${inputs.srcMac}`;
+          if (inputs.dstMac) cmd += ` -x ${inputs.dstMac}`;
+          
+          if (inputs.tcpdump === 'true') {
+             return `${cmd} & tcpdump -i ${inputs.interface} -w macof_capture.pcap`;
+          }
+          
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'yersinia',
@@ -391,5 +712,39 @@ export const sniffingSpoofingTools: Tool[] = [
     relatedTools: ['scapy', 'ettercap', 'macof'],
     installation: 'sudo apt install yersinia -y',
     website: 'https://github.com/tomac/yersinia',
+    interactiveCommands: [
+      {
+        name: 'Yersinia Infrastructure Exploiter',
+        description: 'Configure and launch complex Layer 2 infrastructure attacks (STP, CDP, DTP, DHCP, HSRP).',
+        inputs: [
+          { id: 'interface', label: 'Interface (-interface)', type: 'text', defaultValue: 'eth0', placeholder: 'e.g., eth0' },
+          { id: 'mode', label: 'Interface Mode', type: 'select', options: ['Headless (CLI Attack)', 'GTK GUI (-G)', 'Interactive Shell (-I)'], defaultValue: 'Headless (CLI Attack)' },
+          { id: 'protocol', label: 'Protocol Module', type: 'select', options: ['dhcp', 'stp', 'cdp', 'dtp', 'hsrp', 'vtp'], defaultValue: 'dhcp' },
+          { id: 'attack', label: 'Attack Type (-attack)', type: 'select', options: ['0 (Raw Packet)', '1 (Standard Attack)', '2 (Advanced Attack)', '3', '4'], defaultValue: '1 (Standard Attack)' },
+          { id: 'daemon', label: 'Run as Daemon (-D)', type: 'checkbox', defaultValue: 'false', placeholder: 'Run in background' },
+          { id: 'macSpoof', label: 'Spoof MAC (-M)', type: 'checkbox', defaultValue: 'true', placeholder: 'Use a random source MAC' }
+        ],
+        generator: (inputs) => {
+          let cmd = 'yersinia';
+          
+          if (inputs.mode === 'GTK GUI (-G)') return `${cmd} -G`;
+          if (inputs.mode === 'Interactive Shell (-I)') return `${cmd} -I`;
+          
+          cmd += ` ${inputs.protocol}`;
+          
+          if (inputs.attack !== '0 (Raw Packet)') {
+             cmd += ` -attack ${inputs.attack.split(' ')[0]}`;
+          } else {
+             cmd += ' -attack 0';
+          }
+          
+          if (inputs.interface) cmd += ` -interface ${inputs.interface}`;
+          if (inputs.daemon === 'true') cmd += ' -D';
+          if (inputs.macSpoof === 'true') cmd += ' -M';
+          
+          return cmd;
+        }
+      }
+    ]
   }
 ];

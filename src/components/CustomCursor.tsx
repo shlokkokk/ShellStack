@@ -8,6 +8,8 @@ const CustomCursor = () => {
   const [mode, setMode] = useState<'scan' | 'action' | 'text'>('scan');
   const [isClicking, setIsClicking] = useState(false);
 
+  const useSvgCursorOnly = mode !== 'scan' || isClicking;
+
   useEffect(() => {
     const checkTouch = () => {
       setIsTouchDevice(
@@ -57,7 +59,7 @@ const CustomCursor = () => {
 
     gsap.ticker.add(tick);
 
-    const interactiveSelector = 'a, button, [role="button"], .category-card, .module-card, .cyber-panel';
+    const interactiveSelector = 'a, button, [role="button"], label, .category-card, .module-card, .cyber-panel';
     const textSelector = 'input, textarea, select, [contenteditable="true"]';
 
     const handleMouseOver = (e: Event) => {
@@ -77,6 +79,7 @@ const CustomCursor = () => {
 
     return () => {
       document.body.classList.remove('custom-cursor-enabled');
+      document.body.classList.remove('custom-cursor-svg-only');
       gsap.ticker.remove(tick);
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mousedown', handleMouseDown);
@@ -86,6 +89,20 @@ const CustomCursor = () => {
     };
   }, [isTouchDevice]);
 
+  useEffect(() => {
+    if (isTouchDevice) return;
+
+    if (useSvgCursorOnly) {
+      document.body.classList.add('custom-cursor-svg-only');
+    } else {
+      document.body.classList.remove('custom-cursor-svg-only');
+    }
+
+    return () => {
+      document.body.classList.remove('custom-cursor-svg-only');
+    };
+  }, [isTouchDevice, useSvgCursorOnly]);
+
   if (isTouchDevice) return null;
 
   return (
@@ -93,7 +110,9 @@ const CustomCursor = () => {
       {/* Core Dot */}
       <div
         ref={cursorRef}
-        className="fixed pointer-events-none z-[10001]"
+        className={`fixed pointer-events-none z-[10001] transition-opacity duration-150 ${
+          useSvgCursorOnly ? 'opacity-0' : 'opacity-100'
+        }`}
         style={{ willChange: 'transform', transform: 'translate(-50%, -50%)' }}
       >
         <div 
@@ -107,7 +126,9 @@ const CustomCursor = () => {
       {/* Cyber Reticle */}
       <div
         ref={outerRef}
-        className="fixed pointer-events-none z-[10000]"
+        className={`fixed pointer-events-none z-[10000] transition-opacity duration-150 ${
+          useSvgCursorOnly ? 'opacity-0' : 'opacity-100'
+        }`}
         style={{ willChange: 'transform', transform: 'translate(-50%, -50%)' }}
       >
         <div className={`relative transition-all duration-300 ${

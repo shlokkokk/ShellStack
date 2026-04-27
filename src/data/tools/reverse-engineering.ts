@@ -31,6 +31,30 @@ export const reverseEngineeringTools: Tool[] = [
     relatedTools: ['ida-pro', 'binary-ninja', 'radare2', 'cutter'],
     installation: 'Download from https://ghidra-sre.org — requires Java 17+',
     website: 'https://ghidra-sre.org',
+    interactiveCommands: [
+      {
+        name: 'Ghidra Headless Analyzer',
+        description: 'Generate headless Ghidra commands for automated batch reverse engineering and script execution.',
+        inputs: [
+          { id: 'projDir', label: 'Project Directory', type: 'text', defaultValue: '/tmp/ghidra_proj', placeholder: 'Path to save project' },
+          { id: 'projName', label: 'Project Name', type: 'text', defaultValue: 'MalwareAnalysis', placeholder: 'Name of the project' },
+          { id: 'action', label: 'Action', type: 'select', options: ['-import', '-process'], defaultValue: '-import' },
+          { id: 'binary', label: 'Target Binary', type: 'text', defaultValue: 'malware.exe', placeholder: 'File or directory to analyze' },
+          { id: 'postScript', label: 'Post-Script', type: 'text', defaultValue: 'ExportDecompiled.java', placeholder: 'Script to run after analysis' },
+          { id: 'timeout', label: 'Analysis Timeout', type: 'text', defaultValue: '600', placeholder: 'Max seconds per file' },
+          { id: 'recursive', label: 'Recursive Import (-recursive)', type: 'checkbox', defaultValue: 'false', placeholder: 'If target is a directory' }
+        ],
+        generator: (inputs) => {
+          let cmd = `analyzeHeadless ${inputs.projDir} ${inputs.projName} ${inputs.action} ${inputs.binary}`;
+          
+          if (inputs.postScript) cmd += ` -postScript ${inputs.postScript}`;
+          if (inputs.timeout) cmd += ` -analysisTimeoutPerFile ${inputs.timeout}`;
+          if (inputs.recursive === 'true') cmd += ' -recursive';
+          
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'radare2',
@@ -71,6 +95,33 @@ export const reverseEngineeringTools: Tool[] = [
     relatedTools: ['cutter', 'iaito', 'gdb', 'ghidra'],
     installation: 'sudo apt install radare2 -y   # or: git clone https://github.com/radareorg/radare2 && sys/install.sh',
     website: 'https://rada.re',
+    interactiveCommands: [
+      {
+        name: 'Radare2 Analysis Builder',
+        description: 'Construct radare2 launch commands with auto-analysis, debugging, and patching capabilities.',
+        inputs: [
+          { id: 'binary', label: 'Target Binary', type: 'text', defaultValue: 'program.bin', placeholder: 'Path to binary' },
+          { id: 'analyze', label: 'Auto-Analyze (-A)', type: 'checkbox', defaultValue: 'true', placeholder: 'Run aaa on load' },
+          { id: 'mode', label: 'Open Mode', type: 'select', options: ['Read-Only', 'Debug (-d)', 'Write/Patch (-w)'], defaultValue: 'Read-Only' },
+          { id: 'quiet', label: 'Quiet Mode (-q)', type: 'checkbox', defaultValue: 'false', placeholder: 'Suppress banner' },
+          { id: 'strings', label: 'Strings Only (-z)', type: 'checkbox', defaultValue: 'false', placeholder: 'Search for strings' },
+          { id: 'cmd', label: 'Initial Command (-c)', type: 'text', defaultValue: '', placeholder: 'e.g., afl; pdf @ main' }
+        ],
+        generator: (inputs) => {
+          let cmd = 'r2';
+          
+          if (inputs.analyze === 'true') cmd += ' -A';
+          if (inputs.mode === 'Debug (-d)') cmd += ' -d';
+          if (inputs.mode === 'Write/Patch (-w)') cmd += ' -w';
+          if (inputs.quiet === 'true') cmd += ' -q';
+          if (inputs.strings === 'true') cmd += ' -z';
+          if (inputs.cmd) cmd += ` -c "${inputs.cmd}"`;
+          
+          cmd += ` ${inputs.binary}`;
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'gdb',
@@ -113,6 +164,39 @@ export const reverseEngineeringTools: Tool[] = [
     relatedTools: ['lldb', 'edb-debugger', 'radare2', 'pwntools'],
     installation: 'sudo apt install gdb -y\nbash -c "$(curl -fsSL https://gef.blber.dev/sh)"   # Install GEF plugin',
     website: 'https://www.gnu.org/software/gdb',
+    interactiveCommands: [
+      {
+        name: 'GDB Debugging Session',
+        description: 'Prepare GDB launch commands with custom startup scripts, PID attachment, and arguments.',
+        inputs: [
+          { id: 'target', label: 'Binary / PID', type: 'text', defaultValue: './binary', placeholder: 'Executable or PID' },
+          { id: 'attachMode', label: 'Attachment Mode', type: 'select', options: ['Execute Binary', 'Attach to PID (-p)'], defaultValue: 'Execute Binary' },
+          { id: 'quiet', label: 'Quiet Mode (-q)', type: 'checkbox', defaultValue: 'true', placeholder: 'Skip startup banner' },
+          { id: 'args', label: 'Program Args (--args)', type: 'text', defaultValue: '', placeholder: 'Arguments for the binary' },
+          { id: 'exCmd', label: 'Startup Command (-ex)', type: 'text', defaultValue: 'break main', placeholder: 'e.g., break main' },
+          { id: 'script', label: 'GDB Script (-x)', type: 'text', defaultValue: '', placeholder: 'Path to .gdbinit or script' }
+        ],
+        generator: (inputs) => {
+          let cmd = 'gdb';
+          
+          if (inputs.quiet === 'true') cmd += ' -q';
+          if (inputs.script) cmd += ` -x ${inputs.script}`;
+          if (inputs.exCmd) cmd += ` -ex "${inputs.exCmd}"`;
+          
+          if (inputs.attachMode === 'Attach to PID (-p)') {
+            cmd += ` -p ${inputs.target}`;
+          } else {
+            if (inputs.args) {
+               cmd += ` --args ${inputs.target} ${inputs.args}`;
+            } else {
+               cmd += ` ${inputs.target}`;
+            }
+          }
+          
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'apktool',
@@ -145,6 +229,29 @@ export const reverseEngineeringTools: Tool[] = [
     relatedTools: ['jadx', 'dex2jar', 'frida', 'objection'],
     installation: 'sudo apt install apktool -y',
     website: 'https://ibotpeaches.github.io/Apktool/',
+    interactiveCommands: [
+      {
+        name: 'Apktool Modifier',
+        description: 'Generate commands to decode, modify, and rebuild Android applications.',
+        inputs: [
+          { id: 'action', label: 'Action', type: 'select', options: ['Decode (d)', 'Build (b)'], defaultValue: 'Decode (d)' },
+          { id: 'target', label: 'Target File/Directory', type: 'text', defaultValue: 'app.apk', placeholder: 'APK to decode or Dir to build' },
+          { id: 'noRes', label: 'Skip Resources (-r)', type: 'checkbox', defaultValue: 'false', placeholder: 'Faster decode (code only)' },
+          { id: 'force', label: 'Force Overwrite (-f)', type: 'checkbox', defaultValue: 'true', placeholder: 'Overwrite output dir' },
+          { id: 'output', label: 'Output Path (-o)', type: 'text', defaultValue: 'out_dir', placeholder: 'Directory or modified APK' }
+        ],
+        generator: (inputs) => {
+          let cmd = `apktool ${inputs.action.charAt(0)}`;
+          
+          if (inputs.action.includes('Decode') && inputs.noRes === 'true') cmd += ' -r';
+          if (inputs.force === 'true') cmd += ' -f';
+          if (inputs.output) cmd += ` -o ${inputs.output}`;
+          
+          cmd += ` ${inputs.target}`;
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'jadx',
@@ -176,6 +283,36 @@ export const reverseEngineeringTools: Tool[] = [
     relatedTools: ['apktool', 'dex2jar', 'jd-gui', 'bytecode-viewer'],
     installation: 'sudo apt install jadx -y',
     website: 'https://github.com/skylot/jadx',
+    interactiveCommands: [
+      {
+        name: 'JADX Decompiler Builder',
+        description: 'Construct JADX commands to extract readable Java source code from APKs.',
+        inputs: [
+          { id: 'uiMode', label: 'Interface Mode', type: 'select', options: ['jadx-gui', 'jadx (CLI)'], defaultValue: 'jadx-gui' },
+          { id: 'target', label: 'Target APK', type: 'text', defaultValue: 'app.apk', placeholder: 'APK file' },
+          { id: 'outDir', label: 'Output Dir (-d)', type: 'text', defaultValue: 'src_out', placeholder: 'For CLI mode' },
+          { id: 'deobf', label: 'Deobfuscate (--deobf)', type: 'checkbox', defaultValue: 'true', placeholder: 'Rename obfuscated classes' },
+          { id: 'badCode', label: 'Show Bad Code', type: 'checkbox', defaultValue: 'true', placeholder: '--show-bad-code' },
+          { id: 'noRes', label: 'Skip Resources (--no-res)', type: 'checkbox', defaultValue: 'false', placeholder: 'Extract code only' },
+          { id: 'threads', label: 'Threads (-j)', type: 'text', defaultValue: '4', placeholder: 'Number of worker threads' }
+        ],
+        generator: (inputs) => {
+          let cmd = inputs.uiMode;
+          
+          if (inputs.uiMode === 'jadx (CLI)' && inputs.outDir) {
+            cmd += ` -d ${inputs.outDir}`;
+          }
+          
+          if (inputs.deobf === 'true') cmd += ' --deobf';
+          if (inputs.badCode === 'true') cmd += ' --show-bad-code';
+          if (inputs.noRes === 'true') cmd += ' --no-res';
+          if (inputs.threads && inputs.threads !== '4') cmd += ` -j ${inputs.threads}`;
+          
+          cmd += ` ${inputs.target}`;
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'strace-ltrace',
@@ -211,6 +348,42 @@ export const reverseEngineeringTools: Tool[] = [
     relatedTools: ['gdb', 'radare2', 'procmon'],
     installation: 'sudo apt install strace ltrace -y',
     website: 'https://strace.io',
+    interactiveCommands: [
+      {
+        name: 'Syscall/Library Tracer',
+        description: 'Generate strace or ltrace commands to intercept system calls and dynamic library calls.',
+        inputs: [
+          { id: 'tool', label: 'Tracing Tool', type: 'select', options: ['strace (Syscalls)', 'ltrace (Library Calls)'], defaultValue: 'strace (Syscalls)' },
+          { id: 'target', label: 'Target Binary/PID', type: 'text', defaultValue: './binary', placeholder: 'Executable or PID' },
+          { id: 'attach', label: 'Attach to PID (-p)', type: 'checkbox', defaultValue: 'false', placeholder: 'Treat target as PID' },
+          { id: 'filter', label: 'Trace Filter (-e)', type: 'select', options: ['All', 'trace=network', 'trace=file', 'trace=process', 'trace=memory'], defaultValue: 'All' },
+          { id: 'follow', label: 'Follow Forks (-f)', type: 'checkbox', defaultValue: 'true', placeholder: 'Trace child processes' },
+          { id: 'strLen', label: 'String Length (-s)', type: 'text', defaultValue: '200', placeholder: 'Max string display length' },
+          { id: 'output', label: 'Output File (-o)', type: 'text', defaultValue: '', placeholder: 'Save trace to file' },
+          { id: 'summary', label: 'Summary Only (-c)', type: 'checkbox', defaultValue: 'false', placeholder: 'Show syscall statistics only' }
+        ],
+        generator: (inputs) => {
+          let cmd = inputs.tool.split(' ')[0];
+          
+          if (inputs.follow === 'true') cmd += ' -f';
+          if (inputs.strLen && inputs.strLen !== '32') cmd += ` -s ${inputs.strLen}`;
+          if (inputs.summary === 'true') cmd += ' -c';
+          if (inputs.output) cmd += ` -o ${inputs.output}`;
+          
+          if (inputs.tool === 'strace (Syscalls)' && inputs.filter !== 'All') {
+            cmd += ` -e ${inputs.filter}`;
+          }
+          
+          if (inputs.attach === 'true') {
+            cmd += ` -p ${inputs.target}`;
+          } else {
+            cmd += ` ${inputs.target}`;
+          }
+          
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'idapro',
@@ -253,6 +426,37 @@ export const reverseEngineeringTools: Tool[] = [
     relatedTools: ['ghidra', 'radare2', 'binary-ninja'],
     installation: 'Commercial software. IDA Free available at hex-rays.com.',
     website: 'https://hex-rays.com/ida-pro/',
+    interactiveCommands: [
+      {
+        name: 'IDA Pro Batch Analyzer',
+        description: 'Generate IDA Pro headless and batch commands for automated disassembly and script execution.',
+        inputs: [
+          { id: 'binary', label: 'Target Binary', type: 'text', defaultValue: 'binary.exe', placeholder: 'Path to binary' },
+          { id: 'executable', label: 'IDA Version', type: 'select', options: ['ida64 (64-bit GUI)', 'idaq (32-bit GUI)', 'idat64 (64-bit Text)', 'idat (32-bit Text)'], defaultValue: 'ida64 (64-bit GUI)' },
+          { id: 'auto', label: 'Autonomous (-A)', type: 'checkbox', defaultValue: 'true', placeholder: 'No user interaction' },
+          { id: 'batch', label: 'Batch Mode (-B)', type: 'checkbox', defaultValue: 'false', placeholder: 'Generate IDB & ASM' },
+          { id: 'script', label: 'Script (-S)', type: 'text', defaultValue: '', placeholder: 'e.g., script.py' },
+          { id: 'plugin', label: 'Plugin/Output (-O)', type: 'text', defaultValue: '', placeholder: 'e.g., hexrays:outfile.c' },
+          { id: 'proc', label: 'Processor (-p)', type: 'text', defaultValue: '', placeholder: 'e.g., arm, mips' }
+        ],
+        generator: (inputs) => {
+          let cmd = inputs.executable.split(' ')[0];
+          
+          if (inputs.auto === 'true') cmd += ' -A';
+          if (inputs.batch === 'true') cmd += ' -B';
+          if (inputs.script) cmd += ` -S"${inputs.script}"`;
+          if (inputs.plugin) cmd += ` -O${inputs.plugin}`;
+          if (inputs.proc) cmd += ` -p${inputs.proc}`;
+          
+          if (!inputs.batch && inputs.auto === 'true') {
+            cmd += ' -c'; // Create new database if autonomous and not batch
+          }
+          
+          cmd += ` ${inputs.binary}`;
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'cuckoosandbox',
@@ -297,6 +501,34 @@ export const reverseEngineeringTools: Tool[] = [
     relatedTools: ['anyrun', 'joesandbox', 'inetsim'],
     installation: 'Complex multi-component installation. See official documentation.',
     website: 'https://cuckoosandbox.org/',
+    interactiveCommands: [
+      {
+        name: 'Cuckoo Submission Builder',
+        description: 'Construct advanced Cuckoo Sandbox submission commands for malware analysis.',
+        inputs: [
+          { id: 'targetType', label: 'Target Type', type: 'select', options: ['File', 'URL (--url)'], defaultValue: 'File' },
+          { id: 'target', label: 'Target', type: 'text', defaultValue: 'suspicious.exe', placeholder: 'File path or URL' },
+          { id: 'timeout', label: 'Timeout (--timeout)', type: 'text', defaultValue: '120', placeholder: 'Analysis time (seconds)' },
+          { id: 'package', label: 'Package (--package)', type: 'select', options: ['Auto', 'exe', 'dll', 'pdf', 'doc', 'xls'], defaultValue: 'Auto' },
+          { id: 'machine', label: 'Machine (--machine)', type: 'text', defaultValue: '', placeholder: 'Target VM name' },
+          { id: 'options', label: 'Options (--options)', type: 'text', defaultValue: '', placeholder: 'e.g., function=DllMain' },
+          { id: 'memory', label: 'Memory Dump (--memory)', type: 'checkbox', defaultValue: 'false', placeholder: 'Take full memory dump' }
+        ],
+        generator: (inputs) => {
+          let cmd = 'cuckoo submit';
+          
+          if (inputs.targetType === 'URL (--url)') cmd += ' --url';
+          if (inputs.timeout && inputs.timeout !== '120') cmd += ` --timeout ${inputs.timeout}`;
+          if (inputs.package !== 'Auto') cmd += ` --package ${inputs.package}`;
+          if (inputs.machine) cmd += ` --machine ${inputs.machine}`;
+          if (inputs.options) cmd += ` --options ${inputs.options}`;
+          if (inputs.memory === 'true') cmd += ' --memory';
+          
+          cmd += ` ${inputs.target}`;
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'detectiteasy',
@@ -334,6 +566,30 @@ export const reverseEngineeringTools: Tool[] = [
     relatedTools: ['peid', 'file', 'binwalk'],
     installation: 'sudo apt install detect-it-easy -y (on Kali)',
     website: 'https://github.com/horsicq/Detect-It-Easy',
+    interactiveCommands: [
+      {
+        name: 'Detect It Easy (DIE) CLI',
+        description: 'Generate DIE commands for fast file identification and entropy analysis.',
+        inputs: [
+          { id: 'target', label: 'Target File/Dir', type: 'text', defaultValue: 'suspicious.exe', placeholder: 'Binary or directory' },
+          { id: 'recursive', label: 'Recursive (-r)', type: 'checkbox', defaultValue: 'false', placeholder: 'If target is a directory' },
+          { id: 'json', label: 'JSON Output (-j)', type: 'checkbox', defaultValue: 'false', placeholder: 'Format as JSON' },
+          { id: 'entropy', label: 'Entropy (-e)', type: 'checkbox', defaultValue: 'false', placeholder: 'Calculate entropy' },
+          { id: 'deepScan', label: 'Deep Scan (-d)', type: 'checkbox', defaultValue: 'false', placeholder: 'Slower, more accurate' }
+        ],
+        generator: (inputs) => {
+          let cmd = 'diec';
+          
+          if (inputs.recursive === 'true') cmd += ' -r';
+          if (inputs.json === 'true') cmd += ' -j';
+          if (inputs.entropy === 'true') cmd += ' -e';
+          if (inputs.deepScan === 'true') cmd += ' -d';
+          
+          cmd += ` ${inputs.target}`;
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'inetsim',
@@ -377,6 +633,28 @@ export const reverseEngineeringTools: Tool[] = [
     relatedTools: ['fakedns', 'wireshark', 'cuckoosandbox'],
     installation: 'sudo apt install inetsim -y',
     website: 'https://www.inetsim.org/',
+    interactiveCommands: [
+      {
+        name: 'INetSim Network Simulator',
+        description: 'Construct INetSim launch commands to simulate internet services for malware analysis.',
+        inputs: [
+          { id: 'bindAddr', label: 'Bind Address', type: 'text', defaultValue: '0.0.0.0', placeholder: 'IP to bind services to' },
+          { id: 'conf', label: 'Config File (--conf)', type: 'text', defaultValue: '', placeholder: '/etc/inetsim/inetsim.conf' },
+          { id: 'dataDir', label: 'Data Directory', type: 'text', defaultValue: '', placeholder: 'Path to custom serve files' },
+          { id: 'logDir', label: 'Log Directory', type: 'text', defaultValue: '', placeholder: 'Custom log path' }
+        ],
+        generator: (inputs) => {
+          let cmd = 'sudo inetsim';
+          
+          if (inputs.bindAddr && inputs.bindAddr !== '0.0.0.0') cmd += ` --bind-address ${inputs.bindAddr}`;
+          if (inputs.conf) cmd += ` --conf ${inputs.conf}`;
+          if (inputs.dataDir) cmd += ` --data-dir ${inputs.dataDir}`;
+          if (inputs.logDir) cmd += ` --log-dir ${inputs.logDir}`;
+          
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'floss',
@@ -420,5 +698,33 @@ export const reverseEngineeringTools: Tool[] = [
     relatedTools: ['strings', 'ghidra', 'ida-pro'],
     installation: 'Download the standalone binary from the Mandiant/FireEye GitHub repository.',
     website: 'https://github.com/mandiant/flare-floss',
+    interactiveCommands: [
+      {
+        name: 'FLOSS Deobfuscator',
+        description: 'Generate advanced FLOSS commands to extract hidden strings and auto-generate analysis scripts.',
+        inputs: [
+          { id: 'binary', label: 'Target Binary', type: 'text', defaultValue: 'malware.exe', placeholder: 'Path to target' },
+          { id: 'noStatic', label: 'Obfuscated Only', type: 'checkbox', defaultValue: 'true', placeholder: '--no-static-strings' },
+          { id: 'scriptGen', label: 'Gen Analysis Script (-g)', type: 'checkbox', defaultValue: 'false', placeholder: 'Generate IDA/Ghidra script' },
+          { id: 'expert', label: 'Expert Mode (-x)', type: 'checkbox', defaultValue: 'false', placeholder: 'Show decode locations' },
+          { id: 'quiet', label: 'Quiet Mode (-q)', type: 'checkbox', defaultValue: 'false', placeholder: 'Strings only (pipe-friendly)' },
+          { id: 'json', label: 'JSON Output (--json)', type: 'checkbox', defaultValue: 'false', placeholder: 'Structured JSON output' },
+          { id: 'minLen', label: 'Min String Length (-n)', type: 'text', defaultValue: '4', placeholder: 'Default 4' }
+        ],
+        generator: (inputs) => {
+          let cmd = 'floss';
+          
+          if (inputs.noStatic === 'true') cmd += ' --no-static-strings';
+          if (inputs.scriptGen === 'true') cmd += ' -g';
+          if (inputs.expert === 'true') cmd += ' -x';
+          if (inputs.quiet === 'true') cmd += ' -q';
+          if (inputs.json === 'true') cmd += ' --json';
+          if (inputs.minLen && inputs.minLen !== '4') cmd += ` -n ${inputs.minLen}`;
+          
+          cmd += ` ${inputs.binary}`;
+          return cmd;
+        }
+      }
+    ]
   }
 ];

@@ -29,6 +29,32 @@ export const databaseAssessmentTools: Tool[] = [
     relatedTools: ['nosqlmap', 'dbeaver'],
     installation: 'sudo apt install sqlmap -y',
     website: 'https://sqlmap.org',
+    interactiveCommands: [
+      {
+        name: 'SQLMap Direct DB Attacker',
+        description: 'Generate direct database connection strings to exploit DB services without going through a web application.',
+        inputs: [
+          { id: 'dbType', label: 'Database Engine', type: 'select', options: ['mysql', 'postgres', 'mssql', 'oracle'], defaultValue: 'mysql' },
+          { id: 'user', label: 'Username', type: 'text', defaultValue: 'sa', placeholder: 'Database user' },
+          { id: 'password', label: 'Password', type: 'text', defaultValue: 'password123', placeholder: 'Database password' },
+          { id: 'host', label: 'Target Host/IP', type: 'text', defaultValue: '192.168.1.100', placeholder: 'IP Address' },
+          { id: 'port', label: 'Port', type: 'text', defaultValue: '3306', placeholder: 'e.g., 3306, 5432, 1433' },
+          { id: 'dbname', label: 'Database Name', type: 'text', defaultValue: 'master', placeholder: 'Target DB' },
+          { id: 'action', label: 'Action', type: 'select', options: ['--dump-all', '--os-shell', '--sql-shell', '--priv-esc'], defaultValue: '--dump-all' },
+          { id: 'exclude', label: 'Exclude SysDBs', type: 'checkbox', defaultValue: 'true', placeholder: '--exclude-sysdbs' }
+        ],
+        generator: (inputs) => {
+          let cmd = `sqlmap -d "${inputs.dbType}://${inputs.user}:${inputs.password}@${inputs.host}:${inputs.port}/${inputs.dbname}"`;
+          
+          if (inputs.action) cmd += ` ${inputs.action}`;
+          if (inputs.action === '--dump-all' && inputs.exclude === 'true') {
+            cmd += ' --exclude-sysdbs';
+          }
+          
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'nosqlmap',
@@ -53,6 +79,34 @@ export const databaseAssessmentTools: Tool[] = [
     relatedTools: ['sqlmap', 'mongoaudit'],
     installation: 'git clone https://github.com/codingo/NoSQLMap.git && cd NoSQLMap && python setup.py install',
     website: 'https://github.com/codingo/NoSQLMap',
+    interactiveCommands: [
+      {
+        name: 'NoSQLMap Launcher',
+        description: 'Generate NoSQLMap commands for automated NoSQL database injection and enumeration.',
+        inputs: [
+          { id: 'mode', label: 'Launch Mode', type: 'select', options: ['Interactive Menu', '--attack', '--enumerate', '--scan'], defaultValue: 'Interactive Menu' },
+          { id: 'target', label: 'Target URL/IP', type: 'text', defaultValue: '', placeholder: 'e.g., http://example.com' },
+          { id: 'dbType', label: 'Database Type', type: 'select', options: ['MongoDB', 'CouchDB'], defaultValue: 'MongoDB' },
+          { id: 'port', label: 'Port', type: 'text', defaultValue: '27017', placeholder: 'Default NoSQL port' },
+          { id: 'auth', label: 'Authentication', type: 'text', defaultValue: '', placeholder: 'user:pass' },
+          { id: 'verbose', label: 'Verbose Mode (-v)', type: 'checkbox', defaultValue: 'true', placeholder: 'Enable verbose output' }
+        ],
+        generator: (inputs) => {
+          let cmd = 'python nosqlmap.py';
+          
+          if (inputs.mode !== 'Interactive Menu') {
+             cmd += ` ${inputs.mode.split(' ')[0]}`;
+             if (inputs.target) cmd += ` -t ${inputs.target}`;
+             if (inputs.dbType === 'CouchDB') cmd += ' --couchdb';
+             if (inputs.port) cmd += ` -p ${inputs.port}`;
+             if (inputs.auth) cmd += ` -a "${inputs.auth}"`;
+             if (inputs.verbose === 'true') cmd += ' -v';
+          }
+          
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'odat',
@@ -82,6 +136,36 @@ export const databaseAssessmentTools: Tool[] = [
     relatedTools: ['sqlmap', 'nmap'],
     installation: 'sudo apt install odat -y',
     website: 'https://github.com/quentinhardy/odat',
+    interactiveCommands: [
+      {
+        name: 'ODAT Attack Launcher',
+        description: 'Construct complex ODAT commands for Oracle DB brute-forcing, file uploads, and RCE.',
+        inputs: [
+          { id: 'module', label: 'Attack Module', type: 'select', options: ['all', 'passwordguesser', 'utlfile', 'dbms_scheduler'], defaultValue: 'all' },
+          { id: 'target', label: 'Target IP (-s)', type: 'text', defaultValue: '192.168.1.100', placeholder: 'IP address' },
+          { id: 'port', label: 'Port (-p)', type: 'text', defaultValue: '1521', placeholder: 'Oracle listener port' },
+          { id: 'user', label: 'Username (-U)', type: 'text', defaultValue: 'sys', placeholder: 'Optional for all/guesser' },
+          { id: 'password', label: 'Password (-P)', type: 'text', defaultValue: 'oracle', placeholder: 'Optional for all/guesser' },
+          { id: 'sysdba', label: 'Is SYSDBA (--sysdba)', type: 'checkbox', defaultValue: 'true', placeholder: 'Connect as SYSDBA' },
+          { id: 'cmd', label: 'OS Command (--exec)', type: 'text', defaultValue: 'cmd.exe /c calc.exe', placeholder: 'For dbms_scheduler' }
+        ],
+        generator: (inputs) => {
+          let cmd = `python odat.py ${inputs.module} -s ${inputs.target} -p ${inputs.port}`;
+          
+          if (inputs.module !== 'all' && inputs.module !== 'passwordguesser') {
+             if (inputs.user) cmd += ` -U ${inputs.user}`;
+             if (inputs.password) cmd += ` -P ${inputs.password}`;
+             if (inputs.sysdba === 'true') cmd += ' --sysdba';
+          }
+          
+          if (inputs.module === 'dbms_scheduler' && inputs.cmd) {
+             cmd += ` --exec "${inputs.cmd}"`;
+          }
+          
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'dbpw-audit',
@@ -109,6 +193,25 @@ export const databaseAssessmentTools: Tool[] = [
     relatedTools: ['hydra', 'medusa', 'ncrack'],
     installation: 'git clone https://github.com/nmonkee/dbpwaudit && cd dbpwaudit',
     website: 'https://github.com/nmonkee/dbpwaudit',
+    interactiveCommands: [
+      {
+        name: 'DBPwAudit Brute Forcer',
+        description: 'Generate fast, multi-engine database dictionary attack commands.',
+        inputs: [
+          { id: 'target', label: 'Target IP (-s)', type: 'text', defaultValue: '192.168.1.100', placeholder: 'Target IP' },
+          { id: 'driver', label: 'DB Driver (-D)', type: 'select', options: ['MySQL', 'MSSQL', 'Oracle', 'DB2'], defaultValue: 'MySQL' },
+          { id: 'dbName', label: 'Database Name (-d)', type: 'text', defaultValue: 'master', placeholder: 'e.g., master, mysql' },
+          { id: 'userList', label: 'User List (-U)', type: 'text', defaultValue: 'users.txt', placeholder: 'Path to user dictionary' },
+          { id: 'passList', label: 'Password List (-P)', type: 'text', defaultValue: 'passwords.txt', placeholder: 'Path to password dictionary' },
+          { id: 'port', label: 'Port (-p)', type: 'text', defaultValue: '', placeholder: 'Override default port' }
+        ],
+        generator: (inputs) => {
+          let cmd = `./dbpwaudit -s ${inputs.target} -d ${inputs.dbName} -D ${inputs.driver} -U ${inputs.userList} -P ${inputs.passList}`;
+          if (inputs.port) cmd += ` -p ${inputs.port}`;
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'mssqlclient',
@@ -139,6 +242,35 @@ export const databaseAssessmentTools: Tool[] = [
     relatedTools: ['crackmapexec', 'sqlmap', 'sqsh'],
     installation: 'sudo apt install python3-impacket -y',
     website: 'https://github.com/fortra/impacket',
+    interactiveCommands: [
+      {
+        name: 'MSSQLClient Impacket Builder',
+        description: 'Prepare Impacket MSSQL connection strings for Pass-the-Hash and AD integration.',
+        inputs: [
+          { id: 'authMode', label: 'Auth Mode', type: 'select', options: ['Plaintext', 'Pass-the-Hash (-hashes)'], defaultValue: 'Plaintext' },
+          { id: 'domain', label: 'Domain', type: 'text', defaultValue: 'CORP', placeholder: 'Leave blank for local auth' },
+          { id: 'user', label: 'Username', type: 'text', defaultValue: 'Administrator', placeholder: 'Target user' },
+          { id: 'secret', label: 'Password or Hash', type: 'text', defaultValue: 'Password123!', placeholder: 'Cleartext or LM:NT hash' },
+          { id: 'target', label: 'Target IP', type: 'text', defaultValue: '192.168.1.100', placeholder: 'Target IP Address' },
+          { id: 'winAuth', label: 'Windows Auth', type: 'checkbox', defaultValue: 'true', placeholder: '-windows-auth' },
+          { id: 'dcIp', label: 'DC IP (-dc-ip)', type: 'text', defaultValue: '', placeholder: 'Optional Domain Controller IP' }
+        ],
+        generator: (inputs) => {
+          let cmd = 'mssqlclient.py';
+          
+          if (inputs.authMode === 'Pass-the-Hash (-hashes)') {
+             cmd += ` -hashes :${inputs.secret.replace(':', '')}`;
+          }
+          if (inputs.winAuth === 'true') cmd += ' -windows-auth';
+          if (inputs.dcIp) cmd += ` -dc-ip ${inputs.dcIp}`;
+          
+          const prefix = inputs.domain ? `${inputs.domain}/${inputs.user}` : inputs.user;
+          const authString = inputs.authMode === 'Plaintext' ? `${prefix}:${inputs.secret}@${inputs.target}` : `${prefix}@${inputs.target}`;
+          
+          return `${cmd} ${authString}`;
+        }
+      }
+    ]
   },
   {
     id: 'pgaudit',
@@ -162,6 +294,36 @@ export const databaseAssessmentTools: Tool[] = [
     relatedTools: ['sqlmap', 'dbeaver'],
     installation: 'sudo apt install postgresql-pgaudit -y',
     website: 'https://github.com/pgaudit/pgaudit',
+    interactiveCommands: [
+      {
+        name: 'pgAudit Configuration Generator',
+        description: 'Generate PostgreSQL SQL commands to configure the pgAudit extension and set granular logging rules natively.',
+        inputs: [
+          { id: 'action', label: 'Action', type: 'select', options: ['Enable Extension', 'Set Log Classes', 'Set Audit Role', 'Disable Extension'], defaultValue: 'Set Log Classes' },
+          { id: 'logClasses', label: 'Log Classes', type: 'text', defaultValue: 'write, ddl', placeholder: 'e.g., READ, WRITE, FUNCTION, ROLE, DDL, MISC, ALL' },
+          { id: 'auditRole', label: 'Audit Role', type: 'text', defaultValue: 'auditor_role', placeholder: 'Role name for object auditing' },
+          { id: 'logCatalog', label: 'Log Catalog', type: 'checkbox', defaultValue: 'false', placeholder: 'pgaudit.log_catalog' },
+          { id: 'logRelation', label: 'Log Relation', type: 'checkbox', defaultValue: 'false', placeholder: 'pgaudit.log_relation' },
+          { id: 'sessionScope', label: 'Session Scope', type: 'checkbox', defaultValue: 'true', placeholder: 'Use SET (session) vs ALTER SYSTEM' }
+        ],
+        generator: (inputs) => {
+          if (inputs.action === 'Enable Extension') return 'CREATE EXTENSION pgaudit;';
+          if (inputs.action === 'Disable Extension') return 'DROP EXTENSION pgaudit;';
+          
+          let prefix = inputs.sessionScope === 'true' ? 'SET' : 'ALTER SYSTEM SET';
+          
+          if (inputs.action === 'Set Audit Role') {
+            return `${prefix} pgaudit.role = '${inputs.auditRole}';`;
+          }
+          
+          let cmd = `${prefix} pgaudit.log = '${inputs.logClasses}';`;
+          if (inputs.logCatalog === 'true') cmd += `\n${prefix} pgaudit.log_catalog = on;`;
+          if (inputs.logRelation === 'true') cmd += `\n${prefix} pgaudit.log_relation = on;`;
+          
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'mongoaudit',
@@ -184,6 +346,29 @@ export const databaseAssessmentTools: Tool[] = [
     relatedTools: ['nosqlmap'],
     installation: 'pip install mongoaudit',
     website: 'https://github.com/stamparm/mongoaudit',
+    interactiveCommands: [
+      {
+        name: 'MongoAudit Launcher',
+        description: 'Generate commands to launch the MongoAudit automated assessment wizard or headless scan.',
+        inputs: [
+          { id: 'mode', label: 'Launch Mode', type: 'select', options: ['Interactive Wizard', 'Headless Check'], defaultValue: 'Interactive Wizard' },
+          { id: 'target', label: 'Target', type: 'text', defaultValue: '127.0.0.1', placeholder: 'Target IP' },
+          { id: 'port', label: 'Port', type: 'text', defaultValue: '27017', placeholder: 'MongoDB port' },
+          { id: 'auth', label: 'Authentication', type: 'text', defaultValue: '', placeholder: 'username:password' },
+          { id: 'quiet', label: 'Quiet Mode', type: 'checkbox', defaultValue: 'false', placeholder: 'Suppress unnecessary output' },
+          { id: 'export', label: 'Export Report', type: 'text', defaultValue: '', placeholder: 'e.g., report.json' }
+        ],
+        generator: (inputs) => {
+          if (inputs.mode === 'Interactive Wizard') return 'mongoaudit';
+          
+          let cmd = `mongoaudit --host ${inputs.target} --port ${inputs.port}`;
+          if (inputs.auth) cmd += ` --auth "${inputs.auth}"`;
+          if (inputs.quiet === 'true') cmd += ' --quiet';
+          if (inputs.export) cmd += ` --export ${inputs.export}`;
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'hexorbase',
@@ -206,5 +391,28 @@ export const databaseAssessmentTools: Tool[] = [
     relatedTools: ['dbeaver', 'dbpwaudit'],
     installation: 'sudo apt install hexorbase -y',
     website: 'https://github.com/savio-code/hexorbase',
+    interactiveCommands: [
+      {
+        name: 'HexorBase GUI Launcher',
+        description: 'Launch the HexorBase administration GUI with optional debugging flags.',
+        inputs: [
+          { id: 'executable', label: 'Executable', type: 'text', defaultValue: 'hexorbase', placeholder: 'Launch command' },
+          { id: 'debug', label: 'Debug Mode', type: 'checkbox', defaultValue: 'false', placeholder: 'Enable verbose GUI logging' },
+          { id: 'lang', label: 'Language Override', type: 'select', options: ['Default', 'en', 'es', 'fr'], defaultValue: 'Default' },
+          { id: 'profile', label: 'Load Profile', type: 'text', defaultValue: '', placeholder: 'Path to saved configuration' },
+          { id: 'noSplash', label: 'No Splash Screen', type: 'checkbox', defaultValue: 'true', placeholder: 'Skip startup graphic' },
+          { id: 'timeout', label: 'Connection Timeout', type: 'text', defaultValue: '30', placeholder: 'Seconds' }
+        ],
+        generator: (inputs) => {
+          let cmd = inputs.executable;
+          if (inputs.debug === 'true') cmd += ' --debug';
+          if (inputs.lang !== 'Default') cmd += ` --lang=${inputs.lang}`;
+          if (inputs.profile) cmd += ` --profile="${inputs.profile}"`;
+          if (inputs.noSplash === 'true') cmd += ' --no-splash';
+          if (inputs.timeout !== '30') cmd += ` --timeout=${inputs.timeout}`;
+          return cmd;
+        }
+      }
+    ]
   }
 ];

@@ -44,6 +44,36 @@ export const mobileSecurityTools: Tool[] = [
     relatedTools: ['frida', 'objection', 'apktool', 'jadx'],
     installation: 'docker pull opensecurity/mobile-security-framework-mobsf',
     website: 'https://github.com/MobSF/Mobile-Security-Framework-MobSF',
+    interactiveCommands: [
+      {
+        name: 'MobSF API Orchestrator',
+        description: 'Generate cURL commands to interact with the MobSF REST API for automated analysis pipelines.',
+        inputs: [
+          { id: 'action', label: 'API Action', type: 'select', options: ['Upload File (/api/v1/upload)', 'Scan File (/api/v1/scan)', 'Get JSON Report (/api/v1/report_json)', 'Get PDF Report (/api/v1/download_pdf)', 'Delete Scan (/api/v1/delete_scan)'], defaultValue: 'Upload File (/api/v1/upload)' },
+          { id: 'apiKey', label: 'MobSF API Key', type: 'text', defaultValue: 'YOUR_API_KEY', placeholder: 'Required for all API calls' },
+          { id: 'host', label: 'MobSF Host', type: 'text', defaultValue: 'http://localhost:8000', placeholder: 'e.g., http://10.0.0.5:8000' },
+          { id: 'filePath', label: 'File Path', type: 'text', defaultValue: 'app.apk', placeholder: 'Required for Upload action' },
+          { id: 'hash', label: 'File Hash', type: 'text', defaultValue: '', placeholder: 'Required for Scan, Report, Delete actions' },
+          { id: 'scanType', label: 'Scan Type', type: 'select', options: ['apk', 'ipa', 'appx', 'zip'], defaultValue: 'apk' }
+        ],
+        generator: (inputs) => {
+          const baseCmd = `curl -H "Authorization: ${inputs.apiKey}"`;
+          
+          if (inputs.action.includes('upload')) {
+            return `${baseCmd} -F "file=@${inputs.filePath}" ${inputs.host}/api/v1/upload`;
+          } else if (inputs.action.includes('scan')) {
+            return `${baseCmd} -X POST -d "scan_type=${inputs.scanType}&file_name=${inputs.filePath.split('/').pop()}&hash=${inputs.hash}" ${inputs.host}/api/v1/scan`;
+          } else if (inputs.action.includes('report_json')) {
+            return `${baseCmd} "${inputs.host}/api/v1/report_json?hash=${inputs.hash}"`;
+          } else if (inputs.action.includes('download_pdf')) {
+            return `${baseCmd} "${inputs.host}/api/v1/download_pdf?hash=${inputs.hash}" -o report.pdf`;
+          } else if (inputs.action.includes('delete_scan')) {
+            return `${baseCmd} -X POST -d "hash=${inputs.hash}" ${inputs.host}/api/v1/delete_scan`;
+          }
+          return `${baseCmd} ${inputs.host}`;
+        }
+      }
+    ]
   },
   {
     id: 'frida',
@@ -89,14 +119,38 @@ export const mobileSecurityTools: Tool[] = [
     website: 'https://frida.re',
     interactiveCommands: [
       {
-        name: 'Frida Certificate Pinning Bypass',
-        description: 'Generate the Frida command to bypass SSL certificate pinning on a target Android app.',
+        name: 'Frida Injection Builder',
+        description: 'Build comprehensive Frida commands for dynamic instrumentation, tracing, and code hooking.',
         inputs: [
-          { id: 'packageName', label: 'App Package Name', type: 'text', defaultValue: 'com.example.app', placeholder: 'e.g., com.instagram.android' },
-          { id: 'script', label: 'Script to Load', type: 'text', defaultValue: 'cert-pinning-bypass.js', placeholder: 'Path to your .js script' },
+          { id: 'mode', label: 'Execution Mode', type: 'select', options: ['Attach (-n)', 'Spawn Fresh (-f)', 'Process List (frida-ps)', 'Trace (frida-trace)', 'Kill (frida-kill)'], defaultValue: 'Spawn Fresh (-f)' },
+          { id: 'device', label: 'Device Target', type: 'select', options: ['USB (-U)', 'Remote (-R)', 'Local (-D)'], defaultValue: 'USB (-U)' },
+          { id: 'target', label: 'App / Process', type: 'text', defaultValue: 'com.example.app', placeholder: 'Package name or PID' },
+          { id: 'script', label: 'Load Script (-l)', type: 'text', defaultValue: '', placeholder: 'Local path to .js script' },
+          { id: 'codeshare', label: 'Codeshare Script', type: 'text', defaultValue: '', placeholder: 'e.g., akabe1/frida-multiple-unpinning' },
+          { id: 'noPause', label: 'No Pause (--no-pause)', type: 'checkbox', defaultValue: 'true', placeholder: 'Do not pause spawned process' },
+          { id: 'traceFunc', label: 'Trace Function (-i)', type: 'text', defaultValue: '', placeholder: 'Native function (e.g., SSL_write)' },
+          { id: 'traceJava', label: 'Trace Java (-j)', type: 'text', defaultValue: '', placeholder: 'Java class/method (e.g., *crypto*)' },
+          { id: 'output', label: 'Output File (-o)', type: 'text', defaultValue: '', placeholder: 'Log output to file' }
         ],
         generator: (inputs) => {
-          return `frida -U -f ${inputs.packageName} --no-pause -l ${inputs.script}`;
+          let cmd = 'frida';
+          if (inputs.mode.includes('frida-ps')) return `frida-ps ${inputs.device.split(' ')[0]}ai`;
+          if (inputs.mode.includes('frida-kill')) return `frida-kill ${inputs.device.split(' ')[0]} ${inputs.target}`;
+          if (inputs.mode.includes('frida-trace')) cmd = 'frida-trace';
+          
+          cmd += ` ${inputs.device.split(' ')[0]}`;
+          
+          if (inputs.mode.includes('Spawn')) cmd += ` -f ${inputs.target}`;
+          else if (inputs.mode.includes('Attach') || cmd === 'frida-trace') cmd += ` -n ${inputs.target}`;
+          
+          if (inputs.noPause === 'true' && inputs.mode.includes('Spawn')) cmd += ' --no-pause';
+          if (inputs.script) cmd += ` -l ${inputs.script}`;
+          if (inputs.codeshare) cmd += ` --codeshare ${inputs.codeshare}`;
+          if (inputs.traceFunc) cmd += ` -i "${inputs.traceFunc}"`;
+          if (inputs.traceJava) cmd += ` -j "${inputs.traceJava}"`;
+          if (inputs.output) cmd += ` -o ${inputs.output}`;
+          
+          return cmd.replace('-n -n', '-n').replace('-f -n', '-f');
         }
       }
     ]
@@ -149,6 +203,50 @@ export const mobileSecurityTools: Tool[] = [
     relatedTools: ['frida', 'mobsf', 'burpsuite', 'mitmproxy'],
     installation: 'pip install objection',
     website: 'https://github.com/sensepost/objection',
+    interactiveCommands: [
+      {
+        name: 'Objection REPL & Shell Builder',
+        description: 'Build complete objection runtime exploration commands and REPL scripts.',
+        inputs: [
+          { id: 'target', label: 'Target App (-g)', type: 'text', defaultValue: 'com.example.app', placeholder: 'App package name' },
+          { id: 'action', label: 'Initial Action', type: 'select', options: ['explore (Launch REPL)', 'patchapk (Inject into APK)'], defaultValue: 'explore (Launch REPL)' },
+          { id: 'startupCmd', label: 'Startup Command (-s)', type: 'select', options: ['None', 'android sslpinning disable', 'android root disable', 'android keystore list', 'memory dump all dump.bin', 'Custom Command'], defaultValue: 'None' },
+          { id: 'customCmd', label: 'Custom Command', type: 'text', defaultValue: '', placeholder: 'Command to run automatically on start' },
+          { id: 'network', label: 'Network (-N)', type: 'checkbox', defaultValue: 'false', placeholder: 'Connect over network (e.g., Corellium)' },
+          { id: 'api', label: 'API Host (-h)', type: 'text', defaultValue: '', placeholder: 'Target IP if networked' },
+          { id: 'apk', label: 'Source APK (-s)', type: 'text', defaultValue: '', placeholder: 'Required for patchapk' }
+        ],
+        generator: (inputs) => {
+          let cmd = `objection`;
+          
+          if (inputs.network === 'true') {
+            cmd += ' -N';
+            if (inputs.api) cmd += ` -h ${inputs.api}`;
+          } else {
+            cmd += ` -g ${inputs.target}`;
+          }
+          
+          if (inputs.action.includes('patchapk')) {
+            return `objection patchapk -s ${inputs.apk}`;
+          }
+          
+          cmd += ' explore';
+          
+          let startup = '';
+          if (inputs.startupCmd === 'Custom Command') {
+            startup = inputs.customCmd;
+          } else if (inputs.startupCmd !== 'None') {
+            startup = inputs.startupCmd;
+          }
+          
+          if (startup) {
+            cmd += ` -s "${startup}"`;
+          }
+          
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'drozer',
@@ -198,5 +296,46 @@ export const mobileSecurityTools: Tool[] = [
     relatedTools: ['frida', 'objection', 'apktool'],
     installation: 'pip install drozer   # Also install drozer agent APK on Android device',
     website: 'https://github.com/WithSecureLabs/drozer',
+    interactiveCommands: [
+      {
+        name: 'Drozer Android Attacker',
+        description: 'Build complete Drozer commands to analyze and exploit Android IPC components.',
+        inputs: [
+          { id: 'action', label: 'Execution Mode', type: 'select', options: ['Connect to Agent', 'Execute Module (run)'], defaultValue: 'Execute Module (run)' },
+          { id: 'module', label: 'Drozer Module', type: 'select', options: ['app.package.list', 'app.package.attacksurface', 'app.activity.info', 'app.activity.start', 'app.provider.info', 'app.provider.query', 'app.provider.read', 'scanner.provider.injection', 'app.broadcast.send', 'app.service.info'], defaultValue: 'app.package.attacksurface' },
+          { id: 'targetApp', label: 'Target App (-a)', type: 'text', defaultValue: 'com.example.app', placeholder: 'Package Name' },
+          { id: 'component', label: 'Component (--component)', type: 'text', defaultValue: '', placeholder: 'e.g., .MainActivity (for activity.start)' },
+          { id: 'uri', label: 'Content URI', type: 'text', defaultValue: 'content://com.example.app.db/users', placeholder: 'For provider read/query' },
+          { id: 'actionIntent', label: 'Intent Action (--action)', type: 'text', defaultValue: '', placeholder: 'For broadcast.send' },
+          { id: 'extras', label: 'Intent Extras', type: 'text', defaultValue: '', placeholder: 'e.g., --extra string key value' }
+        ],
+        generator: (inputs) => {
+          if (inputs.action === 'Connect to Agent') return 'drozer console connect';
+          
+          let cmd = `run ${inputs.module}`;
+          
+          if (inputs.module === 'app.package.list') return `${cmd} -f ${inputs.targetApp}`;
+          
+          if (!inputs.module.includes('provider.query') && !inputs.module.includes('provider.read') && !inputs.module.includes('broadcast.send')) {
+             cmd += ` -a ${inputs.targetApp}`;
+          }
+          
+          if (inputs.module === 'app.activity.start' && inputs.component) {
+            cmd += ` --component ${inputs.targetApp} ${inputs.component}`;
+          }
+          
+          if ((inputs.module === 'app.provider.query' || inputs.module === 'app.provider.read') && inputs.uri) {
+            cmd += ` ${inputs.uri}`;
+          }
+          
+          if (inputs.module === 'app.broadcast.send' && inputs.actionIntent) {
+            cmd += ` --action ${inputs.actionIntent}`;
+            if (inputs.extras) cmd += ` ${inputs.extras}`;
+          }
+          
+          return cmd;
+        }
+      }
+    ]
   },
 ];

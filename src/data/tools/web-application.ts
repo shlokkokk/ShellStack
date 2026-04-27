@@ -207,6 +207,30 @@ export const webApplicationTools: Tool[] = [
     relatedTools: ['joomscan', 'droopescan', 'cmsmap'],
     installation: 'sudo apt install wpscan -y',
     website: 'https://wpscan.com',
+    interactiveCommands: [
+      {
+        name: 'WPScan WordPress Assault Builder',
+        description: 'Comprehensive WordPress scanning — enumerate users, plugins, themes, brute-force logins, and check CVEs via API.',
+        inputs: [
+          { id: 'url', label: 'WordPress URL', type: 'text', defaultValue: 'http://example.com', placeholder: 'e.g., http://target.com/blog' },
+          { id: 'enumMode', label: 'Enumeration Mode', type: 'select', options: ['None', 'u (Users)', 'vp (Vulnerable Plugins)', 'ap (All Plugins)', 'vt (Vulnerable Themes)', 'at (All Themes)', 'u,vp,vt (Full Scan)'], defaultValue: 'u,vp,vt (Full Scan)' },
+          { id: 'bruteUser', label: 'Brute Force Username (-U)', type: 'text', defaultValue: '', placeholder: 'e.g., admin (leave empty to skip)' },
+          { id: 'brutePass', label: 'Password List (-P)', type: 'text', defaultValue: '', placeholder: 'e.g., /usr/share/wordlists/rockyou.txt' },
+          { id: 'apiToken', label: 'WPVulnDB API Token', type: 'text', defaultValue: '', placeholder: 'Optional — enables CVE data', helpText: 'Get a free token from wpscan.com for vulnerability details' },
+          { id: 'stealth', label: 'Stealth Mode (--stealthy)', type: 'checkbox', defaultValue: 'false', placeholder: 'Random UA + single thread' },
+          { id: 'detection', label: 'Plugin Detection Mode', type: 'select', options: ['mixed (Default)', 'passive', 'aggressive'], defaultValue: 'mixed (Default)' }
+        ],
+        generator: (inputs) => {
+          const url = `--url ${inputs.url}`;
+          const enumerate = inputs.enumMode !== 'None' ? ` --enumerate ${inputs.enumMode.split(' ')[0]}` : '';
+          const brute = inputs.bruteUser && inputs.brutePass ? ` -U ${inputs.bruteUser} -P ${inputs.brutePass}` : '';
+          const api = inputs.apiToken ? ` --api-token ${inputs.apiToken}` : '';
+          const stealth = inputs.stealth === 'true' ? ' --stealthy' : '';
+          const detection = inputs.detection !== 'mixed (Default)' ? ` --plugins-detection ${inputs.detection}` : '';
+          return `wpscan ${url}${enumerate}${brute}${api}${stealth}${detection}`;
+        }
+      }
+    ]
   },
   {
     id: 'dirsearch',
@@ -335,6 +359,35 @@ export const webApplicationTools: Tool[] = [
     relatedTools: ['xsstrike', 'dalfox', 'beef'],
     installation: 'sudo apt install xsser -y',
     website: 'https://github.com/epsylon/xsser',
+    interactiveCommands: [
+      {
+        name: 'XSSer Automation Engine',
+        description: 'Configure automated XSS detection with payload injection, crawling, and cookie authentication.',
+        inputs: [
+          { id: 'target', label: 'Target URL', type: 'text', defaultValue: 'http://example.com/search?q=test', placeholder: 'URL with parameter' },
+          { id: 'auto', label: 'Auto Payloads (--auto)', type: 'checkbox', defaultValue: 'true', placeholder: 'Inject default payload list' },
+          { id: 'crawl', label: 'Crawl Depth (-c)', type: 'text', defaultValue: '0', placeholder: 'Number of URLs to crawl (0=disabled)' },
+          { id: 'cookie', label: 'Cookie (--cookie)', type: 'text', defaultValue: '', placeholder: 'e.g., session=xyz123' },
+          { id: 'customPayload', label: 'Custom Payload (--Fp)', type: 'text', defaultValue: '', placeholder: 'e.g., <script>alert(1)</script>' },
+          { id: 'threads', label: 'Concurrency (--Cw)', type: 'select', options: ['1', '5', '10', '20'], defaultValue: '1' }
+        ],
+        generator: (inputs) => {
+          let cmd = 'xsser';
+          
+          if (inputs.crawl && inputs.crawl !== '0') {
+            cmd += ` -c ${inputs.crawl}`;
+            if (inputs.threads && inputs.threads !== '1') cmd += ` --Cw=${inputs.threads}`;
+          }
+          
+          if (inputs.auto === 'true') cmd += ' --auto';
+          if (inputs.cookie) cmd += ` --cookie="${inputs.cookie}"`;
+          if (inputs.customPayload) cmd += ` --Fp "${inputs.customPayload}"`;
+          
+          cmd += ` -u "${inputs.target}"`;
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'dalfox',
@@ -368,6 +421,36 @@ export const webApplicationTools: Tool[] = [
     relatedTools: ['xsser', 'xsstrike', 'paramspider'],
     installation: 'go install github.com/hahwul/dalfox/v2@latest',
     website: 'https://github.com/hahwul/dalfox',
+    interactiveCommands: [
+      {
+        name: 'DalFox XSS Hunter Builder',
+        description: 'Configure high-speed XSS scanning with Blind XSS, SSRF detection, custom headers, and pipeline input.',
+        inputs: [
+          { id: 'mode', label: 'Scan Mode', type: 'select', options: ['url (Single URL)', 'file (URL List)', 'pipe (Stdin)'], defaultValue: 'url (Single URL)' },
+          { id: 'target', label: 'Target URL / File', type: 'text', defaultValue: 'http://example.com/page?id=1', placeholder: 'URL or path to urls.txt' },
+          { id: 'blindXss', label: 'Blind XSS Callback (-b)', type: 'text', defaultValue: '', placeholder: 'e.g., https://your.xsshunter.com', helpText: 'Your Blind XSS callback URL (XSS Hunter, interact.sh)' },
+          { id: 'customHeaders', label: 'Custom Headers (-H)', type: 'text', defaultValue: '', placeholder: 'e.g., Authorization: Bearer TOKEN' },
+          { id: 'customPayload', label: 'Custom Payload File (-w)', type: 'text', defaultValue: '', placeholder: 'Path to custom XSS payloads file' },
+          { id: 'output', label: 'Output File (-o)', type: 'text', defaultValue: '', placeholder: 'e.g., xss_results.txt' },
+          { id: 'skipBav', label: 'Skip BAV Analysis', type: 'checkbox', defaultValue: 'false', placeholder: 'Skip Built-in Accuracy Verification' },
+          { id: 'wafEvasion', label: 'WAF Evasion (--waf-evasion)', type: 'checkbox', defaultValue: 'false', placeholder: 'Enable WAF bypass techniques' }
+        ],
+        generator: (inputs) => {
+          const mode = inputs.mode.split(' ')[0];
+          const blind = inputs.blindXss ? ` -b ${inputs.blindXss}` : '';
+          const headers = inputs.customHeaders ? ` -H "${inputs.customHeaders}"` : '';
+          const payload = inputs.customPayload ? ` -w ${inputs.customPayload}` : '';
+          const output = inputs.output ? ` -o ${inputs.output}` : '';
+          const skipBav = inputs.skipBav === 'true' ? ' --skip-bav' : '';
+          const waf = inputs.wafEvasion === 'true' ? ' --waf-evasion' : '';
+
+          if (mode === 'pipe') {
+            return `cat urls.txt | dalfox pipe${blind}${headers}${payload}${output}${skipBav}${waf}`;
+          }
+          return `dalfox ${mode} ${inputs.target}${blind}${headers}${payload}${output}${skipBav}${waf}`;
+        }
+      }
+    ]
   },
   {
     id: 'commix',
@@ -400,6 +483,33 @@ export const webApplicationTools: Tool[] = [
     relatedTools: ['sqlmap', 'tplmap'],
     installation: 'sudo apt install commix -y',
     website: 'https://github.com/commixproject/commix',
+    interactiveCommands: [
+      {
+        name: 'Commix Command Injection Builder',
+        description: 'Configure automated OS command injection detection and exploitation with technique selection and authentication.',
+        inputs: [
+          { id: 'target', label: 'Target URL', type: 'text', defaultValue: 'http://example.com/vuln.php?ip=127.0.0.1', placeholder: 'URL with injectable parameter' },
+          { id: 'method', label: 'HTTP Method', type: 'select', options: ['GET', 'POST'], defaultValue: 'GET' },
+          { id: 'postData', label: 'POST Data (--data)', type: 'text', defaultValue: '', placeholder: 'e.g., ip=127.0.0.1&cmd=test' },
+          { id: 'cookie', label: 'Cookie (--cookie)', type: 'text', defaultValue: '', placeholder: 'e.g., PHPSESSID=abc123; security=low' },
+          { id: 'technique', label: 'Injection Technique', type: 'select', options: ['All (Default)', 'Classic (--technique=c)', 'Eval-based (--technique=e)', 'Time-based (--technique=t)', 'File-based (--technique=f)'], defaultValue: 'All (Default)' },
+          { id: 'osCmd', label: 'Execute Specific Command (--os-cmd)', type: 'text', defaultValue: '', placeholder: 'e.g., whoami, id, cat /etc/passwd' },
+          { id: 'batch', label: 'Non-Interactive (--batch)', type: 'checkbox', defaultValue: 'true', placeholder: 'Auto-answer prompts' },
+          { id: 'level', label: 'Detection Level', type: 'select', options: ['1 (Default)', '2 (Medium)', '3 (Maximum)'], defaultValue: '1 (Default)' }
+        ],
+        generator: (inputs) => {
+          const url = `-u "${inputs.target}"`;
+          const data = inputs.postData ? ` --data="${inputs.postData}"` : '';
+          const cookie = inputs.cookie ? ` --cookie="${inputs.cookie}"` : '';
+          let technique = '';
+          if (inputs.technique.includes('--technique=')) technique = ` ${inputs.technique.match(/--technique=\w/)?.[0] || ''}`;
+          const osCmd = inputs.osCmd ? ` --os-cmd="${inputs.osCmd}"` : '';
+          const batch = inputs.batch === 'true' ? ' --batch' : '';
+          const level = inputs.level !== '1 (Default)' ? ` --level=${inputs.level.split(' ')[0]}` : '';
+          return `commix ${url}${data}${cookie}${technique}${osCmd}${batch}${level}`;
+        }
+      }
+    ]
   },
   {
     id: 'wfuzz',
@@ -432,6 +542,37 @@ export const webApplicationTools: Tool[] = [
     relatedTools: ['ffuf', 'gobuster', 'dirsearch'],
     installation: 'sudo apt install wfuzz -y',
     website: 'https://github.com/xmendez/wfuzz',
+    interactiveCommands: [
+      {
+        name: 'Wfuzz Parameter Injection Builder',
+        description: 'Build robust fuzzer payloads targeting URLs, POST bodies, and headers with complex filters.',
+        inputs: [
+          { id: 'target', label: 'Target URL', type: 'text', defaultValue: 'http://example.com/FUZZ', placeholder: 'Insert FUZZ keyword where needed' },
+          { id: 'wordlist', label: 'Wordlist (-z)', type: 'text', defaultValue: 'file,/usr/share/wordlists/dirb/common.txt', placeholder: 'Format: type,path or list,1-100' },
+          { id: 'hideCode', label: 'Hide Status Code (--hc)', type: 'text', defaultValue: '404', placeholder: 'e.g., 404,403' },
+          { id: 'hideWords', label: 'Hide Word Count (--hw)', type: 'text', defaultValue: '', placeholder: 'e.g., 10,25' },
+          { id: 'hideChars', label: 'Hide Char Count (--hl)', type: 'text', defaultValue: '', placeholder: 'e.g., 0,50' },
+          { id: 'postData', label: 'POST Data (-d)', type: 'text', defaultValue: '', placeholder: 'e.g., user=FUZZ&pass=test' },
+          { id: 'header', label: 'Custom Header (-H)', type: 'text', defaultValue: '', placeholder: 'e.g., Host: FUZZ.example.com' },
+          { id: 'color', label: 'Colorize Output (-c)', type: 'checkbox', defaultValue: 'true', placeholder: 'Enable colors' }
+        ],
+        generator: (inputs) => {
+          let cmd = 'wfuzz';
+          if (inputs.color === 'true') cmd += ' -c';
+          
+          cmd += ` -z ${inputs.wordlist}`;
+          
+          if (inputs.hideCode) cmd += ` --hc ${inputs.hideCode}`;
+          if (inputs.hideWords) cmd += ` --hw ${inputs.hideWords}`;
+          if (inputs.hideChars) cmd += ` --hl ${inputs.hideChars}`;
+          if (inputs.postData) cmd += ` -d "${inputs.postData}"`;
+          if (inputs.header) cmd += ` -H "${inputs.header}"`;
+          
+          cmd += ` ${inputs.target}`;
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'arjun',
@@ -462,6 +603,37 @@ export const webApplicationTools: Tool[] = [
     relatedTools: ['paramspider', 'dalfox'],
     installation: 'pip3 install arjun',
     website: 'https://github.com/s0md3v/Arjun',
+    interactiveCommands: [
+      {
+        name: 'Arjun Parameter Discovery',
+        description: 'Configure automated HTTP parameter brute-forcing for GET, POST, or JSON endpoints.',
+        inputs: [
+          { id: 'target', label: 'Target URL (-u)', type: 'text', defaultValue: 'http://example.com', placeholder: 'Single URL' },
+          { id: 'method', label: 'HTTP Method (-m)', type: 'select', options: ['GET', 'POST', 'JSON'], defaultValue: 'GET' },
+          { id: 'urlFile', label: 'URL List File (-i)', type: 'text', defaultValue: '', placeholder: 'Path to target list (overrides URL)' },
+          { id: 'threads', label: 'Threads (-t)', type: 'select', options: ['5', '10', '20'], defaultValue: '5' },
+          { id: 'outputFormat', label: 'Output Type', type: 'select', options: ['None', 'Text (-oT)', 'JSON (-oJ)'], defaultValue: 'None' },
+          { id: 'outputFile', label: 'Output File', type: 'text', defaultValue: 'arjun_out.txt', placeholder: 'File to save results' },
+          { id: 'include', label: 'Regex Filter (--include)', type: 'text', defaultValue: '', placeholder: 'Match specific response text' }
+        ],
+        generator: (inputs) => {
+          let cmd = 'arjun';
+          
+          if (inputs.urlFile) cmd += ` -i ${inputs.urlFile}`;
+          else cmd += ` -u ${inputs.target}`;
+          
+          if (inputs.method !== 'GET') cmd += ` -m ${inputs.method}`;
+          if (inputs.threads && inputs.threads !== '5') cmd += ` -t ${inputs.threads}`;
+          
+          if (inputs.outputFormat === 'Text (-oT)') cmd += ` -oT ${inputs.outputFile}`;
+          if (inputs.outputFormat === 'JSON (-oJ)') cmd += ` -oJ ${inputs.outputFile}`;
+          
+          if (inputs.include) cmd += ` --include="${inputs.include}"`;
+          
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'paramspider',
@@ -489,6 +661,29 @@ export const webApplicationTools: Tool[] = [
     relatedTools: ['arjun', 'waybackurls', 'gau'],
     installation: 'git clone https://github.com/devanshbatham/ParamSpider && cd ParamSpider && pip3 install -r requirements.txt',
     website: 'https://github.com/devanshbatham/ParamSpider',
+    interactiveCommands: [
+      {
+        name: 'ParamSpider OSINT Miner',
+        description: 'Generate Wayback Machine extraction commands to find historical endpoints with parameters.',
+        inputs: [
+          { id: 'domain', label: 'Target Domain (-d)', type: 'text', defaultValue: 'example.com', placeholder: 'e.g., target.com' },
+          { id: 'level', label: 'Mining Level (--level)', type: 'select', options: ['normal', 'high (Subdomains)'], defaultValue: 'normal' },
+          { id: 'exclude', label: 'Exclude Extensions (--exclude)', type: 'text', defaultValue: 'php,jpg,jpeg,gif,css,tif,tiff,png,ttf,woff,woff2,ico', placeholder: 'Comma separated' },
+          { id: 'quiet', label: 'Quiet Mode (--quiet)', type: 'checkbox', defaultValue: 'false', placeholder: 'Hide standard output' },
+          { id: 'output', label: 'Output File', type: 'text', defaultValue: '', placeholder: 'Defaults to domain name' }
+        ],
+        generator: (inputs) => {
+          let cmd = `python3 paramspider.py -d ${inputs.domain}`;
+          
+          if (inputs.level === 'high (Subdomains)') cmd += ' --level high';
+          if (inputs.exclude) cmd += ` --exclude ${inputs.exclude}`;
+          if (inputs.quiet === 'true') cmd += ' --quiet';
+          if (inputs.output) cmd += ` -o ${inputs.output}`;
+          
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'eyewitness',
@@ -520,6 +715,37 @@ export const webApplicationTools: Tool[] = [
     relatedTools: ['aquatone', 'gowitness'],
     installation: 'sudo apt install eyewitness -y',
     website: 'https://github.com/RedSiege/EyeWitness',
+    interactiveCommands: [
+      {
+        name: 'EyeWitness Triage Automator',
+        description: 'Configure automated web screenshot tasks feeding from Nmap files or URL lists.',
+        inputs: [
+          { id: 'inputType', label: 'Input Source', type: 'select', options: ['URL File (-f)', 'Nmap XML (-x)'], defaultValue: 'URL File (-f)' },
+          { id: 'inputPath', label: 'File Path', type: 'text', defaultValue: 'urls.txt', placeholder: 'Path to URLs or XML' },
+          { id: 'mode', label: 'Scan Mode', type: 'select', options: ['Web (--web)', 'Active Directory (--ad)'], defaultValue: 'Web (--web)' },
+          { id: 'resolve', label: 'Resolve Hostnames (--resolve)', type: 'checkbox', defaultValue: 'true', placeholder: 'Resolve IPs' },
+          { id: 'timeout', label: 'Render Timeout (--timeout)', type: 'text', defaultValue: '15', placeholder: 'Max seconds per page' },
+          { id: 'threads', label: 'Threads (--threads)', type: 'select', options: ['10', '20', '50'], defaultValue: '10' },
+          { id: 'outDir', label: 'Output Dir (-d)', type: 'text', defaultValue: '', placeholder: 'e.g., eyewitness_report' }
+        ],
+        generator: (inputs) => {
+          let cmd = 'eyewitness';
+          
+          const flag = inputs.inputType === 'URL File (-f)' ? '-f' : '-x';
+          cmd += ` ${flag} ${inputs.inputPath}`;
+          
+          if (inputs.mode === 'Web (--web)') cmd += ' --web';
+          else if (inputs.mode === 'Active Directory (--ad)') cmd += ' --ad';
+          
+          if (inputs.resolve === 'true') cmd += ' --resolve';
+          if (inputs.timeout && inputs.timeout !== '15') cmd += ` --timeout ${inputs.timeout}`;
+          if (inputs.threads && inputs.threads !== '10') cmd += ` --threads ${inputs.threads}`;
+          if (inputs.outDir) cmd += ` -d ${inputs.outDir}`;
+          
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'sublist3r',
@@ -550,6 +776,36 @@ export const webApplicationTools: Tool[] = [
     relatedTools: ['amass', 'assetfinder', 'findomain'],
     installation: 'sudo apt install sublist3r -y',
     website: 'https://github.com/aboul3la/Sublist3r',
+    interactiveCommands: [
+      {
+        name: 'Sublist3r Enumeration Runner',
+        description: 'Build subdomain discovery commands with built-in active port scanning and brute force fallbacks.',
+        inputs: [
+          { id: 'domain', label: 'Target Domain (-d)', type: 'text', defaultValue: 'example.com', placeholder: 'e.g., target.com' },
+          { id: 'brute', label: 'Subbrute Module (-b)', type: 'checkbox', defaultValue: 'false', placeholder: 'Enable bruteforce fallback' },
+          { id: 'ports', label: 'Port Scan (-p)', type: 'text', defaultValue: '', placeholder: 'e.g., 80,443 (Scans found hosts)' },
+          { id: 'threads', label: 'Threads (-t)', type: 'text', defaultValue: '30', placeholder: 'For bruteforce module' },
+          { id: 'engines', label: 'Search Engines (-e)', type: 'text', defaultValue: '', placeholder: 'e.g., google,bing,yahoo (Leave blank for all)' },
+          { id: 'verbose', label: 'Verbose (-v)', type: 'checkbox', defaultValue: 'true', placeholder: 'Real-time output' },
+          { id: 'output', label: 'Output File (-o)', type: 'text', defaultValue: '', placeholder: 'e.g., subdomains.txt' }
+        ],
+        generator: (inputs) => {
+          let cmd = `sublist3r -d ${inputs.domain}`;
+          
+          if (inputs.brute === 'true') {
+            cmd += ' -b';
+            if (inputs.threads && inputs.threads !== '30') cmd += ` -t ${inputs.threads}`;
+          }
+          
+          if (inputs.ports) cmd += ` -p ${inputs.ports}`;
+          if (inputs.engines) cmd += ` -e ${inputs.engines}`;
+          if (inputs.verbose === 'true') cmd += ' -v';
+          if (inputs.output) cmd += ` -o ${inputs.output}`;
+          
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'httprobe',
@@ -578,5 +834,35 @@ export const webApplicationTools: Tool[] = [
     relatedTools: ['httpx', 'curl'],
     installation: 'go install github.com/tomnomnom/httprobe@latest',
     website: 'https://github.com/tomnomnom/httprobe',
+    interactiveCommands: [
+      {
+        name: 'Httprobe Pipeline Configurator',
+        description: 'Configure fast HTTP/HTTPS probing chains for large lists of unresolved subdomains.',
+        inputs: [
+          { id: 'inputFile', label: 'Input File', type: 'text', defaultValue: 'domains.txt', placeholder: 'File containing unresolved subdomains' },
+          { id: 'ports', label: 'Additional Ports (-p)', type: 'text', defaultValue: '', placeholder: 'e.g., http:8080 https:8443 (Space separated)' },
+          { id: 'concurrency', label: 'Concurrency (-c)', type: 'select', options: ['20', '50', '100', '200'], defaultValue: '20' },
+          { id: 'timeout', label: 'Timeout (-t)', type: 'text', defaultValue: '10000', placeholder: 'Milliseconds' },
+          { id: 'preferHttps', label: 'Prefer HTTPS (--prefer-https)', type: 'checkbox', defaultValue: 'true', placeholder: 'Hide HTTP if HTTPS succeeds' },
+          { id: 'output', label: 'Output Redirect', type: 'text', defaultValue: '', placeholder: 'e.g., live_hosts.txt' }
+        ],
+        generator: (inputs) => {
+          let cmd = `cat ${inputs.inputFile} | httprobe`;
+          
+          if (inputs.ports) {
+            const portList = inputs.ports.split(' ').filter(Boolean).map(p => `-p ${p}`).join(' ');
+            if (portList) cmd += ` ${portList}`;
+          }
+          
+          if (inputs.concurrency && inputs.concurrency !== '20') cmd += ` -c ${inputs.concurrency}`;
+          if (inputs.timeout && inputs.timeout !== '10000') cmd += ` -t ${inputs.timeout}`;
+          if (inputs.preferHttps === 'true') cmd += ' --prefer-https';
+          
+          if (inputs.output) cmd += ` > ${inputs.output}`;
+          
+          return cmd;
+        }
+      }
+    ]
   }
 ];

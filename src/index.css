@@ -83,6 +83,17 @@
   body.custom-cursor-enabled label {
     cursor: none;
   }
+
+  body.custom-cursor-enabled.custom-cursor-svg-only,
+  body.custom-cursor-enabled.custom-cursor-svg-only a,
+  body.custom-cursor-enabled.custom-cursor-svg-only button,
+  body.custom-cursor-enabled.custom-cursor-svg-only [role='button'],
+  body.custom-cursor-enabled.custom-cursor-svg-only input,
+  body.custom-cursor-enabled.custom-cursor-svg-only textarea,
+  body.custom-cursor-enabled.custom-cursor-svg-only select,
+  body.custom-cursor-enabled.custom-cursor-svg-only label {
+    cursor: unset;
+  }
   
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Space Grotesk', sans-serif;
@@ -480,6 +491,41 @@
   background: rgba(74, 222, 128, 0.5);
 }
 
+/* Custom Horizontal Scrollbar for Generated Output */
+.custom-scrollbar::-webkit-scrollbar {
+  height: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(243, 245, 249, 0.02);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0, 240, 255, 0.1);
+  background-image: radial-gradient(circle, #fff 25%, transparent 25%);
+  border: 1px solid rgba(0, 240, 255, 0.6);
+  border-radius: 2px;
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 240, 255, 0.2);
+  background-image: radial-gradient(circle, #fff 30%, transparent 30%);
+  border-color: rgba(0, 240, 255, 1);
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+}
+
+
+/* Performance optimization for scrolling containers */
+.overflow-x-auto {
+  -webkit-overflow-scrolling: touch;
+  transform: translate3d(0, 0, 0);
+  will-change: scroll-position;
+}
+
+
 /* Scroll Fade Mask */
 .scroll-mask-bottom {
   mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
@@ -561,4 +607,20 @@
 
 .pixel-border::before { top: -2px; left: -2px; }
 .pixel-border::after { top: -2px; right: -2px; }
+
+.no-blur {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.will-change-scroll {
+  will-change: scroll-position, transform;
+}
+
+.select-all {
+  user-select: all;
+  -webkit-user-select: all;
+}
+
+
 

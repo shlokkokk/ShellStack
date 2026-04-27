@@ -56,16 +56,44 @@ export const cryptographyTools: Tool[] = [
     website: 'https://www.openssl.org',
     interactiveCommands: [
       {
-        name: 'TLS Server Inspector',
-        description: 'Inspect a server\'s TLS configuration, certificate, and supported cipher suites.',
+        name: 'OpenSSL Toolkit Builder',
+        description: 'Comprehensive builder for TLS connections, certificate generation, encryption, and signatures.',
         inputs: [
-          { id: 'host', label: 'Target Host', type: 'text', defaultValue: 'example.com', placeholder: 'e.g., example.com or 192.168.1.100' },
-          { id: 'port', label: 'Port', type: 'text', defaultValue: '443', placeholder: '443' },
-          { id: 'tlsVersion', label: 'TLS Version Test', type: 'select', defaultValue: '', options: ['', '-tls1', '-tls1_1', '-tls1_2', '-tls1_3'] },
+          { id: 'mode', label: 'Operation Mode', type: 'select', options: ['s_client (TLS Test)', 'x509 (Read Cert)', 'req (Generate CSR/Cert)', 'genrsa (Generate Key)', 'enc (Encrypt/Decrypt)', 'dgst (Hash/Sign)'], defaultValue: 's_client (TLS Test)' },
+          { id: 'target', label: 'Target / Input File', type: 'text', defaultValue: 'example.com:443', placeholder: 'Host:Port or file.txt' },
+          { id: 'outFile', label: 'Output File (-out)', type: 'text', defaultValue: '', placeholder: 'Save output to file' },
+          { id: 'tlsVersion', label: 'TLS Version (s_client)', type: 'select', options: ['Auto', '-tls1', '-tls1_1', '-tls1_2', '-tls1_3'], defaultValue: 'Auto' },
+          { id: 'cipher', label: 'Cipher Suite (s_client/enc)', type: 'text', defaultValue: '', placeholder: 'e.g., NULL, HIGH, -aes-256-cbc' },
+          { id: 'keySize', label: 'Key Size (genrsa)', type: 'text', defaultValue: '2048', placeholder: '2048, 4096' },
+          { id: 'pass', label: 'Password (-k/-pass)', type: 'text', defaultValue: '', placeholder: 'Password for encryption' },
+          { id: 'decrypt', label: 'Decrypt (-d)', type: 'checkbox', defaultValue: 'false', placeholder: 'For enc mode' }
         ],
         generator: (inputs) => {
-          const version = inputs.tlsVersion ? ` ${inputs.tlsVersion}` : '';
-          return `openssl s_client -connect ${inputs.host}:${inputs.port}${version} < /dev/null 2>&1 | head -50`;
+          let cmd = `openssl ${inputs.mode.split(' ')[0]}`;
+          
+          if (inputs.mode.includes('s_client')) {
+            cmd += ` -connect ${inputs.target}`;
+            if (inputs.tlsVersion !== 'Auto') cmd += ` ${inputs.tlsVersion}`;
+            if (inputs.cipher) cmd += ` -cipher ${inputs.cipher}`;
+            cmd += ' < /dev/null 2>&1 | head -50';
+          } else if (inputs.mode.includes('req')) {
+            cmd += ` -x509 -newkey rsa:${inputs.keySize} -keyout key.pem -out ${inputs.outFile || 'cert.pem'} -days 365 -nodes`;
+          } else if (inputs.mode.includes('x509')) {
+            cmd += ` -in ${inputs.target} -text -noout`;
+          } else if (inputs.mode.includes('genrsa')) {
+            cmd += ` -out ${inputs.outFile || 'private.key'} ${inputs.keySize}`;
+          } else if (inputs.mode.includes('enc')) {
+            if (inputs.decrypt === 'true') cmd += ' -d';
+            if (inputs.cipher) cmd += ` ${inputs.cipher.startsWith('-') ? inputs.cipher : '-' + inputs.cipher}`;
+            else cmd += ' -aes-256-cbc';
+            cmd += ` -in ${inputs.target}`;
+            if (inputs.outFile) cmd += ` -out ${inputs.outFile}`;
+            if (inputs.pass) cmd += ` -k "${inputs.pass}" -pbkdf2`;
+          } else if (inputs.mode.includes('dgst')) {
+            cmd += ` -sha256 -sign private.key -out ${inputs.outFile || 'sig.bin'} ${inputs.target}`;
+          }
+          
+          return cmd;
         }
       }
     ]
@@ -113,6 +141,49 @@ export const cryptographyTools: Tool[] = [
     relatedTools: ['openssl', 'age', 'pass'],
     installation: 'sudo apt install gnupg -y   # Pre-installed on most Linux systems',
     website: 'https://www.gnupg.org',
+    interactiveCommands: [
+      {
+        name: 'GnuPG Crypto Operations',
+        description: 'Build complete GPG commands for key management, encryption, and digital signatures.',
+        inputs: [
+          { id: 'action', label: 'Action', type: 'select', options: ['--encrypt (-e)', '--decrypt (-d)', '--sign (-s)', '--verify', '--gen-key', '--export (-a)', '--import'], defaultValue: '--encrypt (-e)' },
+          { id: 'targetFile', label: 'Target File', type: 'text', defaultValue: 'secret.txt', placeholder: 'File to encrypt/decrypt/sign' },
+          { id: 'recipient', label: 'Recipient (-r)', type: 'text', defaultValue: 'user@email.com', placeholder: 'Required for encryption' },
+          { id: 'armor', label: 'ASCII Armor (-a)', type: 'checkbox', defaultValue: 'true', placeholder: 'Output as base64 text' },
+          { id: 'outFile', label: 'Output File (-o)', type: 'text', defaultValue: '', placeholder: 'Save output to file' },
+          { id: 'symmetric', label: 'Symmetric Enc (--symmetric)', type: 'checkbox', defaultValue: 'false', placeholder: 'Encrypt with password' }
+        ],
+        generator: (inputs) => {
+          let cmd = `gpg`;
+          
+          const act = inputs.action.split(' ')[0];
+          cmd += ` ${act}`;
+          
+          if (inputs.armor === 'true' && (act === '--encrypt' || act === '--sign' || act === '--export')) {
+            cmd += ' --armor';
+          }
+          
+          if (act === '--encrypt' && inputs.recipient) {
+            cmd += ` --recipient "${inputs.recipient}"`;
+          }
+          if (inputs.symmetric === 'true') {
+            cmd += ' --symmetric';
+          }
+          
+          if (inputs.outFile) cmd += ` --output ${inputs.outFile}`;
+          
+          if (!act.includes('gen-key') && !act.includes('export') && !act.includes('import')) {
+            cmd += ` ${inputs.targetFile}`;
+          } else if (act === '--export') {
+            cmd += ` "${inputs.recipient}"`;
+          } else if (act === '--import') {
+             cmd += ` public.key`;
+          }
+          
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'cryptool',
@@ -137,6 +208,25 @@ export const cryptographyTools: Tool[] = [
     relatedTools: ['openssl', 'hashcat', 'john'],
     installation: 'Download installer from cryptool.org — Windows only (CT2). CrypTool 1 also available.',
     website: 'https://www.cryptool.org',
+    interactiveCommands: [
+      {
+        name: 'CrypTool Launcher',
+        description: 'Launch CrypTool or specific CT2 workspaces.',
+        inputs: [
+          { id: 'executable', label: 'Executable', type: 'text', defaultValue: 'CrypTool2.exe', placeholder: 'Path to executable' },
+          { id: 'workspace', label: 'Workspace File (.cwm)', type: 'text', defaultValue: '', placeholder: 'Path to workspace' },
+          { id: 'hidden', label: 'Start Hidden', type: 'checkbox', defaultValue: 'false', placeholder: 'Run in background' },
+          { id: 'language', label: 'Language', type: 'select', options: ['en', 'de', 'es'], defaultValue: 'en' },
+          { id: 'logLevel', label: 'Log Level', type: 'select', options: ['Info', 'Warning', 'Error', 'Debug'], defaultValue: 'Info' },
+          { id: 'plugin', label: 'Load Plugin', type: 'text', defaultValue: '', placeholder: 'DLL name' }
+        ],
+        generator: (inputs) => {
+          let cmd = inputs.executable;
+          if (inputs.workspace) cmd += ` "${inputs.workspace}"`;
+          return cmd;
+        }
+      }
+    ]
   },
   {
     id: 'hashid',
@@ -178,6 +268,31 @@ export const cryptographyTools: Tool[] = [
     relatedTools: ['hashcat', 'john', 'haiti'],
     installation: 'pip install hashid   # or: sudo apt install hash-identifier -y',
     website: 'https://github.com/psypanda/hashID',
+    interactiveCommands: [
+      {
+        name: 'HashID Expert Analyzer',
+        description: 'Generate advanced hash identification commands with Hashcat and John the Ripper integration.',
+        inputs: [
+          { id: 'hashInput', label: 'Hash string or file', type: 'text', defaultValue: '5f4dcc3b5aa765d61d8327deb882cf99', placeholder: 'Enter hash or filename' },
+          { id: 'hashcat', label: 'Hashcat mode (-m)', type: 'checkbox', defaultValue: 'true', placeholder: 'Enable' },
+          { id: 'john', label: 'John format (-j)', type: 'checkbox', defaultValue: 'true', placeholder: 'Enable' },
+          { id: 'extended', label: 'Extended Info (-e)', type: 'checkbox', defaultValue: 'false', placeholder: 'Enable' },
+          { id: 'outFile', label: 'Output File (-o)', type: 'text', defaultValue: '', placeholder: 'Save output to file' },
+          { id: 'quiet', label: 'Quiet Mode', type: 'checkbox', defaultValue: 'false', placeholder: 'Suppress banner' }
+        ],
+        generator: (inputs) => {
+          let cmd = 'hashid';
+          if (inputs.hashcat === 'true') cmd += ' -m';
+          if (inputs.john === 'true') cmd += ' -j';
+          if (inputs.extended === 'true') cmd += ' -e';
+          if (inputs.outFile) cmd += ` -o ${inputs.outFile}`;
+          
+          let execCmd = inputs.hashInput.endsWith('.txt') ? `cat ${inputs.hashInput} | ${cmd}` : `${cmd} "${inputs.hashInput}"`;
+          if (inputs.quiet === 'true') execCmd = execCmd.replace('hashid', 'hashid 2>/dev/null'); // Simple hack for hiding some errors/banners in CLI
+          return execCmd;
+        }
+      }
+    ]
   },
   {
     id: 'testssl',
@@ -231,17 +346,30 @@ export const cryptographyTools: Tool[] = [
     website: 'https://testssl.sh',
     interactiveCommands: [
       {
-        name: 'TLS/SSL Audit Builder',
-        description: 'Generate a testssl.sh command to audit a server\'s TLS configuration.',
+        name: 'TLS/SSL Complete Audit Builder',
+        description: 'Generate highly detailed testssl.sh commands to audit servers for vulnerabilities, ciphers, and certificate flaws.',
         inputs: [
           { id: 'host', label: 'Target Host', type: 'text', defaultValue: 'example.com', placeholder: 'Domain or IP address' },
           { id: 'port', label: 'Port', type: 'text', defaultValue: '443', placeholder: '443' },
-          { id: 'check', label: 'Check Type', type: 'select', defaultValue: '--full', options: ['--full', '--vulnerable', '--ciphers', '--protocols', '--headers', '--heartbleed'] },
-          { id: 'output', label: 'Report Format', type: 'select', defaultValue: '', options: ['', '--json', '--html'] },
+          { id: 'checkMode', label: 'Audit Scope', type: 'select', defaultValue: '--full', options: ['--full', '--vulnerable', '--ciphers', '--protocols', '--headers', '--heartbleed', '--poodle'] },
+          { id: 'outputFormat', label: 'Report Format', type: 'select', defaultValue: '--html', options: ['None', '--json', '--html', '--csv'] },
+          { id: 'outDir', label: 'Output Dir/File', type: 'text', defaultValue: 'report.html', placeholder: 'e.g., report.html' },
+          { id: 'fast', label: 'Fast Mode (--fast)', type: 'checkbox', defaultValue: 'false', placeholder: 'Skip some checks' },
+          { id: 'serial', label: 'Serial Mode (--serial)', type: 'checkbox', defaultValue: 'false', placeholder: 'Run sequentially (slower, reliable)' }
         ],
         generator: (inputs) => {
-          const outputFlag = inputs.output ? ` ${inputs.output}` : '';
-          return `testssl.sh ${inputs.check}${outputFlag} ${inputs.host}:${inputs.port}`;
+          let cmd = 'testssl.sh';
+          
+          if (inputs.checkMode !== '--full') cmd += ` ${inputs.checkMode}`;
+          
+          if (inputs.fast === 'true') cmd += ' --fast';
+          if (inputs.serial === 'true') cmd += ' --serial';
+          
+          if (inputs.outputFormat !== 'None') {
+            cmd += ` ${inputs.outputFormat} ${inputs.outDir}`;
+          }
+          
+          return `${cmd} ${inputs.host}:${inputs.port}`;
         }
       }
     ]
