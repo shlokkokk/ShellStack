@@ -91,7 +91,7 @@ const ToolDetailModal = ({ tool, isOpen, onClose }: ToolDetailModalProps) => {
 
   return (
     <div 
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4 pt-20"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-0 md:p-4 md:pt-20"
       data-modal-open="true"
     >
       {/* Backdrop */}
@@ -101,13 +101,13 @@ const ToolDetailModal = ({ tool, isOpen, onClose }: ToolDetailModalProps) => {
       />
       
       {/* Modal */}
-      <div className="relative w-full max-w-4xl max-h-[90vh] cyber-panel overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-4xl h-[100dvh] md:h-auto max-h-[100dvh] md:max-h-[90vh] cyber-panel overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200 rounded-none md:rounded-xl">
         {/* Header */}
-        <div className="flex items-start justify-between p-6 border-b border-[rgba(243,245,249,0.08)]">
+        <div className="flex items-start justify-between p-4 md:p-6 border-b border-[rgba(243,245,249,0.08)] shrink-0">
           <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
-              <h2 className="text-2xl font-bold text-[#F2F5F9]">{tool.name}</h2>
-              <span className={`px-2 py-1 text-xs font-mono uppercase rounded border ${getDifficultyColor(tool.difficulty)}`}>
+            <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3 mb-2">
+              <h2 className="text-xl md:text-2xl font-bold text-[#F2F5F9]">{tool.name}</h2>
+              <span className={`self-start md:self-auto px-2 py-1 text-[10px] md:text-xs font-mono uppercase rounded border ${getDifficultyColor(tool.difficulty)}`}>
                 {tool.difficulty}
               </span>
             </div>
@@ -132,7 +132,7 @@ const ToolDetailModal = ({ tool, isOpen, onClose }: ToolDetailModalProps) => {
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-[rgba(243,245,249,0.08)]">
+        <div className="flex border-b border-[rgba(243,245,249,0.08)] overflow-x-auto scrollbar-hide bg-[#05060B] shrink-0">
           {[
             { id: 'guide', label: 'Guide', icon: BookOpen, hide: !tool.detailedReport },
             { id: 'commands', label: 'Commands', icon: Terminal },
@@ -145,10 +145,10 @@ const ToolDetailModal = ({ tool, isOpen, onClose }: ToolDetailModalProps) => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center gap-2 px-6 py-3 text-sm font-mono uppercase tracking-wider transition-all ${
+                className={`flex items-center gap-2 px-4 py-3 md:px-6 md:py-3 text-[11px] md:text-sm font-mono uppercase tracking-wider transition-all whitespace-nowrap group shrink-0 ${
                   activeTab === tab.id
                     ? 'text-[#39FF14] border-b-2 border-[#39FF14] bg-[rgba(57,255,20,0.05)]'
-                    : 'text-[#A7B0BC] hover:text-[#F2F5F9]'
+                    : 'text-[#A7B0BC] hover:text-[#F2F5F9] hover:bg-[rgba(255,255,255,0.01)]'
                 }`}
               >
                 <Icon className="w-4 h-4" />
@@ -162,7 +162,7 @@ const ToolDetailModal = ({ tool, isOpen, onClose }: ToolDetailModalProps) => {
         <div 
           ref={scrollRef}
           onScroll={checkScroll}
-          className="flex-1 overflow-y-auto p-6 scrollbar-hide relative"
+          className="flex-1 overflow-y-auto p-4 md:p-6 scrollbar-hide relative z-10"
         >
           {activeTab === 'guide' && tool.detailedReport && (
             <div className="space-y-8 pb-8">
@@ -208,8 +208,8 @@ const ToolDetailModal = ({ tool, isOpen, onClose }: ToolDetailModalProps) => {
                   <div className="absolute left-[19px] top-4 bottom-4 w-0.5 bg-[rgba(0,240,255,0.15)]" />
                   
                   {tool.detailedReport.stepByStep.map((step) => (
-                    <div key={step.step} className="relative flex gap-6 group">
-                      <div className="z-10 w-10 h-10 rounded-full bg-[#05060B] border-2 border-[rgba(0,240,255,0.3)] flex items-center justify-center font-mono text-sm text-[#00F0FF] group-hover:border-[#00F0FF] transition-colors">
+                    <div key={step.step} className="relative flex gap-3 md:gap-6 group">
+                      <div className="z-10 w-10 h-10 rounded-full bg-[#05060B] border-2 border-[rgba(0,240,255,0.3)] flex items-center justify-center font-mono text-sm text-[#00F0FF] group-hover:border-[#00F0FF] transition-colors shrink-0">
                         {step.step}
                       </div>
                       <div className="flex-1 pt-1">
@@ -218,7 +218,7 @@ const ToolDetailModal = ({ tool, isOpen, onClose }: ToolDetailModalProps) => {
                           {step.description}
                         </p>
                         {step.code && (
-                          <div className="bg-[#05060B] p-3 rounded border border-[rgba(243,245,249,0.05)] font-mono text-xs text-[#00F0FF]">
+                          <div className="bg-[#05060B] p-3 rounded border border-[rgba(243,245,249,0.05)] font-mono text-xs text-[#00F0FF] overflow-x-auto whitespace-pre-wrap break-all">
                             {step.code}
                           </div>
                         )}
@@ -229,7 +229,7 @@ const ToolDetailModal = ({ tool, isOpen, onClose }: ToolDetailModalProps) => {
               </div>
 
               {/* CTF Tips */}
-              <div className="p-6 bg-gradient-to-br from-[rgba(57,255,20,0.05)] to-transparent border border-[rgba(57,255,20,0.2)] rounded-xl relative overflow-hidden group">
+              <div className="p-4 md:p-6 bg-gradient-to-br from-[rgba(57,255,20,0.05)] to-transparent border border-[rgba(57,255,20,0.2)] rounded-xl relative overflow-hidden group">
                 <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                   <Target className="w-24 h-24 text-[#39FF14]" />
                 </div>
@@ -254,16 +254,16 @@ const ToolDetailModal = ({ tool, isOpen, onClose }: ToolDetailModalProps) => {
                 <div className="space-y-3">
                   {tool.detailedReport.useCases.map((uc, idx) => (
                     <div key={idx} className="p-4 bg-[rgba(243,245,249,0.02)] border border-[rgba(243,245,249,0.05)] rounded-lg hover:bg-[rgba(255,230,0,0.02)] hover:border-[rgba(255,230,0,0.2)] transition-all">
-                      <div className="flex justify-between items-start mb-2">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-2">
                         <h4 className="font-bold text-[#F2F5F9]">{uc.title}</h4>
-                        <div className="px-2 py-0.5 rounded text-[10px] font-mono bg-[rgba(255,230,0,0.1)] text-[#FFE600] border border-[rgba(255,230,0,0.2)] uppercase">
+                        <div className="self-start sm:self-auto px-2 py-0.5 rounded text-[10px] font-mono bg-[rgba(255,230,0,0.1)] text-[#FFE600] border border-[rgba(255,230,0,0.2)] uppercase">
                           SCENARIO_{idx + 1}
                         </div>
                       </div>
                       <p className="text-sm text-[#A7B0BC] mb-4">{uc.context}</p>
                       <div className="space-y-1.5">
                         {uc.commands.map((cmd, cIdx) => (
-                          <div key={cIdx} className="flex items-center gap-2 bg-[#05060B] px-3 py-2 rounded font-mono text-xs text-[#00F0FF]">
+                          <div key={cIdx} className="flex items-center gap-2 bg-[#05060B] px-3 py-2 rounded font-mono text-xs text-[#00F0FF] overflow-x-auto whitespace-pre-wrap break-all">
                             <span className="text-gray-600">$</span> {cmd}
                           </div>
                         ))}
@@ -305,7 +305,7 @@ const ToolDetailModal = ({ tool, isOpen, onClose }: ToolDetailModalProps) => {
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
-                        <code className="text-sm font-mono text-[#00F0FF] block mb-2">
+                        <code className="text-xs md:text-sm font-mono text-[#00F0FF] block mb-2 overflow-x-auto whitespace-pre-wrap break-all">
                           {cmd.command}
                         </code>
                         <p className="text-sm text-[#A7B0BC]">{cmd.description}</p>
@@ -409,7 +409,7 @@ const ToolDetailModal = ({ tool, isOpen, onClose }: ToolDetailModalProps) => {
               {tool.installation && (
                 <div>
                   <h3 className="text-lg font-bold text-[#F2F5F9] mb-3">Installation</h3>
-                  <code className="block p-3 bg-[#05060B] rounded text-sm font-mono text-[#F2F5F9]">
+                  <code className="block p-3 bg-[#05060B] rounded text-xs md:text-sm font-mono text-[#F2F5F9] overflow-x-auto whitespace-pre-wrap break-all">
                     {tool.installation}
                   </code>
                 </div>
@@ -454,7 +454,7 @@ const ToolDetailModal = ({ tool, isOpen, onClose }: ToolDetailModalProps) => {
 
         {/* Scroll Indicator Fade */}
         <div 
-          className={`absolute bottom-[61px] left-0 right-0 h-16 bg-gradient-to-t from-[#05060B] to-transparent pointer-events-none flex items-end justify-center pb-2 transition-opacity duration-300 ${
+          className={`absolute bottom-[57px] md:bottom-[61px] left-0 right-0 h-16 bg-gradient-to-t from-[#05060B] to-transparent pointer-events-none flex items-end justify-center pb-2 transition-opacity duration-300 ${
             (canScroll && !hasScrolled) ? 'opacity-100' : 'opacity-0'
           }`}
         >
@@ -465,7 +465,7 @@ const ToolDetailModal = ({ tool, isOpen, onClose }: ToolDetailModalProps) => {
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-[rgba(243,245,249,0.08)] flex items-center justify-between">
+        <div className="p-4 border-t border-[rgba(243,245,249,0.08)] flex items-center justify-between gap-2 flex-wrap md:flex-nowrap shrink-0">
           <span className="text-xs font-mono text-[#A7B0BC]">
             Category: <span className="text-[#39FF14]">{tool.category}</span>
           </span>

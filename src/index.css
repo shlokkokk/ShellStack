@@ -622,5 +622,13 @@
   -webkit-user-select: all;
 }
 
+@media (max-width: 767px) {
+  body.no-scroll nav,
+  body.no-scroll .mobile-nav-menu {
+    display: none !important;
+  }
+}
 
-
+.triad-svg, .triad-svg * {
+  forced-color-adjust: none !important;
+}
