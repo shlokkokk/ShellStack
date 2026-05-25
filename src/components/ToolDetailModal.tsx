@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, Copy, Check, Terminal, ExternalLink, BookOpen, AlertTriangle, Zap, Target, ArrowDown, ChevronUp, ChevronDown } from 'lucide-react';
+import { X, Copy, Check, Terminal, ExternalLink, BookOpen, AlertTriangle, Zap, Target, ArrowDown, ChevronDown } from 'lucide-react';
 import type { Tool } from '../data/kaliTools';
 import InteractiveCommandBuilder from './InteractiveCommandBuilder';
 

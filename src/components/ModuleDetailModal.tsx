@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, BookOpen, Terminal, Shield, CheckCircle, AlertTriangle, ChevronRight, ChevronDown, ChevronUp, ArrowRight, Target } from 'lucide-react';
+import { X, BookOpen, Terminal, Shield, CheckCircle, AlertTriangle, ChevronRight, ChevronDown, ArrowRight, Target } from 'lucide-react';
 import type { Module } from '../data/cehModules';
 import { tools, type Tool } from '../data/kaliTools';
 import ToolDetailModal from './ToolDetailModal';
