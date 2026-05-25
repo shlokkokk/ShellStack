@@ -163,7 +163,7 @@ const ToolDetailModal = ({ tool, isOpen, onClose }: ToolDetailModalProps) => {
           {/* Collapse/Expand Toggle for Mobile Header */}
           <button
             onClick={() => setIsHeaderExpanded(!isHeaderExpanded)}
-            className="md:hidden flex items-center justify-center px-4 border-l border-[rgba(243,245,249,0.08)] text-[#39FF14] hover:bg-[rgba(57,255,20,0.05)] transition-all shrink-0 self-stretch"
+            className="md:hidden flex items-center justify-center px-4 border-l border-[rgba(243,245,249,0.08)] text-[#A7B0BC] bg-[rgba(167,176,188,0.08)] hover:text-[#39FF14] hover:bg-[rgba(57,255,20,0.08)] transition-all shrink-0 self-stretch"
             title={isHeaderExpanded ? "Collapse header" : "Expand header"}
           >
             <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isHeaderExpanded ? 'rotate-180' : 'rotate-0'}`} />
