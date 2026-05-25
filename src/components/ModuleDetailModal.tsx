@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { X, BookOpen, Terminal, Shield, CheckCircle, AlertTriangle, ChevronRight, ChevronDown, ArrowRight, Target } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { X, BookOpen, Terminal, Shield, CheckCircle, AlertTriangle, ChevronRight, ChevronDown, ChevronUp, ArrowRight, Target } from 'lucide-react';
 import type { Module } from '../data/cehModules';
 import { tools, type Tool } from '../data/kaliTools';
 import ToolDetailModal from './ToolDetailModal';
@@ -17,6 +17,16 @@ const ModuleDetailModal = ({ module, isOpen, onClose }: ModuleDetailModalProps) 
   const [activeSection, setActiveSection] = useState<'topics' | 'tools' | 'countermeasures' | 'exam-tips' | 'scenarios'>('topics');
   const [selectedTool, setSelectedTool] = useState<Tool | null>(null);
   const [showCIADeepDive, setShowCIADeepDive] = useState(false);
+  const [isHeaderExpanded, setIsHeaderExpanded] = useState(true);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Scroll to top when active section tab or module changes
+  useEffect(() => {
+    if (scrollRef.current) {
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      scrollRef.current.scrollTo({ top: 0, behavior: prefersReducedMotion ? 'auto' : 'smooth' });
+    }
+  }, [activeSection, module?.id]);
 
   // Prevent background scroll when modal is open
   useEffect(() => {
@@ -79,7 +89,7 @@ const ModuleDetailModal = ({ module, isOpen, onClose }: ModuleDetailModalProps) 
         </div>
         
         {/* Header */}
-        <div className="relative z-10 p-4 md:p-8 border-b border-[rgba(57,255,20,0.1)] shrink-0 pr-12 md:pr-16">
+        <div className={`relative z-10 p-4 md:p-8 border-b border-[rgba(57,255,20,0.1)] shrink-0 pr-12 md:pr-16 ${isHeaderExpanded ? 'pb-7' : 'pb-4'} md:pb-8`}>
           <div>
             <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 mb-2 md:mb-3">
               <div className="self-start md:self-auto px-2 py-0.5 md:px-3 md:py-1 bg-[rgba(57,255,20,0.1)] border border-[#39FF14]/30 rounded text-[#39FF14] font-mono text-[10px] md:text-xs tracking-tighter animate-pulse-subtle">
@@ -87,10 +97,10 @@ const ModuleDetailModal = ({ module, isOpen, onClose }: ModuleDetailModalProps) 
               </div>
               <h2 className="text-lg md:text-3xl font-bold text-[#F2F5F9] tracking-tight text-glow-green italic">{module.title}</h2>
             </div>
-            <p className="text-[#A7B0BC] text-[11px] md:text-sm mb-3 leading-relaxed">{module.description}</p>
+            <p className={`text-[#A7B0BC] text-[11px] md:text-sm mb-3 leading-relaxed ${isHeaderExpanded ? 'block' : 'hidden md:block'}`}>{module.description}</p>
             
             {/* Stats & Prerequisites */}
-            <div className="flex flex-col gap-2 md:gap-3">
+            <div className={`flex flex-col gap-2 md:gap-3 ${isHeaderExpanded ? 'flex' : 'hidden md:flex'}`}>
               <div className="flex flex-wrap items-center gap-1.5 md:gap-4 text-[9px] md:text-xs font-mono">
                 <span className="flex items-center gap-1 md:gap-1.5 px-1.5 py-0.5 md:px-2 md:py-1 bg-[rgba(0,240,255,0.1)] text-[#00F0FF] rounded border border-[rgba(0,240,255,0.2)]">
                   <Shield className="w-2.5 h-2.5 md:w-3 md:h-3" />
@@ -130,7 +140,7 @@ const ModuleDetailModal = ({ module, isOpen, onClose }: ModuleDetailModalProps) 
         </div>
 
         {/* Tactical Control Bar */}
-        <div className="relative z-20 flex border-y border-[rgba(57,255,20,0.1)] bg-[#05060B] shrink-0">
+        <div className="relative z-20 flex border-y border-[rgba(57,255,20,0.1)] bg-[#05060B] shrink-0 items-center justify-between">
           <div className="flex flex-1 overflow-x-auto scrollbar-hide">
             {[
               { id: 'topics', label: 'Topics', icon: BookOpen },
@@ -179,10 +189,19 @@ const ModuleDetailModal = ({ module, isOpen, onClose }: ModuleDetailModalProps) 
               );
             })}
           </div>
+          
+          {/* Collapse/Expand Toggle for Mobile Header */}
+          <button
+            onClick={() => setIsHeaderExpanded(!isHeaderExpanded)}
+            className="md:hidden flex items-center justify-center px-4 border-l border-[rgba(57,255,20,0.1)] text-[#39FF14] hover:bg-[rgba(57,255,20,0.05)] transition-all shrink-0 self-stretch"
+            title={isHeaderExpanded ? "Collapse header" : "Expand header"}
+          >
+            <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isHeaderExpanded ? 'rotate-180' : 'rotate-0'}`} />
+          </button>
         </div>
 
         {/* Content Section with custom scrollbar */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-8 cyber-scrollbar relative z-10">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 md:p-8 cyber-scrollbar relative z-10">
           {activeSection === 'topics' && (
             <div className="space-y-6">
               <h3 className="flex items-center gap-2.5 md:gap-3 text-[10px] md:text-xs font-mono uppercase tracking-[0.15em] md:tracking-[0.4em] text-[#39FF14] mb-6 md:mb-8 opacity-70">

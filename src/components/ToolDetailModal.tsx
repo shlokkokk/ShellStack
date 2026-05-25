@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, Copy, Check, Terminal, ExternalLink, BookOpen, AlertTriangle, Zap, Target, ArrowDown } from 'lucide-react';
+import { X, Copy, Check, Terminal, ExternalLink, BookOpen, AlertTriangle, Zap, Target, ArrowDown, ChevronUp, ChevronDown } from 'lucide-react';
 import type { Tool } from '../data/kaliTools';
 import InteractiveCommandBuilder from './InteractiveCommandBuilder';
 
@@ -14,6 +14,7 @@ const ToolDetailModal = ({ tool, isOpen, onClose }: ToolDetailModalProps) => {
   const [activeTab, setActiveTab] = useState<'commands' | 'info' | 'examples' | 'guide'>('commands');
   const [canScroll, setCanScroll] = useState(false);
   const [hasScrolled, setHasScrolled] = useState(false);
+  const [isHeaderExpanded, setIsHeaderExpanded] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const checkScroll = () => {
@@ -103,18 +104,18 @@ const ToolDetailModal = ({ tool, isOpen, onClose }: ToolDetailModalProps) => {
       {/* Modal */}
       <div className="relative w-full max-w-4xl h-[100dvh] md:h-auto max-h-[100dvh] md:max-h-[90vh] cyber-panel overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200 rounded-none md:rounded-xl">
         {/* Header */}
-        <div className="flex items-start justify-between p-4 md:p-6 border-b border-[rgba(243,245,249,0.08)] shrink-0">
-          <div className="flex-1">
+        <div className={`relative flex items-start justify-between p-4 md:p-6 border-b border-[rgba(243,245,249,0.08)] shrink-0 ${isHeaderExpanded ? 'pb-7' : 'pb-4'} md:pb-6`}>
+          <div className="flex-1 min-w-0">
             <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3 mb-2">
-              <h2 className="text-xl md:text-2xl font-bold text-[#F2F5F9]">{tool.name}</h2>
+              <h2 className="text-xl md:text-2xl font-bold text-[#F2F5F9] truncate">{tool.name}</h2>
               <span className={`self-start md:self-auto px-2 py-1 text-[10px] md:text-xs font-mono uppercase rounded border ${getDifficultyColor(tool.difficulty)}`}>
                 {tool.difficulty}
               </span>
             </div>
-            <p className="text-[#A7B0BC] text-sm">{tool.description}</p>
+            <p className={`text-[#A7B0BC] text-sm leading-relaxed ${isHeaderExpanded ? 'block' : 'hidden md:block'}`}>{tool.description}</p>
             
             {/* Tags */}
-            <div className="flex flex-wrap gap-2 mt-3">
+            <div className={`flex flex-wrap gap-2 mt-3 ${isHeaderExpanded ? 'flex' : 'hidden md:flex'}`}>
               {tool.tags.map((tag) => (
                 <span key={tag} className="tag">
                   #{tag}
@@ -125,37 +126,48 @@ const ToolDetailModal = ({ tool, isOpen, onClose }: ToolDetailModalProps) => {
           
           <button
             onClick={onClose}
-            className="p-2 text-[#A7B0BC] hover:text-[#FF2D2D] transition-colors"
+            className="p-2 text-[#A7B0BC] hover:text-[#FF2D2D] transition-colors shrink-0 z-20 ml-2"
           >
-            <X className="w-6 h-6" />
+            <X className="w-5 h-5 md:w-6 h-6" />
           </button>
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-[rgba(243,245,249,0.08)] overflow-x-auto scrollbar-hide bg-[#05060B] shrink-0">
-          {[
-            { id: 'guide', label: 'Guide', icon: BookOpen, hide: !tool.detailedReport },
-            { id: 'commands', label: 'Commands', icon: Terminal },
-            { id: 'info', label: 'Information', icon: Zap },
-            { id: 'examples', label: 'Examples', icon: Target },
-          ].map((tab) => {
-            if (tab.hide) return null;
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center gap-2 px-4 py-3 md:px-6 md:py-3 text-[11px] md:text-sm font-mono uppercase tracking-wider transition-all whitespace-nowrap group shrink-0 ${
-                  activeTab === tab.id
-                    ? 'text-[#39FF14] border-b-2 border-[#39FF14] bg-[rgba(57,255,20,0.05)]'
-                    : 'text-[#A7B0BC] hover:text-[#F2F5F9] hover:bg-[rgba(255,255,255,0.01)]'
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-                {tab.label}
-              </button>
-            );
-          })}
+        <div className="relative z-20 flex border-b border-[rgba(243,245,249,0.08)] bg-[#05060B] shrink-0 items-center justify-between">
+          <div className="flex flex-1 overflow-x-auto scrollbar-hide">
+            {[
+              { id: 'guide', label: 'Guide', icon: BookOpen, hide: !tool.detailedReport },
+              { id: 'commands', label: 'Commands', icon: Terminal },
+              { id: 'info', label: 'Information', icon: Zap },
+              { id: 'examples', label: 'Examples', icon: Target },
+            ].map((tab) => {
+              if (tab.hide) return null;
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={`flex items-center gap-2 px-4 py-3 md:px-6 md:py-3 text-[11px] md:text-sm font-mono uppercase tracking-wider transition-all whitespace-nowrap group shrink-0 ${
+                    activeTab === tab.id
+                      ? 'text-[#39FF14] border-b-2 border-[#39FF14] bg-[rgba(57,255,20,0.05)]'
+                      : 'text-[#A7B0BC] hover:text-[#F2F5F9] hover:bg-[rgba(255,255,255,0.01)]'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Collapse/Expand Toggle for Mobile Header */}
+          <button
+            onClick={() => setIsHeaderExpanded(!isHeaderExpanded)}
+            className="md:hidden flex items-center justify-center px-4 border-l border-[rgba(243,245,249,0.08)] text-[#39FF14] hover:bg-[rgba(57,255,20,0.05)] transition-all shrink-0 self-stretch"
+            title={isHeaderExpanded ? "Collapse header" : "Expand header"}
+          >
+            <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isHeaderExpanded ? 'rotate-180' : 'rotate-0'}`} />
+          </button>
         </div>
 
         {/* Content */}
