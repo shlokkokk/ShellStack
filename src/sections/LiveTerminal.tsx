@@ -1,12 +1,17 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Terminal, Wifi, Shield, ChevronRight, Clock, Zap, Scan, Radio, Network, FileCode, KeyRound, Crown } from 'lucide-react';
+import { BsCheckCircleFill, BsArrowRepeat, BsLightningChargeFill, BsWifi, BsChevronRight } from 'react-icons/bs';
+import { RiLoader4Line, RiTerminalBoxLine, RiRadarLine } from 'react-icons/ri';
+import { MdOutlineSkipNext, MdGpsFixed, MdWifiTethering, MdLan } from 'react-icons/md';
+import { GiCrownedSkull, GiPadlock } from 'react-icons/gi';
+import { TbClockHour4, TbShieldCheck } from 'react-icons/tb';
+import { SiWordpress } from 'react-icons/si';
 import {
   filesystem, toolSimulations, missions, easterEggs,
   helpOutput, welcomeBanner, neofetchOutput, ifconfigOutput, unameOutput,
   type FSNode, type OutputLine, type Mission,
 } from '../data/terminalData';
 
-// ── Filesystem helpers ──────────────────────────────────────
+//  Filesystem helpers 
 
 const resolvePath = (currentPath: string, target: string): string => {
   if (target === '~' || target === '') return '/home/kali';
@@ -40,7 +45,7 @@ const getPathDisplay = (path: string): string => {
   return path;
 };
 
-// ── Color map ───────────────────────────────────────────────
+//  Color map 
 
 const colorMap: Record<string, string> = {
   green: 'text-[#39FF14]',
@@ -53,26 +58,38 @@ const colorMap: Record<string, string> = {
   magenta: 'text-[#C084FC]',
 };
 
-const getMissionIcon = (id: string, className = "w-4 h-4") => {
-  switch (id) {
-    case 'web-recon':
-      return <Scan className={`${className} text-[#00F0FF] drop-shadow-[0_0_4px_rgba(0,240,255,0.6)]`} />;
-    case 'wifi-crack':
-      return <Radio className={`${className} text-[#FFE600] drop-shadow-[0_0_4px_rgba(255,230,0,0.6)]`} />;
-    case 'network-pentest':
-      return <Network className={`${className} text-[#39FF14] drop-shadow-[0_0_4px_rgba(57,255,20,0.6)]`} />;
-    case 'wordpress-audit':
-      return <FileCode className={`${className} text-[#FFE600] drop-shadow-[0_0_4px_rgba(255,230,0,0.6)]`} />;
-    case 'password-crack':
-      return <KeyRound className={`${className} text-[#FF2D2D] drop-shadow-[0_0_4px_rgba(255,45,45,0.6)]`} />;
-    case 'active-directory':
-      return <Crown className={`${className} text-[#FFE600] drop-shadow-[0_0_4px_rgba(255,230,0,0.6)]`} />;
-    default:
-      return <Shield className={className} />;
-  }
+const missionIconMeta: Record<string, { color: string; glow: string; bg: string; border: string }> = {
+  'web-recon':        { color: 'text-[#00F0FF]', glow: 'drop-shadow-[0_0_6px_rgba(0,240,255,0.9)]',    bg: 'bg-[rgba(0,240,255,0.12)]',    border: 'border-[rgba(0,240,255,0.35)]' },
+  'wifi-crack':       { color: 'text-[#FFE600]', glow: 'drop-shadow-[0_0_6px_rgba(255,230,0,0.9)]',    bg: 'bg-[rgba(255,230,0,0.12)]',    border: 'border-[rgba(255,230,0,0.35)]' },
+  'network-pentest':  { color: 'text-[#39FF14]', glow: 'drop-shadow-[0_0_6px_rgba(57,255,20,0.9)]',    bg: 'bg-[rgba(57,255,20,0.12)]',    border: 'border-[rgba(57,255,20,0.35)]'  },
+  'wordpress-audit':  { color: 'text-[#FFE600]', glow: 'drop-shadow-[0_0_6px_rgba(255,230,0,0.9)]',    bg: 'bg-[rgba(255,230,0,0.12)]',    border: 'border-[rgba(255,230,0,0.35)]' },
+  'password-crack':   { color: 'text-[#FF2D2D]', glow: 'drop-shadow-[0_0_6px_rgba(255,45,45,0.9)]',    bg: 'bg-[rgba(255,45,45,0.12)]',    border: 'border-[rgba(255,45,45,0.35)]'  },
+  'active-directory': { color: 'text-[#C084FC]', glow: 'drop-shadow-[0_0_6px_rgba(192,132,252,0.9)]',  bg: 'bg-[rgba(192,132,252,0.12)]',  border: 'border-[rgba(192,132,252,0.35)]'},
 };
 
-// ── Main Component ──────────────────────────────────────────
+const getMissionIconBadge = (id: string, isActive = false, size: 'sm' | 'md' = 'md') => {
+  const meta = missionIconMeta[id] || { color: 'text-[#A7B0BC]', glow: '', bg: 'bg-[rgba(255,255,255,0.06)]', border: 'border-[rgba(255,255,255,0.12)]' };
+  const iconClass = `${meta.color} ${meta.glow} ${size === 'sm' ? 'w-4 h-4' : 'w-5 h-5'} ${isActive ? 'animate-pulse' : ''} shrink-0`;
+  const containerClass = `${size === 'sm' ? 'w-7 h-7' : 'w-8 h-8'} rounded-lg border ${meta.bg} ${meta.border} flex items-center justify-center shrink-0 ${isActive ? 'shadow-[0_0_10px_rgba(57,255,20,0.25)]' : ''}`;
+
+  const iconEl = (() => {
+    switch (id) {
+      case 'web-recon':        return <RiRadarLine className={iconClass} />;
+      case 'wifi-crack':       return <MdWifiTethering className={iconClass} />;
+      case 'network-pentest':  return <MdLan className={iconClass} />;
+      case 'wordpress-audit':  return <SiWordpress className={iconClass} />;
+      case 'password-crack':   return <GiPadlock className={iconClass} />;
+      case 'active-directory': return <GiCrownedSkull className={iconClass} />;
+      default:                 return <TbShieldCheck className={iconClass} />;
+    }
+  })();
+
+  return <div className={containerClass}>{iconEl}</div>;
+};
+
+
+
+//  Main Component 
 
 const LiveTerminal = () => {
   // State
@@ -116,7 +133,7 @@ const LiveTerminal = () => {
   const [isGlitching, setIsGlitching] = useState(false);
   const [suggestion, setSuggestion] = useState('');
 
-  // ── Auto-suggest matching ───────────────────────────────
+  //  Auto-suggest matching 
   useEffect(() => {
     if (!inputValue) {
       setSuggestion('');
@@ -158,18 +175,18 @@ const LiveTerminal = () => {
   const animCancelRef = useRef(false);
   const timeoutsRef = useRef<number[]>([]);
 
-  // ── Uptime counter ──────────────────────────────────────
+  //  Uptime counter 
   useEffect(() => {
     const timer = setInterval(() => setUptime(u => u + 1), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  // ── Welcome banner on mount ─────────────────────────────
+  //  Welcome banner on mount 
   useEffect(() => {
     setOutputLines([...welcomeBanner]);
   }, []);
 
-  // ── Auto-scroll & Resize tracking ───────────────────────
+  //  Auto-scroll & Resize tracking 
   useEffect(() => {
     if (outputRef.current) {
       requestAnimationFrame(() => {
@@ -190,26 +207,26 @@ const LiveTerminal = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // ── Screen Glitch effect trigger ────────────────────────
+  //  Screen Glitch effect trigger 
   const triggerGlitch = useCallback(() => {
     setIsGlitching(true);
     const timer = setTimeout(() => setIsGlitching(false), 150);
     return () => clearTimeout(timer);
   }, []);
 
-  // ── Focus input on click anywhere ───────────────────────
+  //  Focus input on click anywhere 
   const focusInput = useCallback(() => {
     if (inputRef.current) inputRef.current.focus();
   }, []);
 
-  // ── Animation cleanup ──────────────────────────────────
+  //  Animation cleanup 
   useEffect(() => {
     return () => {
       timeoutsRef.current.forEach(t => clearTimeout(t));
     };
   }, []);
 
-  // ── Animated output ────────────────────────────────────
+  //  Animated output 
   const animateOutput = useCallback((lines: OutputLine[], onComplete?: () => void) => {
     setIsAnimating(true);
     animCancelRef.current = false;
@@ -245,7 +262,7 @@ const LiveTerminal = () => {
     setIsAnimating(false);
   }, []);
 
-  // ── Instant output (no animation) ──────────────────────
+  //  Instant output (no animation) 
   const pushLines = useCallback((lines: OutputLine[]) => {
     setOutputLines(prev => [...prev, ...lines]);
     if (lines.some(l => l.color === 'red')) {
@@ -253,7 +270,7 @@ const LiveTerminal = () => {
     }
   }, [triggerGlitch]);
 
-  // ── Filesystem commands ────────────────────────────────
+  //  Filesystem commands 
   const handleLs = useCallback((args: string) => {
     const target = args.trim() || currentPath;
     const resolvedPath = args.trim() ? resolvePath(currentPath, args.trim()) : currentPath;
@@ -334,7 +351,7 @@ const LiveTerminal = () => {
     pushLines(lines);
   }, [currentPath, pushLines]);
 
-  // ── Mission commands ───────────────────────────────────
+  //  Mission commands 
   const handleMission = useCallback((args: string) => {
     const parts = args.trim().split(/\s+/);
     const subCmd = parts[0]?.toLowerCase();
@@ -351,7 +368,7 @@ const LiveTerminal = () => {
       missions.forEach(m => {
         const isComplete = completedMissionsRef.current.includes(m.id);
         const isActive = activeMissionRef.current?.id === m.id;
-        const status = isComplete ? '✅ COMPLETED' : isActive ? '🔄 IN PROGRESS' : '⬚  AVAILABLE';
+        const status = isComplete ? '[✓] COMPLETED' : isActive ? '[~] IN PROGRESS' : '[ ] AVAILABLE';
         const diffColor: OutputLine['color'] =
           m.difficulty === 'beginner' ? 'green' :
           m.difficulty === 'intermediate' ? 'yellow' : 'red';
@@ -396,7 +413,7 @@ const LiveTerminal = () => {
         { text: `  ${mission.description}`, color: 'white' },
         { text: '', color: 'dim' },
         { text: `  STEP 1/${mission.steps.length}: ${mission.steps[0].instruction}`, color: 'yellow' },
-        { text: `  💡 Hint: Try using "${mission.steps[0].hint}"`, color: 'dim' },
+        { text: `  [hint] Try using "${mission.steps[0].hint}"`, color: 'dim' },
         { text: '', color: 'dim' },
       ];
       pushLines(lines);
@@ -423,7 +440,7 @@ const LiveTerminal = () => {
     pushLines([{ text: `Unknown mission subcommand: ${subCmd}`, color: 'red' }]);
   }, [pushLines]);
 
-  // ── Check mission progress after command ───────────────
+  //  Check mission progress after command 
   const checkMissionProgress = useCallback((cmd: string) => {
     const currentMission = activeMissionRef.current;
     if (!currentMission) return;
@@ -455,7 +472,7 @@ const LiveTerminal = () => {
         const next = currentMission.steps[nextStep];
         missionLines.push(
           { text: `  STEP ${nextStep + 1}/${currentMission.steps.length}: ${next.instruction}`, color: 'yellow' },
-          { text: `  💡 Hint: Try using "${next.hint}"`, color: 'dim' },
+          { text: `  [hint] Try using "${next.hint}"`, color: 'dim' },
           { text: '', color: 'dim' },
         );
         setMissionStep(nextStep);
@@ -466,7 +483,7 @@ const LiveTerminal = () => {
     }
   }, [pushLines]);
 
-  // ── Tab completion ─────────────────────────────────────
+  //  Tab completion 
   const handleTab = useCallback((value: string) => {
     const parts = value.split(/\s+/);
     const isFirstWord = parts.length <= 1;
@@ -520,7 +537,7 @@ const LiveTerminal = () => {
     }
   }, [currentPath, pushLines]);
 
-  // ── Command executor ───────────────────────────────────
+  //  Command executor 
   const executeCommand = useCallback((rawCmd: string) => {
     const cmd = rawCmd.trim();
     if (!cmd) return;
@@ -698,7 +715,7 @@ const LiveTerminal = () => {
     pushLines([{ text: `bash: ${base}: command not found`, color: 'red' }]);
   }, [currentPath, commandHistory, animateOutput, pushLines, handleLs, handleCd, handleCat, handleMission, checkMissionProgress]);
 
-  // ── Key handlers ───────────────────────────────────────
+  //  Key handlers 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       if (isAnimating) {
@@ -745,7 +762,7 @@ const LiveTerminal = () => {
     }
   }, [inputValue, isAnimating, commandHistory, historyIndex, executeCommand, skipAnimation, handleTab, suggestion]);
 
-  // ── Format uptime ──────────────────────────────────────
+  //  Format uptime 
   const formatUptime = (seconds: number): string => {
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
@@ -755,7 +772,7 @@ const LiveTerminal = () => {
     return `${s}s`;
   };
 
-  // ── Render ─────────────────────────────────────────────
+  //  Render 
   return (
     <section
       id="live-terminal"
@@ -763,11 +780,11 @@ const LiveTerminal = () => {
     >
       <div className="relative w-full max-w-screen-2xl flex flex-col lg:flex-row gap-4 h-[calc(100dvh-7rem)] md:h-[calc(100dvh-9rem)]">
 
-        {/* ── Mission Sidebar (Desktop) ────────────────────── */}
+        {/*  Mission Sidebar (Desktop)  */}
         <aside className="hidden lg:flex flex-col w-72 shrink-0 cyber-panel overflow-hidden">
           {/* Sidebar Header */}
           <div className="flex items-center gap-2 px-4 py-3 border-b border-[rgba(243,245,249,0.08)] bg-[rgba(57,255,20,0.03)]">
-            <Shield className="w-4 h-4 text-[#39FF14]" />
+            <TbShieldCheck className="w-4 h-4 text-[#39FF14]" />
             <span className="text-xs font-mono uppercase tracking-wider text-[#39FF14] font-bold">Missions</span>
             <span className="ml-auto text-[10px] font-mono text-[#A7B0BC]">{completedMissions.length}/{missions.length}</span>
           </div>
@@ -798,9 +815,9 @@ const LiveTerminal = () => {
                         : 'bg-[rgba(255,255,255,0.02)] border-[rgba(243,245,249,0.08)] hover:border-[rgba(57,255,20,0.2)] hover:bg-[rgba(57,255,20,0.04)]'
                   }`}
                 >
-                  <div className="flex items-center gap-2 mb-1.5">
-                    {getMissionIcon(m.id, `w-4 h-4 ${isActive ? 'animate-pulse' : ''}`)}
-                    <span className={`text-xs font-bold font-mono ${isActive ? 'text-[#39FF14]' : 'text-[#F2F5F9]'}`}>
+                  <div className="flex items-start gap-2.5 mb-2">
+                    {getMissionIconBadge(m.id, isActive, 'md')}
+                    <span className={`text-xs font-bold font-mono leading-tight mt-1 ${isActive ? 'text-[#39FF14]' : isComplete ? 'text-[#606878]' : 'text-[#F2F5F9]'}`}>
                       {m.title}
                     </span>
                   </div>
@@ -813,7 +830,7 @@ const LiveTerminal = () => {
                     }`}>
                       {m.difficulty}
                     </span>
-                    {isComplete && <span className="text-[10px] text-[#39FF14] font-mono">✅ DONE</span>}
+                    {isComplete && <span className="flex items-center gap-1 text-[10px] text-[#39FF14] font-mono"><BsCheckCircleFill className="w-3 h-3" /> DONE</span>}
                     {isActive && (
                       <span className="text-[10px] text-[#FFE600] font-mono animate-pulse">
                         STEP {missionStep + 1}/{m.steps.length}
@@ -836,22 +853,22 @@ const LiveTerminal = () => {
           </div>
         </aside>
 
-        {/* ── Mobile Mission Toggle ────────────────────────── */}
+        {/*  Mobile Mission Toggle  */}
         <button
           onClick={() => setIsMissionPanelOpen(!isMissionPanelOpen)}
           className="lg:hidden flex items-center gap-2 px-4 py-2.5 cyber-panel text-xs font-mono text-[#39FF14] uppercase tracking-wider shrink-0"
         >
-          <Shield className="w-3.5 h-3.5" />
+          <TbShieldCheck className="w-3.5 h-3.5" />
           Missions ({completedMissions.length}/{missions.length})
           {activeMission && (
             <span className="ml-auto text-[#FFE600] animate-pulse text-[10px]">
               • {activeMission.title} — Step {missionStep + 1}/{activeMission.steps.length}
             </span>
           )}
-          <ChevronRight className={`w-3.5 h-3.5 ml-auto transition-transform ${isMissionPanelOpen ? 'rotate-90' : ''}`} />
+          <BsChevronRight className={`w-3.5 h-3.5 ml-auto transition-transform ${isMissionPanelOpen ? 'rotate-90' : ''}`} />
         </button>
 
-        {/* ── Mobile Mission Panel ─────────────────────────── */}
+        {/*  Mobile Mission Panel  */}
         {isMissionPanelOpen && (
           <div className="lg:hidden cyber-panel p-3 space-y-2 shrink-0 max-h-[40vh] overflow-y-auto scrollbar-hide">
             {missions.map(m => {
@@ -877,10 +894,10 @@ const LiveTerminal = () => {
                     : 'border-[rgba(243,245,249,0.08)]'
                   }`}
                 >
-                  <div className="flex items-center gap-2">
-                    {getMissionIcon(m.id, `w-3.5 h-3.5 ${isActive ? 'animate-pulse' : ''}`)}
-                    <span className="text-xs font-bold text-[#F2F5F9]">{m.title}</span>
-                    {isComplete && <span className="ml-auto text-[10px] text-[#39FF14]">✅</span>}
+                  <div className="flex items-center gap-2.5">
+                    {getMissionIconBadge(m.id, isActive, 'sm')}
+                    <span className={`text-xs font-bold ${isActive ? 'text-[#39FF14]' : 'text-[#F2F5F9]'}`}>{m.title}</span>
+                    {isComplete && <BsCheckCircleFill className="ml-auto w-3.5 h-3.5 text-[#39FF14]" />}
                     {isActive && <span className="ml-auto text-[10px] text-[#FFE600] animate-pulse">Step {missionStep + 1}/{m.steps.length}</span>}
                   </div>
                 </button>
@@ -889,7 +906,7 @@ const LiveTerminal = () => {
           </div>
         )}
 
-        {/* ── Main Terminal Panel ──────────────────────────── */}
+        {/*  Main Terminal Panel  */}
         <div className={`flex-1 cyber-panel flex flex-col overflow-hidden min-h-0 terminal-container ${isGlitching ? 'terminal-flicker' : ''}`} onClick={focusInput}>
 
           {/* Terminal Top Bar */}
@@ -901,22 +918,38 @@ const LiveTerminal = () => {
             </div>
 
             <div className="flex items-center gap-2 text-[10px] md:text-xs font-mono text-[#A7B0BC]">
-              <Terminal className="w-3 h-3 md:w-3.5 md:h-3.5 text-[#39FF14]" />
+              <RiTerminalBoxLine className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#39FF14]" />
               <span className="hidden sm:inline">kali@shellstack</span>
               <span className="sm:hidden">shellstack</span>
               <span className="text-[#39FF14]">—</span>
               <span className="hidden md:inline">bash</span>
             </div>
 
-            <div className="flex items-center gap-3 text-[10px] font-mono text-[#606878]">
+            <div className="flex items-center gap-2 text-[10px] font-mono text-[#606878]">
               <span className="hidden md:flex items-center gap-1">
-                <Clock className="w-3 h-3" />
+                <TbClockHour4 className="w-3 h-3" />
                 {formatUptime(uptime)}
               </span>
               <span className="hidden sm:flex items-center gap-1 text-[#39FF14]">
-                <Wifi className="w-3 h-3" />
+                <BsWifi className="w-3 h-3" />
                 <span className="hidden md:inline">SECURE</span>
               </span>
+              {/* Refresh / Reset button */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  skipAnimation();
+                  setOutputLines([...welcomeBanner]);
+                  setInputValue('');
+                  setCurrentPath('/home/kali');
+                  setActiveMission(null);
+                  setMissionStep(0);
+                }}
+                title="Reset terminal"
+                className="group flex items-center justify-center w-6 h-6 rounded border border-[rgba(57,255,20,0.35)] bg-[rgba(57,255,20,0.08)] hover:border-[rgba(57,255,20,0.7)] hover:bg-[rgba(57,255,20,0.18)] text-[#39FF14] shadow-[0_0_6px_rgba(57,255,20,0.2)] hover:shadow-[0_0_10px_rgba(57,255,20,0.4)] transition-all duration-200 ml-1"
+              >
+                <BsArrowRepeat className="w-3.5 h-3.5 group-hover:rotate-180 transition-transform duration-500 drop-shadow-[0_0_3px_rgba(57,255,20,0.8)]" />
+              </button>
             </div>
           </div>
 
@@ -938,13 +971,15 @@ const LiveTerminal = () => {
             ))}
 
             {isAnimating && (
-              <div className="text-[#39FF14] animate-pulse inline-block">
-                ⣾ Processing...
+              <div className="flex items-center gap-2 text-[#39FF14] animate-pulse">
+                <RiLoader4Line className="w-3.5 h-3.5 animate-spin" />
+                <span>Processing...</span>
                 <button
                   onClick={(e) => { e.stopPropagation(); skipAnimation(); }}
-                  className="ml-3 text-[#606878] hover:text-[#A7B0BC] text-[10px] underline"
+                  className="flex items-center gap-1 ml-1 text-[#606878] hover:text-[#A7B0BC] text-[10px] underline transition-colors"
                 >
-                  [skip]
+                  <MdOutlineSkipNext className="w-3.5 h-3.5" />
+                  skip
                 </button>
               </div>
             )}
@@ -1080,22 +1115,23 @@ const LiveTerminal = () => {
           </div>
 
           {/* Bottom Status Bar */}
-          <div className="flex items-center justify-between px-3 md:px-5 py-1.5 border-t border-[rgba(243,245,249,0.05)] bg-[rgba(5,6,11,0.6)] text-[9px] md:text-[10px] font-mono text-[#484F5A] shrink-0">
+          <div className="flex items-center justify-between px-3 md:px-5 py-1.5 border-t border-[rgba(243,245,249,0.08)] bg-[rgba(5,6,11,0.85)] text-[9px] md:text-[10px] font-mono text-[#A7B0BC] shrink-0">
             <div className="flex items-center gap-3">
-              <span className="flex items-center gap-1">
-                <Zap className="w-2.5 h-2.5 text-[#39FF14]" />
+              <span className="flex items-center gap-1 text-[#39FF14] font-semibold">
+                <BsLightningChargeFill className="w-2.5 h-2.5" />
                 {commandCount} cmds
               </span>
-              <span className="hidden sm:inline">bash 5.2</span>
-              <span className="hidden md:inline">UTF-8</span>
+              <span className="hidden sm:inline text-[#C5CDD8]">bash 5.2</span>
+              <span className="hidden md:inline text-[#C5CDD8]">UTF-8</span>
             </div>
             <div className="flex items-center gap-3">
               {activeMission && (
-                <span className="text-[#FFE600]">
-                  🎯 {activeMission.title} [{missionStep + 1}/{activeMission.steps.length}]
+                <span className="flex items-center gap-1 text-[#FFE600] font-semibold">
+                  <MdGpsFixed className="w-3 h-3" />
+                  {activeMission.title} [{missionStep + 1}/{activeMission.steps.length}]
                 </span>
               )}
-              <span className="hidden sm:inline">{currentPath}</span>
+              <span className="hidden sm:inline text-[#00F0FF]">{currentPath}</span>
             </div>
           </div>
         </div>
