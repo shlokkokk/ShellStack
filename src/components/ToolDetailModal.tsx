@@ -174,7 +174,8 @@ const ToolDetailModal = ({ tool, isOpen, onClose }: ToolDetailModalProps) => {
         <div 
           ref={scrollRef}
           onScroll={checkScroll}
-          className="flex-1 overflow-y-auto p-4 md:p-6 scrollbar-hide relative z-10"
+          data-lenis-prevent
+          className="flex-1 overflow-y-auto p-4 md:p-6 scrollbar-hide relative z-10 overscroll-contain"
         >
           {activeTab === 'guide' && tool.detailedReport && (
             <div className="space-y-8 pb-8">

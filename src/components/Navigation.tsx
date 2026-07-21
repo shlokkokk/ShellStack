@@ -181,7 +181,7 @@ const Navigation = () => {
         </div>
 
         {/* Nav Links */}
-        <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-1">
+        <nav data-lenis-prevent className="flex-1 overflow-y-auto px-4 py-6 space-y-1 overscroll-contain">
           {navLinks.map((link) => {
             const isActive = location.pathname === link.path;
             return (

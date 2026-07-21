@@ -956,7 +956,8 @@ const LiveTerminal = () => {
           {/* Terminal Output */}
           <div
             ref={outputRef}
-            className="flex-1 overflow-y-auto px-3 md:px-5 py-3 font-mono text-[11px] md:text-[13px] leading-[1.65] terminal-output scrollbar-hide min-h-0"
+            data-lenis-prevent
+            className="flex-1 overflow-y-auto px-3 md:px-5 py-3 font-mono text-[11px] md:text-[13px] leading-[1.65] terminal-output scrollbar-hide min-h-0 overscroll-contain"
           >
             {/* Scanline overlay */}
             <div className="terminal-scanline pointer-events-none" />

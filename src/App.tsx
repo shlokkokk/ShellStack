@@ -17,6 +17,7 @@ import CheatSheetPage from './pages/CheatSheetPage';
 
 import ModuleDetailModal from './components/ModuleDetailModal';
 import GithubEngagementToast from './components/GithubEngagementToast';
+import SmoothScroll from './components/SmoothScroll';
 // import ChatBot from './components/ChatBot';
 import { cehModules, type Module } from './data/cehModules';
 
@@ -323,7 +324,9 @@ const AppShell = () => {
 function App() {
   return (
     <BrowserRouter>
-      <AppShell />
+      <SmoothScroll>
+        <AppShell />
+      </SmoothScroll>
     </BrowserRouter>
   );
 }

@@ -201,7 +201,7 @@ const ModuleDetailModal = ({ module, isOpen, onClose }: ModuleDetailModalProps) 
         </div>
 
         {/* Content Section with custom scrollbar */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 md:p-8 cyber-scrollbar relative z-10">
+        <div ref={scrollRef} data-lenis-prevent className="flex-1 overflow-y-auto p-4 md:p-8 cyber-scrollbar relative z-10 overscroll-contain">
           {activeSection === 'topics' && (
             <div className="space-y-6">
               <h3 className="flex items-center gap-2.5 md:gap-3 text-[10px] md:text-xs font-mono uppercase tracking-[0.15em] md:tracking-[0.4em] text-[#39FF14] mb-6 md:mb-8 opacity-70">
