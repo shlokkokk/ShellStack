@@ -16,6 +16,7 @@ import StudyToolkit from './sections/StudyToolkit';
 import CheatSheetPage from './pages/CheatSheetPage';
 
 import ModuleDetailModal from './components/ModuleDetailModal';
+import GithubEngagementToast from './components/GithubEngagementToast';
 // import ChatBot from './components/ChatBot';
 import { cehModules, type Module } from './data/cehModules';
 
@@ -310,6 +311,8 @@ const AppShell = () => {
           isOpen={isModuleModalOpen}
           onClose={() => setIsModuleModalOpen(false)}
         />
+
+        <GithubEngagementToast />
 
         {/* <ChatBot /> */}
       </div>
