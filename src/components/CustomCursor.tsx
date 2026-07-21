@@ -64,12 +64,13 @@ const CustomCursor = () => {
 
     const handleMouseOver = (e: Event) => {
       const target = e.target as HTMLElement;
-      if (target.closest(textSelector)) { setMode('text'); return; }
-      if (target.closest(interactiveSelector)) { setMode('action'); return; }
-      setMode('scan');
+      let newMode: 'scan' | 'action' | 'text' = 'scan';
+      if (target.closest(textSelector)) newMode = 'text';
+      else if (target.closest(interactiveSelector)) newMode = 'action';
+      setMode(prev => (prev !== newMode ? newMode : prev));
     };
 
-    const handleMouseOut = () => setMode('scan');
+    const handleMouseOut = () => setMode(prev => (prev !== 'scan' ? 'scan' : prev));
 
     document.addEventListener('mouseover', handleMouseOver, { passive: true });
     document.addEventListener('mouseout', handleMouseOut, { passive: true });

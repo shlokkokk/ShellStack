@@ -19,14 +19,14 @@ export const SmoothScroll: React.FC<{ children?: React.ReactNode }> = ({ childre
       return;
     }
 
-    // 2. Instantiate Lenis with tuned inertia parameters
+    // 2. Instantiate Lenis with hyper-responsive, snappy inertia parameters
     const lenis = new Lenis({
-      duration: 1.1,
+      duration: 0.8,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       orientation: 'vertical',
       gestureOrientation: 'vertical',
       smoothWheel: true,
-      wheelMultiplier: 1.0,
+      wheelMultiplier: 1.05,
       touchMultiplier: 0, // Disable touch hijacking to preserve native mobile feel
       prevent: (node) =>
         node.hasAttribute('data-lenis-prevent') ||
@@ -49,15 +49,15 @@ export const SmoothScroll: React.FC<{ children?: React.ReactNode }> = ({ childre
     };
 
     gsap.ticker.add(updateFn);
-    gsap.ticker.lagSmoothing(0);
+    gsap.ticker.lagSmoothing(500, 33);
 
     // 5. Modal & Overlay Lock Observer
     // Detects when modals/drawers open (e.g. Radix UI or body overflow hidden) and pauses Lenis
     const observer = new MutationObserver(() => {
       const isModalOpen =
+        document.body.classList.contains('no-scroll') ||
         document.body.style.overflow === 'hidden' ||
-        document.querySelector('[role="dialog"]') !== null ||
-        document.querySelector('[data-state="open"]') !== null;
+        document.querySelector('[data-modal-open="true"]') !== null;
 
       if (isModalOpen) {
         lenis.stop();
