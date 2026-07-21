@@ -92,12 +92,12 @@ const ToolDetailModal = ({ tool, isOpen, onClose }: ToolDetailModalProps) => {
 
   return (
     <div 
-      className="fixed inset-0 z-[100] flex items-center justify-center p-0 md:p-4 md:pt-20"
+      className="fixed inset-0 z-[180] flex items-center justify-center p-2 sm:p-4 md:p-6"
       data-modal-open="true"
     >
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-[#05060B]/90 backdrop-blur-sm"
+        className="absolute inset-0 bg-[#05060B]/95 backdrop-blur-md"
         onClick={onClose}
       />
       

@@ -45,8 +45,10 @@ const ModuleDetailModal = ({ module, isOpen, onClose }: ModuleDetailModalProps) 
     };
   }, [isOpen]);
 
-  // Handle module-specific side effects
+  // Handle module-specific side effects & state reset on module switch
   useEffect(() => {
+    setSelectedTool(null);
+    setShowCIADeepDive(false);
     if (isOpen && module && module.topics.length > 0) {
       setExpandedTopics([module.topics[0].id]);
     }
@@ -54,11 +56,19 @@ const ModuleDetailModal = ({ module, isOpen, onClose }: ModuleDetailModalProps) 
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') {
+        if (selectedTool) {
+          setSelectedTool(null);
+        } else if (showCIADeepDive) {
+          setShowCIADeepDive(false);
+        } else {
+          onClose();
+        }
+      }
     };
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
-  }, [onClose]);
+  }, [onClose, selectedTool, showCIADeepDive]);
 
   if (!isOpen || !module) return null;
 

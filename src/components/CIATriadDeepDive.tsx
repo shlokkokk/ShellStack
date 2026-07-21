@@ -7,7 +7,7 @@ interface Props {
 
 export const CIATriadDeepDive: React.FC<Props> = ({ onClose }) => {
   return (
-    <div className="absolute inset-0 z-[200] bg-[#05060B]/95 backdrop-blur-xl flex items-center justify-center p-0 md:p-4 animate-in fade-in duration-300">
+    <div data-lenis-prevent className="fixed inset-0 z-[220] bg-[#05060B]/95 backdrop-blur-xl flex items-center justify-center p-2 sm:p-4 md:p-6 animate-in fade-in duration-300">
       <div className="relative w-full max-w-4xl h-[100dvh] md:h-auto max-h-[100dvh] md:max-h-[90vh] bg-[#0B0E16] border-0 md:border border-[#39FF14]/20 rounded-none md:rounded-xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.8)] flex flex-col">
         {/* Subtle Background Overlay */}
         <div className="absolute inset-0 opacity-5 pointer-events-none bg-[#39FF14]/5" />
@@ -31,7 +31,7 @@ export const CIATriadDeepDive: React.FC<Props> = ({ onClose }) => {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-8">
+        <div data-lenis-prevent className="flex-1 overflow-y-auto p-4 md:p-8 overscroll-contain">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
             {/* Visual Figure */}
             <div className="relative flex items-center justify-center w-full aspect-[260/220] max-w-[260px] md:max-w-[320px] mx-auto shrink-0">
@@ -111,7 +111,7 @@ export const CIATriadDeepDive: React.FC<Props> = ({ onClose }) => {
             </div>
 
             {/* Pillar Details */}
-            <div className="space-y-4 lg:max-h-[400px] lg:overflow-y-auto lg:pr-4 cyber-scrollbar">
+            <div data-lenis-prevent className="space-y-4 lg:max-h-[400px] lg:overflow-y-auto lg:pr-4 cyber-scrollbar overscroll-contain">
               {/* Confidentiality */}
               <div className="p-4 rounded-lg bg-[rgba(57,255,20,0.03)] border border-[rgba(57,255,20,0.1)] hover:border-[rgba(57,255,20,0.3)] transition-all group">
                 <div className="flex items-center gap-3 mb-2">
