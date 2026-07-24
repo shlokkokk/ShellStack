@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, Copy, Check, Terminal, ExternalLink, BookOpen, AlertTriangle, Zap, Target, ArrowDown, ChevronDown } from 'lucide-react';
+import { X, Copy, Check, Terminal, ExternalLink, BookOpen, AlertTriangle, Zap, Target, ArrowDown, ChevronDown, Play } from 'lucide-react';
 import type { Tool } from '../data/kaliTools';
 import InteractiveCommandBuilder from './InteractiveCommandBuilder';
+import { useRunInTerminal } from '../hooks/useRunInTerminal';
 
 interface ToolDetailModalProps {
   tool: Tool | null;
@@ -10,6 +11,7 @@ interface ToolDetailModalProps {
 }
 
 const ToolDetailModal = ({ tool, isOpen, onClose }: ToolDetailModalProps) => {
+  const { runInTerminal } = useRunInTerminal();
   const [copiedCommand, setCopiedCommand] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'commands' | 'info' | 'examples' | 'guide'>('commands');
   const [canScroll, setCanScroll] = useState(false);
@@ -323,17 +325,27 @@ const ToolDetailModal = ({ tool, isOpen, onClose }: ToolDetailModalProps) => {
                         </code>
                         <p className="text-sm text-[#A7B0BC]">{cmd.description}</p>
                       </div>
-                      <button
-                        onClick={() => copyToClipboard(cmd.command, `cmd-${index}`)}
-                        className="p-2 text-[#A7B0BC] hover:text-[#39FF14] transition-colors"
-                        title="Copy command"
-                      >
-                        {copiedCommand === `cmd-${index}` ? (
-                          <Check className="w-4 h-4 text-[#39FF14]" />
-                        ) : (
-                          <Copy className="w-4 h-4" />
-                        )}
-                      </button>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          onClick={() => runInTerminal(cmd.command, { onCloseModal: onClose })}
+                          className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-mono font-medium rounded bg-[rgba(57,255,20,0.12)] text-[#39FF14] border border-[rgba(57,255,20,0.3)] hover:bg-[rgba(57,255,20,0.22)] hover:border-[#39FF14] hover:shadow-[0_0_12px_rgba(57,255,20,0.25)] transition-all cursor-pointer"
+                          title="Run live in Terminal"
+                        >
+                          <Play className="w-3 h-3 fill-[#39FF14]" />
+                          <span className="hidden sm:inline">Run</span>
+                        </button>
+                        <button
+                          onClick={() => copyToClipboard(cmd.command, `cmd-${index}`)}
+                          className="p-2 text-[#A7B0BC] hover:text-[#39FF14] transition-colors"
+                          title="Copy command"
+                        >
+                          {copiedCommand === `cmd-${index}` ? (
+                            <Check className="w-4 h-4 text-[#39FF14]" />
+                          ) : (
+                            <Copy className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}

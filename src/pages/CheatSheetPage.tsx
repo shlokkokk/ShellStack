@@ -22,9 +22,11 @@ import {
   BookOpen,
   Users,
   Zap,
+  Play,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { masterCheatSheet } from '../data/masterCheatSheet';
+import { useRunInTerminal } from '../hooks/useRunInTerminal';
 
 const categoryIconMap: Record<string, React.ElementType> = {
   recon: Search,
@@ -349,6 +351,7 @@ const CheatSheetPage = () => {
 };
 
 const PayloadCard = ({ cmd, isCopied, onCopy, highlightVariables }: any) => {
+  const { runInTerminal } = useRunInTerminal();
   return (
     <div className="cyber-panel relative group overflow-hidden transition-all duration-300 hover:border-[#4ade80]/40 bg-[#0B0E16]/40 hover:bg-[#0B0E16]/80">
       <div className="p-6 flex flex-col sm:flex-row items-start sm:items-center gap-6">
@@ -378,23 +381,37 @@ const PayloadCard = ({ cmd, isCopied, onCopy, highlightVariables }: any) => {
           </div>
         </div>
 
-        {/* Action Button - ULTRA MODERN */}
-        <button
-          onClick={() => onCopy(cmd.cmd)}
-          className={`flex-shrink-0 relative group/btn p-4 rounded-xl transition-all duration-300 border overflow-hidden ${
-            isCopied 
-              ? 'bg-[#4ade80] border-[#4ade80] text-[#020617] shadow-[0_0_30px_rgba(74,222,128,0.4)]' 
-              : 'bg-white/5 border-white/10 text-[#94a3b8] hover:border-[#4ade80]/50 hover:text-[#4ade80]'
-          }`}
-        >
-          <div className="relative z-10 flex items-center gap-2">
-            {isCopied ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
-            {isCopied && <span className="text-[10px] font-bold tracking-tighter uppercase">Copied</span>}
-          </div>
-          {!isCopied && (
-            <div className="absolute inset-0 bg-gradient-to-t from-[#4ade80]/20 to-transparent translate-y-full group-hover/btn:translate-y-0 transition-transform" />
-          )}
-        </button>
+        {/* Action Buttons - ULTRA MODERN */}
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={() => runInTerminal(cmd.cmd)}
+            className="relative group/btn px-3 py-3 rounded-xl transition-all duration-300 border overflow-hidden bg-[rgba(57,255,20,0.12)] border-[rgba(57,255,20,0.3)] text-[#39FF14] hover:bg-[rgba(57,255,20,0.22)] hover:border-[#39FF14] hover:shadow-[0_0_20px_rgba(57,255,20,0.3)] cursor-pointer"
+            title="Run live in Terminal"
+          >
+            <div className="relative z-10 flex items-center gap-1.5 font-mono text-xs font-semibold">
+              <Play className="w-4 h-4 fill-[#39FF14]" />
+              <span className="hidden sm:inline">Run</span>
+            </div>
+          </button>
+
+          <button
+            onClick={() => onCopy(cmd.cmd)}
+            className={`relative group/btn p-3 rounded-xl transition-all duration-300 border overflow-hidden ${
+              isCopied 
+                ? 'bg-[#4ade80] border-[#4ade80] text-[#020617] shadow-[0_0_30px_rgba(74,222,128,0.4)]' 
+                : 'bg-white/5 border-white/10 text-[#94a3b8] hover:border-[#4ade80]/50 hover:text-[#4ade80]'
+            }`}
+            title="Copy command"
+          >
+            <div className="relative z-10 flex items-center gap-2">
+              {isCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+              {isCopied && <span className="text-[10px] font-bold tracking-tighter uppercase">Copied</span>}
+            </div>
+            {!isCopied && (
+              <div className="absolute inset-0 bg-gradient-to-t from-[#4ade80]/20 to-transparent translate-y-full group-hover/btn:translate-y-0 transition-transform" />
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Decorative Scanline inside card */}

@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Terminal, Copy, Check, Settings2 } from 'lucide-react';
+import { Terminal, Copy, Check, Settings2, Play } from 'lucide-react';
 import type { InteractiveCommand } from '../data/toolTypes';
+import { useRunInTerminal } from '../hooks/useRunInTerminal';
 
 interface InteractiveCommandBuilderProps {
   command: InteractiveCommand;
 }
 
 const InteractiveCommandBuilder = ({ command }: InteractiveCommandBuilderProps) => {
+  const { runInTerminal } = useRunInTerminal();
   const [inputs, setInputs] = useState<Record<string, string>>(() => {
     const initialState: Record<string, string> = {};
     command.inputs.forEach(input => {
@@ -133,17 +135,28 @@ const InteractiveCommandBuilder = ({ command }: InteractiveCommandBuilderProps) 
               </code>
             </div>
             
-            <button
-              onClick={handleCopy}
-              className={`shrink-0 flex items-center justify-center p-2 rounded-lg transition-all ${
-                copied 
-                  ? 'bg-[rgba(57,255,20,0.2)] text-[#39FF14] border border-[#39FF14]' 
-                  : 'bg-[rgba(243,245,249,0.05)] text-[#A7B0BC] border border-[rgba(243,245,249,0.1)] hover:text-[#39FF14] hover:border-[#39FF14]/50'
-              }`}
-              title="Copy to clipboard"
-            >
-              {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => runInTerminal(generatedCommand)}
+                className="flex items-center gap-1.5 px-3 py-2 text-xs font-mono font-semibold rounded-lg bg-[rgba(57,255,20,0.15)] text-[#39FF14] border border-[rgba(57,255,20,0.4)] hover:bg-[rgba(57,255,20,0.25)] hover:border-[#39FF14] hover:shadow-[0_0_15px_rgba(57,255,20,0.3)] transition-all cursor-pointer"
+                title="Run live in Terminal"
+              >
+                <Play className="w-3.5 h-3.5 fill-[#39FF14]" />
+                <span>Run in Terminal</span>
+              </button>
+
+              <button
+                onClick={handleCopy}
+                className={`flex items-center justify-center p-2 rounded-lg transition-all ${
+                  copied 
+                    ? 'bg-[rgba(57,255,20,0.2)] text-[#39FF14] border border-[#39FF14]' 
+                    : 'bg-[rgba(243,245,249,0.05)] text-[#A7B0BC] border border-[rgba(243,245,249,0.1)] hover:text-[#39FF14] hover:border-[#39FF14]/50'
+                }`}
+                title="Copy to clipboard"
+              >
+                {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
         </div>
       </div>

@@ -10,6 +10,7 @@ import {
   helpOutput, welcomeBanner, neofetchOutput, ifconfigOutput, unameOutput,
   type FSNode, type OutputLine, type Mission,
 } from '../data/terminalData';
+import { terminalStore } from '../lib/terminalStore';
 
 //  Filesystem helpers 
 
@@ -711,9 +712,34 @@ const LiveTerminal = () => {
       return;
     }
 
-    // Unknown command
-    pushLines([{ text: `bash: ${base}: command not found`, color: 'red' }]);
+    // Dynamic Intelligent Command Simulation for any tool in the catalog
+    const targetMatch = cmd.match(/(?:https?:\/\/|[\w-]+\.[\w.-]+|\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b)/i);
+    const target = targetMatch ? targetMatch[0] : 'target.local';
+
+    const dynamicOutput: OutputLine[] = [
+      { text: `[+] Initializing ${base} security module (v4.2.0-kali)...`, color: 'cyan', delay: 80 },
+      { text: `[*] Command string: "${cmd}"`, color: 'dim', delay: 140 },
+      { text: `[*] Target host: ${target}`, color: 'white', delay: 200 },
+      { text: `[*] Establishing secure sockets & analyzing payload signatures...`, color: 'dim', delay: 350 },
+      { text: `[+] [THREAD 01] Scanning ports and protocols on ${target}`, color: 'green', delay: 500 },
+      { text: `[+] [THREAD 02] Task completed successfully. 0 critical errors.`, color: 'yellow', delay: 700 },
+      { text: `[+] Execution finished. Output logged to /var/log/shellstack/${base}.log`, color: 'green', delay: 900 },
+    ];
+
+    animateOutput(dynamicOutput, () => {
+      checkMissionProgress(cmd);
+    });
   }, [currentPath, commandHistory, animateOutput, pushLines, handleLs, handleCd, handleCat, handleMission, checkMissionProgress]);
+
+  // Subscribe to global terminalStore command dispatches
+  useEffect(() => {
+    const unsubscribe = terminalStore.subscribe((dispatchedCmd) => {
+      if (dispatchedCmd) {
+        executeCommand(dispatchedCmd);
+      }
+    });
+    return unsubscribe;
+  }, [executeCommand]);
 
   //  Key handlers 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -775,7 +801,8 @@ const LiveTerminal = () => {
   //  Render 
   return (
     <section
-      id="live-terminal"
+      id="terminal"
+      data-terminal-section="true"
       className="relative w-full min-h-[calc(100dvh-4rem)] pt-20 md:pt-24 pb-6 md:pb-10 px-3 md:px-6 lg:px-12 flex items-start justify-center"
     >
       <div className="relative w-full max-w-screen-2xl flex flex-col lg:flex-row gap-4 h-[calc(100dvh-7rem)] md:h-[calc(100dvh-9rem)]">
