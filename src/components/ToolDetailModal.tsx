@@ -57,13 +57,14 @@ const ToolDetailModal = ({ tool, isOpen, onClose }: ToolDetailModalProps) => {
   useEffect(() => {
     if (isOpen) {
       document.body.classList.add('no-scroll');
-      return () => {
-        const activeModals = document.querySelectorAll('[data-modal-open="true"]');
-        if (activeModals.length <= 1) {
-          document.body.classList.remove('no-scroll');
-        }
-      };
+    } else {
+      // Always clean up — never leave no-scroll stuck on the body
+      document.body.classList.remove('no-scroll');
     }
+    return () => {
+      // Cleanup on unmount: always safe to remove
+      document.body.classList.remove('no-scroll');
+    };
   }, [isOpen]);
 
   useEffect(() => {
@@ -94,7 +95,7 @@ const ToolDetailModal = ({ tool, isOpen, onClose }: ToolDetailModalProps) => {
 
   return (
     <div 
-      className="fixed inset-0 z-[180] flex items-center justify-center p-2 sm:p-4 md:p-6"
+      className="fixed inset-0 z-[99999] flex items-center justify-center pt-20 pb-5 px-3 sm:px-6"
       data-modal-open="true"
     >
       {/* Backdrop */}
@@ -104,34 +105,61 @@ const ToolDetailModal = ({ tool, isOpen, onClose }: ToolDetailModalProps) => {
       />
       
       {/* Modal */}
-      <div className="relative w-full max-w-4xl h-[100dvh] md:h-auto max-h-[100dvh] md:max-h-[90vh] cyber-panel overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200 rounded-none md:rounded-xl">
-        {/* Header */}
-        <div className={`relative flex items-start justify-between p-4 md:p-6 border-b border-[rgba(243,245,249,0.08)] shrink-0 ${isHeaderExpanded ? 'pb-7' : 'pb-4'} md:pb-6`}>
-          <div className="flex-1 min-w-0">
-            <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3 mb-2">
-              <h2 className="text-xl md:text-2xl font-bold text-[#F2F5F9] truncate">{tool.name}</h2>
-              <span className={`self-start md:self-auto px-2 py-1 text-[10px] md:text-xs font-mono uppercase rounded border ${getDifficultyColor(tool.difficulty)}`}>
+      <div className="relative w-full max-w-5xl h-full max-h-[calc(100vh-100px)] cyber-panel overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200 rounded-xl shadow-[0_0_50px_rgba(0,0,0,0.8)]">
+        {/* Compact Header */}
+        <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-3 p-4 border-b border-[rgba(243,245,249,0.08)] bg-[#0B0E16] shrink-0">
+          <div className="flex-1 min-w-0 pr-2">
+            <div className="flex flex-wrap items-center gap-2 mb-1">
+              <h2 className="text-lg md:text-xl font-bold text-[#F2F5F9] font-mono tracking-tight">{tool.name}</h2>
+              <span className={`px-2 py-0.5 text-[10px] font-mono uppercase rounded border ${getDifficultyColor(tool.difficulty)}`}>
                 {tool.difficulty}
               </span>
+
+              {/* Tags */}
+              <div className="hidden sm:flex items-center gap-1.5 ml-2">
+                {tool.tags.slice(0, 3).map((tag) => (
+                  <span key={tag} className="text-[10px] font-mono text-[#A7B0BC]/60 bg-[#05060B] px-1.5 py-0.5 rounded border border-[rgba(243,245,249,0.05)]">
+                    #{tag}
+                  </span>
+                ))}
+              </div>
             </div>
-            <p className={`text-[#A7B0BC] text-sm leading-relaxed ${isHeaderExpanded ? 'block' : 'hidden md:block'}`}>{tool.description}</p>
-            
-            {/* Tags */}
-            <div className={`flex flex-wrap gap-2 mt-3 ${isHeaderExpanded ? 'flex' : 'hidden md:flex'}`}>
-              {tool.tags.map((tag) => (
-                <span key={tag} className="tag">
-                  #{tag}
-                </span>
-              ))}
-            </div>
+
+            <p className="text-xs text-[#A7B0BC] line-clamp-1 leading-relaxed">{tool.description}</p>
           </div>
-          
-          <button
-            onClick={onClose}
-            className="p-2 text-[#A7B0BC] hover:text-[#FF2D2D] transition-colors shrink-0 z-20 ml-2"
-          >
-            <X className="w-5 h-5 md:w-6 h-6" />
-          </button>
+
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Compact Install Pill */}
+            {tool.installation && (
+              <div className="flex items-center gap-2 bg-[#05060B] border border-[rgba(0,240,255,0.3)] px-2.5 py-1 rounded-lg font-mono text-[11px] text-[#00F0FF]">
+                <span className="text-[#39FF14] font-bold select-none">$</span>
+                <code className="truncate max-w-[180px] sm:max-w-[260px] select-all">{tool.installation}</code>
+                <button
+                  onClick={() => runInTerminal(tool.installation!, { onCloseModal: onClose })}
+                  className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold text-[#39FF14] bg-[rgba(57,255,20,0.15)] border border-[rgba(57,255,20,0.4)] hover:bg-[rgba(57,255,20,0.25)] rounded transition-all cursor-pointer shrink-0"
+                  title="Run installation in terminal"
+                >
+                  <Play className="w-2.5 h-2.5 fill-[#39FF14]" />
+                  <span>Run</span>
+                </button>
+                <button
+                  onClick={() => copyToClipboard(tool.installation!, 'install')}
+                  className="p-0.5 text-[#A7B0BC] hover:text-[#00F0FF] transition-colors cursor-pointer shrink-0"
+                  title="Copy command"
+                >
+                  {copiedCommand === 'install' ? <Check className="w-3 h-3 text-[#39FF14]" /> : <Copy className="w-3 h-3" />}
+                </button>
+              </div>
+            )}
+
+            <button
+              onClick={onClose}
+              className="p-1.5 text-[#A7B0BC] hover:text-[#FF2D2D] hover:bg-[rgba(255,45,45,0.1)] rounded-lg transition-colors cursor-pointer shrink-0 ml-1"
+              title="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Tabs */}
@@ -300,7 +328,7 @@ const ToolDetailModal = ({ tool, isOpen, onClose }: ToolDetailModalProps) => {
                     Interactive Command Builders
                   </h3>
                   {tool.interactiveCommands.map((interactiveCmd, index) => (
-                    <InteractiveCommandBuilder key={index} command={interactiveCmd} />
+                    <InteractiveCommandBuilder key={index} command={interactiveCmd} onCloseModal={onClose} />
                   ))}
                 </div>
               )}

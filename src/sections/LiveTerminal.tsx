@@ -1,16 +1,18 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { BsCheckCircleFill, BsArrowRepeat, BsLightningChargeFill, BsWifi, BsChevronRight } from 'react-icons/bs';
 import { RiLoader4Line, RiTerminalBoxLine, RiRadarLine } from 'react-icons/ri';
 import { MdOutlineSkipNext, MdGpsFixed, MdWifiTethering, MdLan } from 'react-icons/md';
 import { GiCrownedSkull, GiPadlock } from 'react-icons/gi';
 import { TbClockHour4, TbShieldCheck } from 'react-icons/tb';
 import { SiWordpress } from 'react-icons/si';
+import { Server, Cpu, Copy, Check, X } from 'lucide-react';
 import {
   filesystem, toolSimulations, missions, easterEggs,
   helpOutput, welcomeBanner, neofetchOutput, ifconfigOutput, unameOutput,
   type FSNode, type OutputLine, type Mission,
 } from '../data/terminalData';
-import { terminalStore } from '../lib/terminalStore';
+import { terminalStore, type EngineMode, type DockerConnectionStatus } from '../lib/terminalStore';
+import { DockerConnectModal } from '../components/DockerConnectModal';
 
 //  Filesystem helpers 
 
@@ -133,6 +135,83 @@ const LiveTerminal = () => {
   const [commandCount, setCommandCount] = useState(0);
   const [isGlitching, setIsGlitching] = useState(false);
   const [suggestion, setSuggestion] = useState('');
+
+  // Docker Engine Mode State & Subscription
+  const [engineMode, setEngineMode] = useState<EngineMode>(terminalStore.getEngineMode());
+  const [dockerStatus, setDockerStatus] = useState<DockerConnectionStatus>(terminalStore.getDockerStatus());
+  const [isDockerModalOpen, setIsDockerModalOpen] = useState(false);
+  const [pendingModalCmd, setPendingModalCmd] = useState<string | undefined>(undefined);
+
+  const [dispatchedDockerCmds, setDispatchedDockerCmds] = useState<string[]>([]);
+  // Holds the most recently dispatched command — shown as a persistent banner above the real-docker iframe
+  const [dockerQueuedCmd, setDockerQueuedCmd] = useState<string | null>(null);
+  const [dockerCmdCopied, setDockerCmdCopied] = useState(false);
+  const [clickedDispatchedCmd, setClickedDispatchedCmd] = useState<string | null>(null);
+
+  // ── On-mount: read any cross-navigation command from sessionStorage ────────
+  // This is the most reliable approach: sessionStorage is written BEFORE navigate()
+  // so it's always available when this effect fires, regardless of React render timing.
+  useEffect(() => {
+    try {
+      const cmd = sessionStorage.getItem('shellstack_pending_cmd');
+      const mode = sessionStorage.getItem('shellstack_pending_mode') as 'execute' | 'paste' | null;
+      if (cmd && cmd.trim()) {
+        sessionStorage.removeItem('shellstack_pending_cmd');
+        sessionStorage.removeItem('shellstack_pending_mode');
+        const trimmed = cmd.trim();
+        if (terminalStore.getEngineMode() === 'real-docker') {
+          setDockerQueuedCmd(trimmed);
+          setDockerCmdCopied(false);
+          setDispatchedDockerCmds(prev => [trimmed, ...prev.filter(c => c !== trimmed).slice(0, 19)]);
+        } else {
+          // Simulated mode — execute or paste
+          if (mode === 'paste') {
+            setInputValue(trimmed);
+            setTimeout(() => { inputRef.current?.focus(); }, 80);
+          } else {
+            // Use a tiny delay so the terminal is fully initialised
+            setTimeout(() => executeCommandRef.current(trimmed), 80);
+          }
+        }
+      }
+    } catch {
+      // sessionStorage blocked in this context, ignore
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const unsubEngine = terminalStore.subscribeEngine((mode, status) => {
+      setEngineMode(mode);
+      setDockerStatus(status);
+    });
+
+    const unsubModal = terminalStore.subscribeModal((commandToRun) => {
+      setPendingModalCmd(commandToRun);
+      setIsDockerModalOpen(true);
+    });
+
+    terminalStore.startConnectionPolling(5000);
+
+    return () => {
+      unsubEngine();
+      unsubModal();
+      terminalStore.stopConnectionPolling();
+    };
+  }, []);
+
+  // Memoize Docker Terminal iframe ONLY on engineMode+dockerStatus changes.
+  // NEVER include transient state (toast, etc.) here — that would reload the iframe!
+  const dockerIframeMemo = useMemo(() => {
+    if (engineMode !== 'real-docker' || dockerStatus !== 'connected') return null;
+    return (
+      <iframe
+        src="http://localhost:7681"
+        className="w-full h-full border-none outline-none flex-1"
+        title="Real Kali Linux Live Terminal"
+        style={{ minHeight: '420px' }}
+      />
+    );
+  }, [engineMode, dockerStatus]);
 
   //  Auto-suggest matching 
   useEffect(() => {
@@ -538,6 +617,9 @@ const LiveTerminal = () => {
     }
   }, [currentPath, pushLines]);
 
+  // Stable ref so the [] subscribe effect can always call the latest executeCommand
+  const executeCommandRef = useRef<(cmd: string) => void>(() => {});
+
   //  Command executor 
   const executeCommand = useCallback((rawCmd: string) => {
     const cmd = rawCmd.trim();
@@ -731,15 +813,45 @@ const LiveTerminal = () => {
     });
   }, [currentPath, commandHistory, animateOutput, pushLines, handleLs, handleCd, handleCat, handleMission, checkMissionProgress]);
 
-  // Subscribe to global terminalStore command dispatches
+  // Keep executeCommandRef in sync with latest closure
   useEffect(() => {
-    const unsubscribe = terminalStore.subscribe((dispatchedCmd) => {
-      if (dispatchedCmd) {
-        executeCommand(dispatchedCmd);
+    executeCommandRef.current = executeCommand;
+  }, [executeCommand]);
+
+  // Subscribe to global terminalStore command dispatches
+  // IMPORTANT: dep array is [] so this never re-subscribes — avoids race where pendingPayload
+  // gets consumed by the first subscription then lost when executeCommand ref changes.
+  useEffect(() => {
+    const unsubscribe = terminalStore.subscribe((payload) => {
+      if (!payload || !payload.command) return;
+
+      if (terminalStore.getEngineMode() === 'real-docker') {
+        const cmd = payload.command;
+        // Store in dispatch log
+        setDispatchedDockerCmds(prev => [cmd, ...prev.filter(c => c !== cmd).slice(0, 19)]);
+        // Surface as a persistent banner (clipboard write happens via user-gesture in the banner button)
+        setDockerQueuedCmd(cmd);
+        setDockerCmdCopied(false);
+      } else {
+        // executeCommand ref captured at mount — safe to call directly since simulated mode
+        // doesn't need fresh closures for Docker handling
+        if (payload.mode === 'paste') {
+          setInputValue(payload.command);
+          setTimeout(() => {
+            if (inputRef.current) {
+              inputRef.current.focus();
+              const len = payload.command.length;
+              inputRef.current.setSelectionRange(len, len);
+            }
+          }, 50);
+        } else {
+          // Use the ref pattern to always call the latest executeCommand
+          executeCommandRef.current(payload.command);
+        }
       }
     });
     return unsubscribe;
-  }, [executeCommand]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   //  Key handlers 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -807,77 +919,148 @@ const LiveTerminal = () => {
     >
       <div className="relative w-full max-w-screen-2xl flex flex-col lg:flex-row gap-4 h-[calc(100dvh-7rem)] md:h-[calc(100dvh-9rem)]">
 
-        {/*  Mission Sidebar (Desktop)  */}
+        {/* Desktop Sidebar (Swaps between Missions in Simulated mode and Container Telemetry in Real Kali mode) */}
         <aside className="hidden lg:flex flex-col w-72 shrink-0 cyber-panel overflow-hidden">
-          {/* Sidebar Header */}
-          <div className="flex items-center gap-2 px-4 py-3 border-b border-[rgba(243,245,249,0.08)] bg-[rgba(57,255,20,0.03)]">
-            <TbShieldCheck className="w-4 h-4 text-[#39FF14]" />
-            <span className="text-xs font-mono uppercase tracking-wider text-[#39FF14] font-bold">Missions</span>
-            <span className="ml-auto text-[10px] font-mono text-[#A7B0BC]">{completedMissions.length}/{missions.length}</span>
-          </div>
+          {engineMode === 'real-docker' ? (
+            <>
+              <div className="flex items-center gap-2 px-4 py-3 border-b border-[rgba(243,245,249,0.08)] bg-[rgba(57,255,20,0.04)]">
+                <Server className="w-4 h-4 text-[#39FF14]" />
+                <span className="text-xs font-mono uppercase tracking-wider text-[#39FF14] font-bold">Kali Telemetry</span>
+                <span className={`ml-auto w-2 h-2 rounded-full ${dockerStatus === 'connected' ? 'bg-[#39FF14] shadow-[0_0_8px_#39FF14]' : 'bg-[#FF2D2D]'}`} />
+              </div>
 
-          {/* Mission List */}
-          <div className="flex-1 overflow-y-auto p-3 space-y-2 scrollbar-hide">
-            {missions.map(m => {
-              const isComplete = completedMissions.includes(m.id);
-              const isActive = activeMission?.id === m.id;
-              return (
-                <button
-                  key={m.id}
-                  onClick={() => {
-                    if (isActive) return;
-                    if (activeMission) {
-                      executeCommand(`mission abort`);
-                      executeCommand(`mission start ${m.id}`);
-                    } else {
-                      executeCommand(`mission start ${m.id}`);
-                    }
-                  }}
-                  disabled={isComplete}
-                  className={`w-full text-left p-3 rounded-lg border transition-all duration-300 group ${
-                    isActive
-                      ? 'bg-[rgba(57,255,20,0.1)] border-[rgba(57,255,20,0.3)] shadow-[0_0_15px_rgba(57,255,20,0.1)]'
-                      : isComplete
-                        ? 'bg-[rgba(255,255,255,0.02)] border-[rgba(243,245,249,0.05)] opacity-60'
-                        : 'bg-[rgba(255,255,255,0.02)] border-[rgba(243,245,249,0.08)] hover:border-[rgba(57,255,20,0.2)] hover:bg-[rgba(57,255,20,0.04)]'
-                  }`}
-                >
-                  <div className="flex items-start gap-2.5 mb-2">
-                    {getMissionIconBadge(m.id, isActive, 'md')}
-                    <span className={`text-xs font-bold font-mono leading-tight mt-1 ${isActive ? 'text-[#39FF14]' : isComplete ? 'text-[#606878]' : 'text-[#F2F5F9]'}`}>
-                      {m.title}
-                    </span>
-                  </div>
-                  <p className="text-[10px] text-[#A7B0BC] leading-relaxed mb-2">{m.description}</p>
-                  <div className="flex items-center justify-between">
-                    <span className={`text-[9px] font-mono uppercase px-1.5 py-0.5 rounded border ${
-                      m.difficulty === 'beginner' ? 'text-[#39FF14] border-[rgba(57,255,20,0.3)] bg-[rgba(57,255,20,0.1)]' :
-                      m.difficulty === 'intermediate' ? 'text-[#FFE600] border-[rgba(255,230,0,0.3)] bg-[rgba(255,230,0,0.1)]' :
-                      'text-[#FF2D2D] border-[rgba(255,45,45,0.3)] bg-[rgba(255,45,45,0.1)]'
-                    }`}>
-                      {m.difficulty}
-                    </span>
-                    {isComplete && <span className="flex items-center gap-1 text-[10px] text-[#39FF14] font-mono"><BsCheckCircleFill className="w-3 h-3" /> DONE</span>}
-                    {isActive && (
-                      <span className="text-[10px] text-[#FFE600] font-mono animate-pulse">
-                        STEP {missionStep + 1}/{m.steps.length}
-                      </span>
-                    )}
-                  </div>
+              <div className="flex-1 overflow-y-auto p-4 space-y-4 font-mono text-xs scrollbar-hide">
+                <div className="p-3 bg-[#05060B] border border-[rgba(57,255,20,0.2)] rounded-xl space-y-2">
+                  <div className="text-[10px] text-[#A7B0BC] uppercase tracking-widest font-bold">CONTAINER ENGINE</div>
+                  <div className="text-[#39FF14] font-bold truncate">shellstack-kali</div>
+                  <div className="text-[10px] text-[#A7B0BC]">ws://localhost:7681</div>
+                  <div className="text-[10px] text-[#00F0FF] uppercase">kalilinux/kali-rolling</div>
+                </div>
 
-                  {/* Mission progress bar */}
-                  {isActive && (
-                    <div className="mt-2 w-full h-1 bg-[rgba(243,245,249,0.1)] rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-[#39FF14] rounded-full transition-all duration-500"
-                        style={{ width: `${(missionStep / m.steps.length) * 100}%` }}
-                      />
+                <div className="space-y-2">
+                  <div className="text-[10px] text-[#A7B0BC] uppercase tracking-widest font-bold flex items-center justify-between">
+                    <span>COMMAND DISPATCHES</span>
+                    <span className="text-[#00F0FF]">{dispatchedDockerCmds.length}</span>
+                  </div>
+                  {dispatchedDockerCmds.length === 0 ? (
+                    <p className="text-[11px] text-[#606878] italic leading-relaxed">
+                      Click "Run" or "Paste" on any tool or builder page to dispatch commands directly to your live Kali shell.
+                    </p>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {dispatchedDockerCmds.map((cmd, i) => {
+                        const isCopied = clickedDispatchedCmd === cmd;
+                        return (
+                          <button
+                            key={i}
+                            onClick={() => {
+                              try {
+                                navigator.clipboard.writeText(cmd);
+                              } catch {}
+                              if (engineMode === 'real-docker') {
+                                setDockerQueuedCmd(cmd);
+                                setDockerCmdCopied(true);
+                                setTimeout(() => setDockerCmdCopied(false), 3000);
+                              } else {
+                                executeCommandRef.current(cmd);
+                              }
+                              setClickedDispatchedCmd(cmd);
+                              setTimeout(() => setClickedDispatchedCmd(null), 2500);
+                            }}
+                            className={`w-full text-left p-2.5 rounded-lg text-[11px] font-mono group cursor-pointer transition-all flex items-center justify-between gap-2 border ${
+                              isCopied
+                                ? 'bg-[rgba(57,255,20,0.15)] border-[#39FF14] text-[#39FF14]'
+                                : 'bg-[#05060B] border-[rgba(243,245,249,0.08)] hover:border-[rgba(57,255,20,0.4)] text-[#00F0FF]'
+                            }`}
+                            title="Click to copy & activate command in terminal"
+                          >
+                            <span className="truncate flex-1">
+                              <span className="text-[#39FF14] mr-1">$</span>
+                              {cmd}
+                            </span>
+                            {isCopied && (
+                              <span className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#39FF14] text-[#050A05]">
+                                {engineMode === 'real-docker' ? 'COPIED & QUEUED!' : 'EXECUTED!'}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
-                </button>
-              );
-            })}
-          </div>
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Sidebar Header */}
+              <div className="flex items-center gap-2 px-4 py-3 border-b border-[rgba(243,245,249,0.08)] bg-[rgba(57,255,20,0.03)]">
+                <TbShieldCheck className="w-4 h-4 text-[#39FF14]" />
+                <span className="text-xs font-mono uppercase tracking-wider text-[#39FF14] font-bold">Missions</span>
+                <span className="ml-auto text-[10px] font-mono text-[#A7B0BC]">{completedMissions.length}/{missions.length}</span>
+              </div>
+
+              {/* Mission List */}
+              <div className="flex-1 overflow-y-auto p-3 space-y-2 scrollbar-hide">
+                {missions.map(m => {
+                  const isComplete = completedMissions.includes(m.id);
+                  const isActive = activeMission?.id === m.id;
+                  return (
+                    <button
+                      key={m.id}
+                      onClick={() => {
+                        if (isActive) return;
+                        if (activeMission) {
+                          executeCommand(`mission abort`);
+                          executeCommand(`mission start ${m.id}`);
+                        } else {
+                          executeCommand(`mission start ${m.id}`);
+                        }
+                      }}
+                      disabled={isComplete}
+                      className={`w-full text-left p-3 rounded-lg border transition-all duration-300 group ${
+                        isActive
+                          ? 'bg-[rgba(57,255,20,0.1)] border-[rgba(57,255,20,0.3)] shadow-[0_0_15px_rgba(57,255,20,0.1)]'
+                          : isComplete
+                            ? 'bg-[rgba(255,255,255,0.02)] border-[rgba(243,245,249,0.05)] opacity-60'
+                            : 'bg-[rgba(255,255,255,0.02)] border-[rgba(243,245,249,0.08)] hover:border-[rgba(57,255,20,0.2)] hover:bg-[rgba(57,255,20,0.04)]'
+                      }`}
+                    >
+                      <div className="flex items-start gap-2.5 mb-2">
+                        {getMissionIconBadge(m.id, isActive, 'md')}
+                        <span className={`text-xs font-bold font-mono leading-tight mt-1 ${isActive ? 'text-[#39FF14]' : isComplete ? 'text-[#606878]' : 'text-[#F2F5F9]'}`}>
+                          {m.title}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-[#A7B0BC] line-clamp-2 leading-relaxed mb-2">
+                        {m.description}
+                      </p>
+                      <div className="flex items-center justify-between">
+                        <span className={`px-2 py-0.5 text-[9px] font-mono rounded uppercase border ${
+                          m.difficulty === 'beginner'
+                            ? 'text-[#39FF14] border-[rgba(57,255,20,0.3)] bg-[rgba(57,255,20,0.05)]'
+                            : m.difficulty === 'intermediate'
+                              ? 'text-[#FFE600] border-[rgba(255,230,0,0.3)] bg-[rgba(255,230,0,0.05)]'
+                              : 'text-[#FF2D2D] border-[rgba(255,45,45,0.3)] bg-[rgba(255,45,45,0.05)]'
+                        }`}>
+                          {m.difficulty}
+                        </span>
+                        {isComplete && <BsCheckCircleFill className="w-3.5 h-3.5 text-[#39FF14]" />}
+                      </div>
+                      {isActive && (
+                        <div className="mt-2 w-full h-1 bg-[rgba(243,245,249,0.1)] rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-[#39FF14] rounded-full transition-all duration-500"
+                            style={{ width: `${(missionStep / m.steps.length) * 100}%` }}
+                          />
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </aside>
 
         {/*  Mobile Mission Toggle  */}
@@ -936,6 +1119,63 @@ const LiveTerminal = () => {
         {/*  Main Terminal Panel  */}
         <div className={`flex-1 cyber-panel flex flex-col overflow-hidden min-h-0 terminal-container ${isGlitching ? 'terminal-flicker' : ''}`} onClick={focusInput}>
 
+          {/* Terminal Engine Control Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-2 px-3 md:px-4 py-2 border-b border-[rgba(243,245,249,0.08)] bg-[rgba(5,6,11,0.95)] shrink-0 select-none">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-mono text-[#A7B0BC] uppercase tracking-wider font-bold hidden sm:inline">ENGINE:</span>
+              <div className="flex items-center p-0.5 bg-[#0B0E16] border border-[rgba(243,245,249,0.1)] rounded-lg">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    terminalStore.setEngineMode('simulated');
+                  }}
+                  className={`px-2.5 py-1 rounded text-[10px] md:text-xs font-mono font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    engineMode === 'simulated'
+                      ? 'bg-[rgba(57,255,20,0.2)] text-[#39FF14] border border-[#39FF14] shadow-[0_0_10px_rgba(57,255,20,0.3)]'
+                      : 'text-[#A7B0BC] hover:text-[#F2F5F9]'
+                  }`}
+                  title="Browser simulated terminal (Instant & free)"
+                >
+                  <Cpu className="w-3 h-3 text-[#39FF14]" />
+                  <span>Simulated</span>
+                </button>
+
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    terminalStore.setEngineMode('real-docker');
+                    if (dockerStatus !== 'connected') {
+                      setIsDockerModalOpen(true);
+                    }
+                  }}
+                  className={`px-2.5 py-1 rounded text-[10px] md:text-xs font-mono font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    engineMode === 'real-docker'
+                      ? dockerStatus === 'connected'
+                        ? 'bg-[rgba(57,255,20,0.2)] text-[#39FF14] border border-[#39FF14] shadow-[0_0_10px_rgba(57,255,20,0.3)]'
+                        : 'bg-[rgba(255,45,45,0.2)] text-[#FF2D2D] border border-[#FF2D2D] shadow-[0_0_10px_rgba(255,45,45,0.3)]'
+                      : 'text-[#A7B0BC] hover:text-[#F2F5F9]'
+                  }`}
+                  title="Real Kali Linux in local Docker container"
+                >
+                  <Server className="w-3 h-3 text-[#00F0FF]" />
+                  <span>Real Kali Docker</span>
+                  <span className={`w-2 h-2 rounded-full ${dockerStatus === 'connected' ? 'bg-[#39FF14] shadow-[0_0_6px_#39FF14]' : 'bg-[#FF2D2D]'}`} />
+                </button>
+              </div>
+            </div>
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsDockerModalOpen(true);
+              }}
+              className="flex items-center gap-1.5 px-2.5 py-1 text-[10px] md:text-xs font-mono text-[#00F0FF] bg-[rgba(0,240,255,0.1)] border border-[rgba(0,240,255,0.3)] rounded-lg hover:bg-[rgba(0,240,255,0.2)] transition-all cursor-pointer"
+            >
+              <Server className="w-3.5 h-3.5" />
+              <span>Connect Docker</span>
+            </button>
+          </div>
+
           {/* Terminal Top Bar */}
           <div className="flex items-center justify-between h-10 md:h-11 px-3 md:px-4 border-b border-[rgba(243,245,249,0.08)] bg-[rgba(255,255,255,0.02)] shrink-0">
             <div className="flex items-center gap-2">
@@ -949,7 +1189,7 @@ const LiveTerminal = () => {
               <span className="hidden sm:inline">kali@shellstack</span>
               <span className="sm:hidden">shellstack</span>
               <span className="text-[#39FF14]">—</span>
-              <span className="hidden md:inline">bash</span>
+              <span className="hidden md:inline">{engineMode === 'real-docker' ? 'docker (ws://localhost:7681)' : 'bash'}</span>
             </div>
 
             <div className="flex items-center gap-2 text-[10px] font-mono text-[#606878]">
@@ -980,190 +1220,304 @@ const LiveTerminal = () => {
             </div>
           </div>
 
-          {/* Terminal Output */}
-          <div
-            ref={outputRef}
-            data-lenis-prevent
-            className="flex-1 overflow-y-auto px-3 md:px-5 py-3 font-mono text-[11px] md:text-[13px] leading-[1.65] terminal-output scrollbar-hide min-h-0 overscroll-contain"
-          >
-            {/* Scanline overlay */}
-            <div className="terminal-scanline pointer-events-none" />
+          {/* Main Terminal Engine View */}
+          {engineMode === 'real-docker' ? (
+            dockerStatus === 'connected' ? (
+              // Banner sits ABOVE the iframe as a flex child — no absolute overlay, no clipping
+              <div className="flex-1 flex flex-col min-h-0">
+                {/* ── Command Ready Notification Bar ─────────────────────── */}
+                {dockerQueuedCmd && (
+                  <div className="shrink-0 relative overflow-hidden">
+                    {/* Animated top edge glow */}
+                    <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#39FF14] to-transparent animate-pulse" />
+                    {/* Subtle bottom separator */}
+                    <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[rgba(57,255,20,0.4)] to-transparent" />
 
-            {outputLines.map((line, i) => (
-              <div
-                key={i}
-                className={`${colorMap[line.color || 'white']} whitespace-pre-wrap break-all terminal-glow-text`}
-              >
-                {line.text || '\u00A0'}
+                    <div className="flex items-center gap-3 px-4 py-2.5 bg-gradient-to-r from-[#060A0F] via-[#071209] to-[#060A0F]">
+
+                      {/* Status indicator */}
+                      <div className="relative shrink-0">
+                        <div className="w-2 h-2 rounded-full bg-[#39FF14] shadow-[0_0_8px_#39FF14]" />
+                        <div className="absolute inset-0 w-2 h-2 rounded-full bg-[#39FF14] animate-ping opacity-60" />
+                      </div>
+
+                      {/* Label */}
+                      <span className="shrink-0 text-[9px] font-mono font-black text-[#39FF14] uppercase tracking-[0.25em] hidden sm:block">
+                        CMD READY
+                      </span>
+
+                      {/* Separator */}
+                      <span className="shrink-0 text-[rgba(57,255,20,0.25)] text-lg hidden sm:block">│</span>
+
+                      {/* Command display */}
+                      <div className="flex-1 min-w-0 flex items-center gap-2 bg-[rgba(0,0,0,0.4)] border border-[rgba(57,255,20,0.2)] rounded-lg px-3 py-1.5 font-mono text-xs overflow-hidden">
+                        <span className="text-[#39FF14] shrink-0 font-bold">$</span>
+                        <code className="text-[#E8F5E9] truncate">{dockerQueuedCmd}</code>
+                      </div>
+
+                      {/* Copy + paste hint button */}
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(dockerQueuedCmd!).then(() => {
+                            setDockerCmdCopied(true);
+                            setTimeout(() => setDockerCmdCopied(false), 3000);
+                          }).catch(() => {
+                            setDockerCmdCopied(true);
+                            setTimeout(() => setDockerCmdCopied(false), 3000);
+                          });
+                        }}
+                        className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-mono text-[11px] font-bold transition-all duration-200 cursor-pointer ${
+                          dockerCmdCopied
+                            ? 'bg-[#39FF14] text-[#050A05] shadow-[0_0_16px_rgba(57,255,20,0.6)]'
+                            : 'bg-[rgba(57,255,20,0.12)] border border-[rgba(57,255,20,0.45)] text-[#39FF14] hover:bg-[rgba(57,255,20,0.22)] hover:shadow-[0_0_12px_rgba(57,255,20,0.3)] hover:border-[rgba(57,255,20,0.7)]'
+                        }`}
+                      >
+                        {dockerCmdCopied ? (
+                          <><Check className="w-3 h-3" /><span>Copied! → Ctrl+V</span></>
+                        ) : (
+                          <><Copy className="w-3 h-3" /><span className="hidden sm:inline">Copy &amp; Paste</span><span className="sm:hidden">Copy</span></>
+                        )}
+                      </button>
+
+                      {/* Dismiss */}
+                      <button
+                        onClick={() => { setDockerQueuedCmd(null); terminalStore.clearDockerReadyCommand(); }}
+                        className="shrink-0 flex items-center justify-center w-6 h-6 rounded text-[rgba(243,245,249,0.25)] hover:text-[#FF2D2D] hover:bg-[rgba(255,45,45,0.1)] transition-all cursor-pointer"
+                        title="Dismiss"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Iframe fills remaining space */}
+                {dockerIframeMemo}
               </div>
-            ))}
+            ) : (
+              <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-[#05060B] min-h-[400px]">
+                <div className="p-3 bg-[rgba(255,45,45,0.1)] border border-[rgba(255,45,45,0.3)] rounded-2xl text-[#FF2D2D] mb-4">
+                  <Server className="w-8 h-8" />
+                </div>
+                <h3 className="text-lg font-bold text-[#F2F5F9] font-mono mb-2">
+                  Real Kali Docker Container Disconnected
+                </h3>
+                <p className="text-xs text-[#A7B0BC] max-w-md mb-6 leading-relaxed font-mono">
+                  Start your local Docker container on port <code className="text-[#39FF14]">7681</code> to connect your real PC terminal environment directly into ShellStack.
+                </p>
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                  <button
+                    onClick={() => setIsDockerModalOpen(true)}
+                    className="px-4 py-2 text-xs font-mono font-bold text-[#00F0FF] bg-[rgba(0,240,255,0.15)] border border-[rgba(0,240,255,0.4)] rounded-xl hover:bg-[rgba(0,240,255,0.25)] transition-all cursor-pointer"
+                  >
+                    View Docker Setup Command
+                  </button>
+                  <button
+                    onClick={() => terminalStore.setEngineMode('simulated')}
+                    className="px-4 py-2 text-xs font-mono font-bold text-[#39FF14] bg-[rgba(57,255,20,0.15)] border border-[rgba(57,255,20,0.4)] rounded-xl hover:bg-[rgba(57,255,20,0.25)] transition-all cursor-pointer"
+                  >
+                    Switch to Simulated Mode
+                  </button>
+                </div>
+              </div>
+            )
+          ) : (
+            <>
+              {/* Terminal Output */}
+              <div
+                ref={outputRef}
+                data-lenis-prevent
+                className="flex-1 overflow-y-auto px-3 md:px-5 py-3 font-mono text-[11px] md:text-[13px] leading-[1.65] terminal-output scrollbar-hide min-h-0 overscroll-contain"
+              >
+                {/* Scanline overlay */}
+                <div className="terminal-scanline pointer-events-none" />
 
-            {isAnimating && (
-              <div className="flex items-center gap-2 text-[#39FF14] animate-pulse">
-                <RiLoader4Line className="w-3.5 h-3.5 animate-spin" />
-                <span>Processing...</span>
+                {outputLines.map((line, i) => (
+                  <div
+                    key={i}
+                    className={`${colorMap[line.color || 'white']} whitespace-pre-wrap break-all terminal-glow-text`}
+                  >
+                    {line.text || '\u00A0'}
+                  </div>
+                ))}
+
+                {isAnimating && (
+                  <div className="flex items-center gap-2 text-[#39FF14] animate-pulse">
+                    <RiLoader4Line className="w-3.5 h-3.5 animate-spin" />
+                    <span>Processing...</span>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); skipAnimation(); }}
+                      className="flex items-center gap-1 ml-1 text-[#606878] hover:text-[#A7B0BC] text-[10px] underline transition-colors"
+                    >
+                      <MdOutlineSkipNext className="w-3.5 h-3.5" />
+                      skip
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Mobile Toolbar (only visible on mobile/tablet) */}
+              <div className="lg:hidden flex items-center gap-1.5 px-3 py-1.5 border-t border-[rgba(243,245,249,0.05)] bg-[rgba(5,6,11,0.9)] overflow-x-auto scrollbar-hide shrink-0 select-none">
                 <button
-                  onClick={(e) => { e.stopPropagation(); skipAnimation(); }}
-                  className="flex items-center gap-1 ml-1 text-[#606878] hover:text-[#A7B0BC] text-[10px] underline transition-colors"
+                  onClick={() => {
+                    if (suggestion) {
+                      setInputValue(suggestion);
+                    } else {
+                      handleTab(inputValue);
+                    }
+                  }}
+                  onMouseDown={e => e.preventDefault()}
+                  onTouchStart={e => e.preventDefault()}
+                  className="px-2.5 py-1 rounded bg-[rgba(255,255,255,0.05)] active:bg-[rgba(57,255,20,0.15)] text-[#A7B0BC] active:text-[#39FF14] border border-[rgba(243,245,249,0.08)] font-mono text-[10px] transition-colors"
                 >
-                  <MdOutlineSkipNext className="w-3.5 h-3.5" />
-                  skip
+                  TAB
+                </button>
+                <button
+                  onClick={() => {
+                    if (commandHistory.length === 0) return;
+                    const newIndex = historyIndex === -1
+                      ? commandHistory.length - 1
+                      : Math.max(0, historyIndex - 1);
+                    setHistoryIndex(newIndex);
+                    setInputValue(commandHistory[newIndex] || '');
+                  }}
+                  onMouseDown={e => e.preventDefault()}
+                  onTouchStart={e => e.preventDefault()}
+                  className="px-2.5 py-1 rounded bg-[rgba(255,255,255,0.05)] active:bg-[rgba(57,255,20,0.15)] text-[#A7B0BC] active:text-[#39FF14] border border-[rgba(243,245,249,0.08)] font-mono text-[10px] transition-colors"
+                >
+                  ▲
+                </button>
+                <button
+                  onClick={() => {
+                    if (historyIndex === -1) return;
+                    const newIndex = historyIndex + 1;
+                    if (newIndex >= commandHistory.length) {
+                      setHistoryIndex(-1);
+                      setInputValue('');
+                    } else {
+                      setHistoryIndex(newIndex);
+                      setInputValue(commandHistory[newIndex] || '');
+                    }
+                  }}
+                  onMouseDown={e => e.preventDefault()}
+                  onTouchStart={e => e.preventDefault()}
+                  className="px-2.5 py-1 rounded bg-[rgba(255,255,255,0.05)] active:bg-[rgba(57,255,20,0.15)] text-[#A7B0BC] active:text-[#39FF14] border border-[rgba(243,245,249,0.08)] font-mono text-[10px] transition-colors"
+                >
+                  ▼
+                </button>
+                <button
+                  onClick={() => setOutputLines([])}
+                  onMouseDown={e => e.preventDefault()}
+                  onTouchStart={e => e.preventDefault()}
+                  className="px-2.5 py-1 rounded bg-[rgba(255,255,255,0.05)] active:bg-[rgba(57,255,20,0.15)] text-[#A7B0BC] active:text-[#39FF14] border border-[rgba(243,245,249,0.08)] font-mono text-[10px] transition-colors"
+                >
+                  CTRL+L
+                </button>
+                <div className="w-[1px] h-3 bg-[rgba(243,245,249,0.15)] mx-1 shrink-0" />
+                <button
+                  onClick={() => setInputValue(prev => prev + (prev.endsWith(' ') || prev === '' ? 'ls' : ' ls'))}
+                  onMouseDown={e => e.preventDefault()}
+                  onTouchStart={e => e.preventDefault()}
+                  className="px-2.5 py-1 rounded bg-[rgba(255,255,255,0.05)] active:bg-[rgba(57,255,20,0.15)] text-[#A7B0BC] active:text-[#39FF14] border border-[rgba(243,245,249,0.08)] font-mono text-[10px] transition-colors"
+                >
+                  ls
+                </button>
+                <button
+                  onClick={() => setInputValue(prev => prev + (prev.endsWith(' ') || prev === '' ? 'cd ..' : ' cd ..'))}
+                  onMouseDown={e => e.preventDefault()}
+                  onTouchStart={e => e.preventDefault()}
+                  className="px-2.5 py-1 rounded bg-[rgba(255,255,255,0.05)] active:bg-[rgba(57,255,20,0.15)] text-[#A7B0BC] active:text-[#39FF14] border border-[rgba(243,245,249,0.08)] font-mono text-[10px] transition-colors"
+                >
+                  cd ..
+                </button>
+                <button
+                  onClick={() => setInputValue(prev => prev + (prev.endsWith(' ') || prev === '' ? 'cat ' : ' cat '))}
+                  onMouseDown={e => e.preventDefault()}
+                  onTouchStart={e => e.preventDefault()}
+                  className="px-2.5 py-1 rounded bg-[rgba(255,255,255,0.05)] active:bg-[rgba(57,255,20,0.15)] text-[#A7B0BC] active:text-[#39FF14] border border-[rgba(243,245,249,0.08)] font-mono text-[10px] transition-colors"
+                >
+                  cat
+                </button>
+                <button
+                  onClick={() => setInputValue(prev => prev.endsWith(' ') || prev === '' ? 'help' : prev + ' help')}
+                  onMouseDown={e => e.preventDefault()}
+                  onTouchStart={e => e.preventDefault()}
+                  className="px-2.5 py-1 rounded bg-[rgba(255,255,255,0.05)] active:bg-[rgba(57,255,20,0.15)] text-[#A7B0BC] active:text-[#39FF14] border border-[rgba(243,245,249,0.08)] font-mono text-[10px] transition-colors"
+                >
+                  help
+                </button>
+                <button
+                  onClick={() => setInputValue(prev => prev.endsWith(' ') || prev === '' ? 'mission list' : prev + ' mission list')}
+                  onMouseDown={e => e.preventDefault()}
+                  onTouchStart={e => e.preventDefault()}
+                  className="px-2.5 py-1 rounded bg-[rgba(255,255,255,0.05)] active:bg-[rgba(57,255,20,0.15)] text-[#A7B0BC] active:text-[#39FF14] border border-[rgba(243,245,249,0.08)] font-mono text-[10px] transition-colors"
+                >
+                  mission
                 </button>
               </div>
-            )}
-          </div>
 
-          {/* Mobile Toolbar (only visible on mobile/tablet) */}
-          <div className="lg:hidden flex items-center gap-1.5 px-3 py-1.5 border-t border-[rgba(243,245,249,0.05)] bg-[rgba(5,6,11,0.9)] overflow-x-auto scrollbar-hide shrink-0 select-none">
-            <button
-              onClick={() => {
-                if (suggestion) {
-                  setInputValue(suggestion);
-                } else {
-                  handleTab(inputValue);
-                }
-              }}
-              onMouseDown={e => e.preventDefault()}
-              onTouchStart={e => e.preventDefault()}
-              className="px-2.5 py-1 rounded bg-[rgba(255,255,255,0.05)] active:bg-[rgba(57,255,20,0.15)] text-[#A7B0BC] active:text-[#39FF14] border border-[rgba(243,245,249,0.08)] font-mono text-[10px] transition-colors"
-            >
-              TAB
-            </button>
-            <button
-              onClick={() => {
-                if (commandHistory.length === 0) return;
-                const newIndex = historyIndex === -1
-                  ? commandHistory.length - 1
-                  : Math.max(0, historyIndex - 1);
-                setHistoryIndex(newIndex);
-                setInputValue(commandHistory[newIndex] || '');
-              }}
-              onMouseDown={e => e.preventDefault()}
-              onTouchStart={e => e.preventDefault()}
-              className="px-2.5 py-1 rounded bg-[rgba(255,255,255,0.05)] active:bg-[rgba(57,255,20,0.15)] text-[#A7B0BC] active:text-[#39FF14] border border-[rgba(243,245,249,0.08)] font-mono text-[10px] transition-colors"
-            >
-              ▲
-            </button>
-            <button
-              onClick={() => {
-                if (historyIndex === -1) return;
-                const newIndex = historyIndex + 1;
-                if (newIndex >= commandHistory.length) {
-                  setHistoryIndex(-1);
-                  setInputValue('');
-                } else {
-                  setHistoryIndex(newIndex);
-                  setInputValue(commandHistory[newIndex] || '');
-                }
-              }}
-              onMouseDown={e => e.preventDefault()}
-              onTouchStart={e => e.preventDefault()}
-              className="px-2.5 py-1 rounded bg-[rgba(255,255,255,0.05)] active:bg-[rgba(57,255,20,0.15)] text-[#A7B0BC] active:text-[#39FF14] border border-[rgba(243,245,249,0.08)] font-mono text-[10px] transition-colors"
-            >
-              ▼
-            </button>
-            <button
-              onClick={() => setOutputLines([])}
-              onMouseDown={e => e.preventDefault()}
-              onTouchStart={e => e.preventDefault()}
-              className="px-2.5 py-1 rounded bg-[rgba(255,255,255,0.05)] active:bg-[rgba(57,255,20,0.15)] text-[#A7B0BC] active:text-[#39FF14] border border-[rgba(243,245,249,0.08)] font-mono text-[10px] transition-colors"
-            >
-              CTRL+L
-            </button>
-            <div className="w-[1px] h-3 bg-[rgba(243,245,249,0.15)] mx-1 shrink-0" />
-            <button
-              onClick={() => setInputValue(prev => prev + (prev.endsWith(' ') || prev === '' ? 'ls' : ' ls'))}
-              onMouseDown={e => e.preventDefault()}
-              onTouchStart={e => e.preventDefault()}
-              className="px-2.5 py-1 rounded bg-[rgba(255,255,255,0.05)] active:bg-[rgba(57,255,20,0.15)] text-[#A7B0BC] active:text-[#39FF14] border border-[rgba(243,245,249,0.08)] font-mono text-[10px] transition-colors"
-            >
-              ls
-            </button>
-            <button
-              onClick={() => setInputValue(prev => prev + (prev.endsWith(' ') || prev === '' ? 'cd ..' : ' cd ..'))}
-              onMouseDown={e => e.preventDefault()}
-              onTouchStart={e => e.preventDefault()}
-              className="px-2.5 py-1 rounded bg-[rgba(255,255,255,0.05)] active:bg-[rgba(57,255,20,0.15)] text-[#A7B0BC] active:text-[#39FF14] border border-[rgba(243,245,249,0.08)] font-mono text-[10px] transition-colors"
-            >
-              cd ..
-            </button>
-            <button
-              onClick={() => setInputValue(prev => prev + (prev.endsWith(' ') || prev === '' ? 'cat ' : ' cat '))}
-              onMouseDown={e => e.preventDefault()}
-              onTouchStart={e => e.preventDefault()}
-              className="px-2.5 py-1 rounded bg-[rgba(255,255,255,0.05)] active:bg-[rgba(57,255,20,0.15)] text-[#A7B0BC] active:text-[#39FF14] border border-[rgba(243,245,249,0.08)] font-mono text-[10px] transition-colors"
-            >
-              cat
-            </button>
-            <button
-              onClick={() => setInputValue(prev => prev.endsWith(' ') || prev === '' ? 'help' : prev + ' help')}
-              onMouseDown={e => e.preventDefault()}
-              onTouchStart={e => e.preventDefault()}
-              className="px-2.5 py-1 rounded bg-[rgba(255,255,255,0.05)] active:bg-[rgba(57,255,20,0.15)] text-[#A7B0BC] active:text-[#39FF14] border border-[rgba(243,245,249,0.08)] font-mono text-[10px] transition-colors"
-            >
-              help
-            </button>
-            <button
-              onClick={() => setInputValue(prev => prev.endsWith(' ') || prev === '' ? 'mission list' : prev + ' mission list')}
-              onMouseDown={e => e.preventDefault()}
-              onTouchStart={e => e.preventDefault()}
-              className="px-2.5 py-1 rounded bg-[rgba(255,255,255,0.05)] active:bg-[rgba(57,255,20,0.15)] text-[#A7B0BC] active:text-[#39FF14] border border-[rgba(243,245,249,0.08)] font-mono text-[10px] transition-colors"
-            >
-              mission
-            </button>
-          </div>
-
-          {/* Command Input */}
-          <div className="flex items-center gap-1 md:gap-2 px-3 md:px-5 py-2.5 md:py-3 border-t border-[rgba(243,245,249,0.08)] bg-[rgba(5,6,11,0.8)] shrink-0">
-            <span className="text-[#39FF14] font-mono text-[11px] md:text-[13px] shrink-0 select-none">
-              kali@shellstack:<span className="text-[#00F0FF]">{getPathDisplay(currentPath)}</span>$
-            </span>
-            <div className="relative flex items-center flex-1 min-w-0">
-              {suggestion && suggestion.toLowerCase().startsWith(inputValue.toLowerCase()) && (
-                <div className="absolute left-0 pointer-events-none select-none font-mono text-[11px] md:text-[13px] whitespace-pre text-[rgba(57,255,20,0.22)] leading-normal">
-                  <span className="text-transparent">{inputValue}</span>
-                  <span>{suggestion.slice(inputValue.length)}</span>
-                </div>
-              )}
-              <input
-                ref={inputRef}
-                type="text"
-                value={inputValue}
-                onChange={e => setInputValue(e.target.value)}
-                onKeyDown={handleKeyDown}
-                className="w-full bg-transparent outline-none font-mono text-[11px] md:text-[13px] text-[#F2F5F9] caret-[#39FF14] min-w-0 placeholder:text-[rgba(57,255,20,0.25)] relative z-10 leading-normal terminal-input"
-                placeholder={isAnimating ? 'Press Enter to skip...' : activeMission ? `💡 Try: ${activeMission.steps[missionStep]?.hint || ''}` : 'Type a command...'}
-                autoFocus
-                autoComplete="off"
-                autoCorrect="off"
-                autoCapitalize="off"
-                spellCheck={false}
-              />
-            </div>
-          </div>
-
-          {/* Bottom Status Bar */}
-          <div className="flex items-center justify-between px-3 md:px-5 py-1.5 border-t border-[rgba(243,245,249,0.08)] bg-[rgba(5,6,11,0.85)] text-[9px] md:text-[10px] font-mono text-[#A7B0BC] shrink-0">
-            <div className="flex items-center gap-3">
-              <span className="flex items-center gap-1 text-[#39FF14] font-semibold">
-                <BsLightningChargeFill className="w-2.5 h-2.5" />
-                {commandCount} cmds
-              </span>
-              <span className="hidden sm:inline text-[#C5CDD8]">bash 5.2</span>
-              <span className="hidden md:inline text-[#C5CDD8]">UTF-8</span>
-            </div>
-            <div className="flex items-center gap-3">
-              {activeMission && (
-                <span className="flex items-center gap-1 text-[#FFE600] font-semibold">
-                  <MdGpsFixed className="w-3 h-3" />
-                  {activeMission.title} [{missionStep + 1}/{activeMission.steps.length}]
+              {/* Command Input */}
+              <div className="flex items-center gap-1 md:gap-2 px-3 md:px-5 py-2.5 md:py-3 border-t border-[rgba(243,245,249,0.08)] bg-[rgba(5,6,11,0.8)] shrink-0">
+                <span className="text-[#39FF14] font-mono text-[11px] md:text-[13px] shrink-0 select-none">
+                  kali@shellstack:<span className="text-[#00F0FF]">{getPathDisplay(currentPath)}</span>$
                 </span>
-              )}
-              <span className="hidden sm:inline text-[#00F0FF]">{currentPath}</span>
-            </div>
-          </div>
+                <div className="relative flex items-center flex-1 min-w-0">
+                  {suggestion && suggestion.toLowerCase().startsWith(inputValue.toLowerCase()) && (
+                    <div className="absolute left-0 pointer-events-none select-none font-mono text-[11px] md:text-[13px] whitespace-pre text-[rgba(57,255,20,0.22)] leading-normal">
+                      <span className="text-transparent">{inputValue}</span>
+                      <span>{suggestion.slice(inputValue.length)}</span>
+                    </div>
+                  )}
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={inputValue}
+                    onChange={e => setInputValue(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    className="w-full bg-transparent outline-none font-mono text-[11px] md:text-[13px] text-[#F2F5F9] caret-[#39FF14] min-w-0 placeholder:text-[rgba(57,255,20,0.25)] relative z-10 leading-normal terminal-input"
+                    placeholder={isAnimating ? 'Press Enter to skip...' : activeMission ? `Hint: ${activeMission.steps[missionStep]?.hint || ''}` : 'Type a command...'}
+                    autoFocus
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck={false}
+                  />
+                </div>
+              </div>
+
+              {/* Bottom Status Bar */}
+              <div className="flex items-center justify-between px-3 md:px-5 py-1.5 border-t border-[rgba(243,245,249,0.08)] bg-[rgba(5,6,11,0.85)] text-[9px] md:text-[10px] font-mono text-[#A7B0BC] shrink-0">
+                <div className="flex items-center gap-3">
+                  <span className="flex items-center gap-1 text-[#39FF14] font-semibold">
+                    <BsLightningChargeFill className="w-2.5 h-2.5" />
+                    {commandCount} cmds
+                  </span>
+                  <span className="hidden sm:inline text-[#C5CDD8]">bash 5.2</span>
+                  <span className="hidden md:inline text-[#C5CDD8]">UTF-8</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  {activeMission && (
+                    <span className="flex items-center gap-1 text-[#FFE600] font-semibold">
+                      <MdGpsFixed className="w-3 h-3" />
+                      {activeMission.title} [{missionStep + 1}/{activeMission.steps.length}]
+                    </span>
+                  )}
+                  <span className="hidden sm:inline text-[#00F0FF]">{currentPath}</span>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
+
+      <DockerConnectModal
+        isOpen={isDockerModalOpen}
+        onClose={() => {
+          setIsDockerModalOpen(false);
+          setPendingModalCmd(undefined);
+        }}
+        pendingCommand={pendingModalCmd}
+      />
     </section>
   );
 };

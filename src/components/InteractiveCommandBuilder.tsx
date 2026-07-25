@@ -5,9 +5,10 @@ import { useRunInTerminal } from '../hooks/useRunInTerminal';
 
 interface InteractiveCommandBuilderProps {
   command: InteractiveCommand;
+  onCloseModal?: () => void;
 }
 
-const InteractiveCommandBuilder = ({ command }: InteractiveCommandBuilderProps) => {
+const InteractiveCommandBuilder = ({ command, onCloseModal }: InteractiveCommandBuilderProps) => {
   const { runInTerminal } = useRunInTerminal();
   const [inputs, setInputs] = useState<Record<string, string>>(() => {
     const initialState: Record<string, string> = {};
@@ -137,9 +138,9 @@ const InteractiveCommandBuilder = ({ command }: InteractiveCommandBuilderProps) 
             
             <div className="flex items-center gap-2 shrink-0">
               <button
-                onClick={() => runInTerminal(generatedCommand)}
-                className="flex items-center gap-1.5 px-3 py-2 text-xs font-mono font-semibold rounded-lg bg-[rgba(57,255,20,0.15)] text-[#39FF14] border border-[rgba(57,255,20,0.4)] hover:bg-[rgba(57,255,20,0.25)] hover:border-[#39FF14] hover:shadow-[0_0_15px_rgba(57,255,20,0.3)] transition-all cursor-pointer"
-                title="Run live in Terminal"
+                onClick={() => runInTerminal(generatedCommand, { onCloseModal })}
+                className="flex items-center gap-2 px-4 py-2 text-xs font-mono font-bold rounded-lg bg-[rgba(57,255,20,0.15)] text-[#39FF14] border border-[rgba(57,255,20,0.4)] hover:bg-[rgba(57,255,20,0.25)] hover:border-[#39FF14] hover:shadow-[0_0_18px_rgba(57,255,20,0.35)] transition-all cursor-pointer"
+                title="Run in Terminal"
               >
                 <Play className="w-3.5 h-3.5 fill-[#39FF14]" />
                 <span>Run in Terminal</span>
@@ -148,9 +149,9 @@ const InteractiveCommandBuilder = ({ command }: InteractiveCommandBuilderProps) 
               <button
                 onClick={handleCopy}
                 className={`flex items-center justify-center p-2 rounded-lg transition-all ${
-                  copied 
-                    ? 'bg-[rgba(57,255,20,0.2)] text-[#39FF14] border border-[#39FF14]' 
-                    : 'bg-[rgba(243,245,249,0.05)] text-[#A7B0BC] border border-[rgba(243,245,249,0.1)] hover:text-[#39FF14] hover:border-[#39FF14]/50'
+                  copied
+                    ? 'bg-[rgba(57,255,20,0.2)] text-[#39FF14] border border-[#39FF14]'
+                    : 'bg-[rgba(243,245,249,0.05)] text-[#A7B0BC] border border-[rgba(243,245,249,0.08)] hover:text-[#39FF14] hover:border-[rgba(57,255,20,0.4)]'
                 }`}
                 title="Copy to clipboard"
               >

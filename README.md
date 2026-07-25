@@ -2,9 +2,9 @@
 
 <div align="center">
 
-### Cybersecurity learning, tool exploration, command building, and tactical reference in one terminal-inspired workspace
+### Cybersecurity learning, tool exploration, command building, and real Kali Docker execution in one workspace
 
-[Live Demo](https://shell-stack.vercel.app/) | [Vite](https://vitejs.dev/) | [React](https://react.dev/) | [TypeScript](https://www.typescriptlang.org/)
+[Live Demo](https://shell-stack.vercel.app/) | [Vite](https://vitejs.dev/) | [React 19](https://react.dev/) | [TypeScript](https://www.typescriptlang.org/)
 
 </div>
 
@@ -14,16 +14,18 @@
 
 ## Overview
 
-ShellStack is a visually immersive cybersecurity study platform built for people who want more than static notes.
+ShellStack is a visually immersive, high-performance cybersecurity study platform built for ethical hackers, students, and security researchers who want more than static notes.
 
 It combines:
 
-- a curated Kali Linux tool directory
-- deep tool detail modals with commands, flags, examples, and guided walkthroughs
-- interactive command builders for dynamic command generation
-- CEH-aligned learning content across 20 modules
-- a large searchable command cheat sheet
-- terminal-style learning flows and animated cyber UI
+- **Dual-Engine Terminal**: Switch seamlessly between a zero-install **Simulated Browser Shell** and a **Real Kali Docker Engine** (`ws://localhost:7681`).
+- **Curated Tool Directory**: Browse 280+ offensive security tools categorized across 19 domains with ranked search and category filters.
+- **Deep Tool Intelligence Modals**: Deep detail views with commands, flags, examples, installation notes, legal warnings, and tactical walkthroughs.
+- **Interactive Command Builders**: Parameterized form controls that generate customized security commands in real time.
+- **Cross-Route Command Dispatch**: 1-click **Run** buttons everywhere that dispatch commands directly into your terminal with zero loading delays.
+- **CEH Study Explorer**: 20 structured CEH v12 learning modules covering the full ethical hacking curriculum.
+- **Command Cheat Sheet Console**: Large searchable reference catalog for instant command recall and 1-click clipboard copies.
+- **Interactive Guided Missions**: Terminal-based challenges validating command execution against learning objectives.
 
 The result is a single environment for learning concepts, exploring tools, and quickly turning knowledge into usable command workflows.
 
@@ -33,11 +35,12 @@ The result is a single environment for learning concepts, exploring tools, and q
 
 | System | What it gives you |
 | --- | --- |
+| `Dual Terminal Engines` | Choose between instant in-browser simulation or real local Kali Linux execution via Docker (`ws://localhost:7681`). |
 | `Tool Directory` | Browse a large offensive security catalog with ranked search, category filtering, command previews, and drill-down detail views. |
 | `Tool Detail Modal` | Explore commands, common flags, usage context, installation notes, examples, legal warnings, and tactical guides without leaving the page. |
-| `Interactive Command Builder` | Generate parameterized commands live from form inputs and copy them instantly. |
+| `Interactive Command Builder` | Generate parameterized commands live from form inputs and execute or copy them instantly. |
 | `CEH Module Explorer` | Navigate 20 CEH-focused learning modules through a dense, visual study interface. |
-| `Cheat Sheet Console` | Search across a large command reference and copy high-value commands quickly. |
+| `Cheat Sheet Console` | Search across a large command reference and copy or run high-value commands quickly. |
 | `Terminal Experience` | Learn in an interface designed to feel like a cyber operations console rather than a generic docs page. |
 
 ---
@@ -51,7 +54,31 @@ The result is a single environment for learning concepts, exploring tools, and q
 1000+ Command Entries
 800+ Flag References
 6 Core Route Experiences
+Dual Terminal Execution Engines
 ```
+
+---
+
+## Architecture & Terminal Engines
+
+ShellStack features a dual-engine architecture to suit both instant learning and real-world execution:
+
+| Terminal Engine | Description & Tech | Best For |
+| --- | --- | --- |
+| **Simulated Browser Engine** | Built-in JavaScript terminal simulation featuring a mock Kali filesystem (`/home/kali`, `/usr/bin`), simulated command outputs (`nmap`, `sqlmap`, `neofetch`, etc.), and interactive guided missions. | Zero-setup browser learning, quick testing, and mission challenges. |
+| **Real Kali Docker Engine** | Connects to a local Docker container or Node bridge running `ttyd` via WebSocket on `ws://localhost:7681`. Runs **real offensive security commands** 100% locally on your machine. | Actual penetration testing, real package installation (`apt install`), and native Linux execution. |
+
+---
+
+## 1-Click Real Docker Setup
+
+To connect ShellStack to your local Kali Linux Docker environment:
+
+```bash
+docker rm -f shellstack-kali; docker run -d --name shellstack-kali -p 7681:7681 --restart unless-stopped kalilinux/kali-rolling sh -c "apt-get update && apt-get install -y ttyd && ttyd -p 7681 -W bash"
+```
+
+> **Note**: Uses the official `kalilinux/kali-rolling` image from Offensive Security. The `-W` flag enables full interactive terminal typing and WebSocket streaming.
 
 ---
 
@@ -64,34 +91,33 @@ The landing experience combines the cinematic hero, Kali/Linux foundation overvi
 The full offensive security directory with ranked search, category filtering, command previews, tactical application hints, and full tool documentation modals.
 
 ### `/ceh`
-A CEH-oriented module explorer built to support structured study instead of flat reading.
+A CEH-oriented module explorer built to support structured study instead of flat reading across 20 core topics.
 
 ### `/terminal`
-A live-style terminal learning section for command and output-driven presentation.
+A live dual-engine terminal section for command execution, telemetry monitoring, and mission challenges.
 
 ### `/study`
-A study-oriented route that connects learners to practical resources and guided paths.
+A study-oriented route that connects learners to practical resources, tool kits, and guided learning paths.
 
 ### `/cheatsheet`
-A dense command-first reference experience with searchable categories, operator-style navigation, and one-click copy actions.
+A dense command-first reference experience with searchable categories, operator-style navigation, and one-click copy and run actions.
 
 ---
 
 ## Feature Highlights
 
-### Dynamic command builders
+### Cross-Route Command Dispatch
+Clicking **Run** on any tool card, modal, interactive builder, or cheat sheet dispatches the command across routes seamlessly into the active terminal engine with a persistent **Command Ready** banner.
 
-Some tools include interactive builders that turn user input into ready-to-copy commands in real time.
-
+### Dynamic Command Builders
+Some tools include interactive builders that turn user input into ready-to-run commands in real time.
 - text, select, and checkbox-driven parameters
 - generated output preview
-- fast clipboard workflow
+- 1-click **Run in Terminal** and clipboard workflow
 - built directly into tool documentation
 
-### Deep tool documentation
-
-Each tool can surface much more than a name and a few commands.
-
+### Deep Tool Documentation
+Each tool surfaces comprehensive operational details:
 - essential commands
 - common flags
 - when-to-use guidance
@@ -101,14 +127,11 @@ Each tool can surface much more than a name and a few commands.
 - practical examples
 - tactical walkthroughs for richer tools
 
-### Search designed for discovery
+### Search Designed for Discovery
+Tool search ranks results to make exact, prefix, and high-signal matches easier to find fast.
 
-Tool search is not just raw string matching. The platform ranks results to make exact, prefix, and high-signal matches easier to find fast.
-
-### Visual system with purpose
-
+### Visual System with Purpose
 ShellStack leans hard into a cyber-ops identity:
-
 - terminal surfaces
 - neon accents
 - scanline and HUD-inspired atmosphere
@@ -119,14 +142,11 @@ ShellStack leans hard into a cyber-ops identity:
 
 ## Built With
 
-- React 19
-- TypeScript
-- Vite
-- Tailwind CSS
-- GSAP
-- React Router
-- Lucide Icons
-- Radix UI primitives
+- **Core Framework**: React 19, TypeScript, Vite
+- **Styling & UI**: Tailwind CSS, Vanilla CSS Tokens, Lucide Icons, React Icons
+- **Animation & Motion**: GSAP, ScrollTrigger
+- **Routing & State**: React Router DOM v7, Custom Reactive Event Store (`terminalStore`)
+- **Terminal Integration**: WebSocket Client, `ttyd` Web Terminal Server Bridge
 
 ---
 
@@ -134,34 +154,21 @@ ShellStack leans hard into a cyber-ops identity:
 
 ```text
 app/
-|- public/
-|- src/
-|  |- components/
-|  |- data/
-|  |  |- modules/
-|  |  `- tools/
-|  |- pages/
-|  `- sections/
-|- package.json
-`- README.md
+├── public/
+├── src/
+│   ├── components/       # Modals (ToolDetail, DockerConnect, CommandBuilder, etc.)
+│   ├── data/             # Tool catalog, CEH modules, cheat sheets, terminal simulations
+│   │   ├── modules/
+│   │   └── tools/
+│   ├── hooks/            # useRunInTerminal, useTerminalStore hooks
+│   ├── lib/              # terminalStore singleton & WebSocket state management
+│   ├── pages/            # CheatSheetPage, etc.
+│   ├── sections/         # LiveTerminal, Hero, ToolsDirectory, CEHExplorer, etc.
+│   ├── App.tsx           # Main router & layout shell
+│   └── index.css         # Cyber-ops styling design system & custom utilities
+├── package.json
+└── vite.config.ts
 ```
-
-### Content model
-
-- `src/data/tools/` contains the category-based security tool datasets
-- `src/data/modules/` contains the CEH learning modules
-- `src/data/masterCheatSheet.ts` powers the command cheat sheet experience
-
----
-
-## Screens and Systems
-
-- `Home` for intro, featured discovery, and Kali/Linux orientation
-- `Tools Directory` for full catalog exploration
-- `Tool Detail Modal` for multi-tab deep dives
-- `Interactive Command Builder` for dynamic command creation
-- `Cheat Sheet Page` for command recall and quick copy
-- `Live Terminal` for command-style learning presentation
 
 ---
 
@@ -169,7 +176,7 @@ app/
 
 ShellStack is designed around a simple idea:
 
-> learning security tools should feel operational, not passive
+> *learning security tools should feel operational, not passive*
 
 The UI, information density, and route structure are all built to support that feeling.
 
@@ -183,9 +190,9 @@ Only use security tools and commands in environments you own or are explicitly p
 
 ---
 
-## Live
+## Live Production Site
 
-**Production:** https://shell-stack.vercel.app/
+🌐 **Production Application**: [https://shell-stack.vercel.app/](https://shell-stack.vercel.app/)
 
 ---
 

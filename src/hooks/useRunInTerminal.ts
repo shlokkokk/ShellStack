@@ -1,44 +1,57 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { terminalStore } from '../lib/terminalStore';
+import { terminalStore, type TerminalCommandMode } from '../lib/terminalStore';
+
+// Key used to hand off a command to LiveTerminal across a navigation
+export const PENDING_CMD_KEY = 'shellstack_pending_cmd';
+export const PENDING_MODE_KEY = 'shellstack_pending_mode';
 
 export const useRunInTerminal = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const runInTerminal = (command: string, options?: { onCloseModal?: () => void }) => {
+  const dispatchToTerminal = (
+    command: string,
+    mode: TerminalCommandMode = 'execute',
+    options?: { onCloseModal?: () => void }
+  ) => {
     if (!command) return;
 
     const trimmed = command.trim();
     if (!trimmed) return;
 
-    // 1. Close any open modal if callback provided
+    // 1. Close modal first
     if (options?.onCloseModal) {
       options.onCloseModal();
     }
 
-    // 2. Dispatch command to terminal store
-    terminalStore.dispatch(trimmed);
+    // Safety: ensure body scroll is restored before any navigation
+    // (modal cleanup effect may not have fired yet when navigate() is called)
+    document.body.classList.remove('no-scroll');
 
-    // 3. Handle navigation to Terminal
     if (location.pathname === '/terminal') {
-      // Already on terminal page, scroll to input/top
-      const termEl = document.getElementById('live-terminal-window') || document.getElementById('terminal');
-      if (termEl) {
-        termEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    } else if (location.pathname === '/') {
-      // On homepage, terminal section exists on the page
-      const termSection = document.getElementById('terminal');
-      if (termSection) {
-        termSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      } else {
-        navigate('/terminal');
-      }
+      // ── Already on terminal page: dispatch directly ──────────────
+      terminalStore.dispatch(trimmed, mode);
     } else {
-      // On another route (/tools, /cheatsheet, /ceh, etc.), navigate to /terminal
+      // ── On another page: persist to sessionStorage so LiveTerminal
+      //    picks it up on mount regardless of component lifecycle timing.
+      try {
+        sessionStorage.setItem(PENDING_CMD_KEY, trimmed);
+        sessionStorage.setItem(PENDING_MODE_KEY, mode);
+      } catch {
+        // sessionStorage blocked: fall back to terminalStore pendingPayload
+        terminalStore.dispatch(trimmed, mode);
+      }
       navigate('/terminal');
     }
   };
 
-  return { runInTerminal };
+  const runInTerminal = (command: string, options?: { onCloseModal?: () => void }) => {
+    dispatchToTerminal(command, 'execute', options);
+  };
+
+  const pasteInTerminal = (command: string, options?: { onCloseModal?: () => void }) => {
+    dispatchToTerminal(command, 'paste', options);
+  };
+
+  return { runInTerminal, pasteInTerminal };
 };

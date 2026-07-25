@@ -239,7 +239,12 @@ const AppShell = () => {
   const [isModuleModalOpen, setIsModuleModalOpen] = useState(false);
 
   useEffect(() => {
-    if (pathname === '/') {
+    // Never show a skeleton for '/' or '/terminal':
+    // - '/terminal' must never unmount LiveTerminal after it mounts, because LiveTerminal
+    //   consumes the terminalStore pendingPayload in its subscribe() effect (child effects
+    //   fire before parent effects). If we then set isRouteLoading=true here, LiveTerminal
+    //   unmounts and the rAF-scheduled payload callback fires on an unmounted component.
+    if (pathname === '/' || pathname === '/terminal') {
       setIsRouteLoading(false);
       return;
     }
